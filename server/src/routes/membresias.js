@@ -5,10 +5,55 @@ import { requireAuth, requireTipo } from '../middleware/auth.js';
 export const membresiasRouter = Router();
 
 export const PLANES = [
-  { tipo: 'GRATIS', nombre: 'Gratis', precio: 0, descripcion: 'Explora el mercado' },
-  { tipo: 'BASICA', nombre: 'Básica', precio: 99000, descripcion: '10 cargas / mes' },
-  { tipo: 'GOLD', nombre: 'Gold 2.0', precio: 179000, descripcion: '20 cargas / mes' },
-  { tipo: 'ILIMITADA', nombre: 'Ilimitada', precio: 249000, descripcion: 'Desbloqueos sin límite' },
+  {
+    tipo: 'GRATIS',
+    nombre: 'Gratis',
+    precio: 0,
+    descripcion: 'Explora el mercado',
+    features: ['Ver listado de cargas', 'Alertas de carretera', 'Calculadora SICE-TAC'],
+    destacado: false,
+  },
+  {
+    tipo: 'BASICA',
+    nombre: 'Básica',
+    precio: 99000,
+    descripcion: '10 cargas / mes',
+    features: [
+      '10 contactos desbloqueados',
+      'Descuento 10% en seguro de carga',
+      'Notificaciones prioritarias',
+      'Soporte por WhatsApp',
+    ],
+    destacado: false,
+  },
+  {
+    tipo: 'GOLD',
+    nombre: 'Gold 2.0',
+    precio: 179000,
+    descripcion: '20 cargas / mes',
+    features: [
+      '20 contactos desbloqueados',
+      'Descuento 15% en combustible aliado',
+      'Descuento 15% en seguro de carga',
+      'Alertas geolocalizadas a 100 km',
+      'Insignia Gold en tu perfil',
+    ],
+    destacado: true,
+  },
+  {
+    tipo: 'ILIMITADA',
+    nombre: 'Ilimitada',
+    precio: 249000,
+    descripcion: 'Desbloqueos sin límite',
+    features: [
+      'Desbloqueos ilimitados',
+      'Descuento 20% en combustible aliado',
+      'Descuento 20% en seguro de carga',
+      'Reporte RNDC asistido',
+      'Soporte prioritario',
+    ],
+    destacado: false,
+  },
 ];
 
 membresiasRouter.get('/planes', (_req, res) => res.json(PLANES));

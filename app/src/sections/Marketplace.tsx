@@ -1,15 +1,75 @@
-import { useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Lock, LockOpen, MapPin, Weight, CalendarDays, Star, BadgeCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CARGAS, formatCOP, tarifaDesbloqueo, type Carga } from '@/data/mock';
+import { formatCOP, tarifaDesbloqueo } from '@/data/mock';
+import { apiFetch, ApiError } from '@/lib/api';
+import { useAuth } from '@/lib/use-auth';
+import AuthDialog from '@/components/AuthDialog';
 
-function TarjetaCarga({ carga }: { carga: Carga }) {
-  const [desbloqueada, setDesbloqueada] = useState(false);
+interface Carga {
+  id: number;
+  titulo: string;
+  tipoCarga: string;
+  origen: string;
+  destino: string;
+  toneladas: number;
+  precio: number;
+  pisoSiceTac: number;
+  fechaCarga: string;
+  tipoPublicacion: 'NACIONAL' | 'URBANA' | 'BARBACHA';
+  vehiculoRequerido: string;
+  destacada: boolean;
+  verificado: boolean;
+  desbloqueada: boolean;
+}
+
+interface Contacto {
+  nombre: string;
+  telefono: string;
+}
+
+function TarjetaCarga({
+  carga,
+  onDesbloqueada,
+  onRequireAuth,
+}: {
+  carga: Carga;
+  onDesbloqueada: (cargaId: number, contacto: Contacto) => void;
+  onRequireAuth: () => void;
+}) {
+  const { token, tipo } = useAuth();
+  const [contacto, setContacto] = useState<Contacto | null>(null);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const tarifa = tarifaDesbloqueo(carga.precio);
   const sobrePiso = carga.precio - carga.pisoSiceTac;
+
+  async function desbloquear() {
+    if (!token) return onRequireAuth();
+    if (tipo !== 'TRANSPORTADOR') {
+      setError('Solo los transportadores pueden desbloquear contactos');
+      return;
+    }
+    setCargando(true);
+    setError(null);
+    try {
+      const data = await apiFetch<{ monto: number; contacto: Contacto }>(
+        `/api/cargas/${carga.id}/desbloqueo`,
+        { method: 'POST', token }
+      );
+      setContacto(data.contacto);
+      onDesbloqueada(carga.id, data.contacto);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo desbloquear el contacto');
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  const desbloqueada = carga.desbloqueada || !!contacto;
 
   return (
     <Card className={`relative overflow-hidden border-zinc-800 bg-zinc-900/60 transition-all hover:border-zinc-700 ${carga.destacada ? 'ring-1 ring-amber-500/40' : ''}`}>
@@ -39,7 +99,7 @@ function TarjetaCarga({ carga }: { carga: Carga }) {
 
         <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-zinc-500">
           <span className="flex items-center gap-1"><Weight className="h-3.5 w-3.5" /> {carga.toneladas} ton</span>
-          <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" /> Carga: {carga.fechaCarga}</span>
+          <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" /> Carga: {new Date(carga.fechaCarga).toLocaleDateString('es-CO')}</span>
           <span className="flex items-center gap-1"><Star className="h-3.5 w-3.5 text-amber-400" /> 4.8</span>
         </div>
 
@@ -59,18 +119,11 @@ function TarjetaCarga({ carga }: { carga: Carga }) {
 
         <div className="mt-4 flex items-center justify-between gap-3">
           {desbloqueada ? (
-            <div className="relative w-full rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
-              {/* Marca de agua anti-pantallazo: identifica al usuario que revela el dato */}
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden opacity-10">
-                <span className="rotate-[-15deg] text-xs font-bold tracking-widest text-emerald-300">
-                  USUARIO-4821 · USUARIO-4821 · USUARIO-4821
-                </span>
-              </div>
+            <div className="w-full rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
               <div className="flex items-center justify-between">
                 <div className="text-sm">
                   <p className="font-semibold text-emerald-300">Contacto desbloqueado</p>
-                  <p className="text-xs text-zinc-400">+57 310 *** 4521 · chat interno habilitado</p>
-                  <p className="text-[10px] text-zinc-500">Visible solo para ti · queda registrado en auditoría</p>
+                  <p className="text-xs text-zinc-400">{contacto?.nombre ?? 'Contacto'} · {contacto?.telefono ?? 'oculto tras recargar — vuelve a abrir la carga'}</p>
                 </div>
                 <LockOpen className="h-4 w-4 shrink-0 text-emerald-400" />
               </div>
@@ -83,14 +136,16 @@ function TarjetaCarga({ carga }: { carga: Carga }) {
               </div>
               <Button
                 size="sm"
-                onClick={() => setDesbloqueada(true)}
+                onClick={desbloquear}
+                disabled={cargando}
                 className="bg-emerald-500 font-semibold text-zinc-950 hover:bg-emerald-400"
               >
-                Desbloquear · {formatCOP(tarifa)}
+                {cargando ? 'Procesando…' : `Desbloquear · ${formatCOP(tarifa)}`}
               </Button>
             </>
           )}
         </div>
+        {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
       </CardContent>
     </Card>
   );
@@ -98,7 +153,33 @@ function TarjetaCarga({ carga }: { carga: Carga }) {
 
 export default function Marketplace() {
   const [filtro, setFiltro] = useState('TODAS');
-  const cargasFiltradas = filtro === 'TODAS' ? CARGAS : CARGAS.filter((c) => c.tipoPublicacion === filtro);
+  const [cargas, setCargas] = useState<Carga[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [authAbierto, setAuthAbierto] = useState(false);
+  const { token } = useAuth();
+
+  const cargar = useCallback(async () => {
+    setCargando(true);
+    setError(null);
+    try {
+      const query = filtro !== 'TODAS' ? `?tipoPublicacion=${filtro}` : '';
+      const data = await apiFetch<Carga[]>(`/api/cargas${query}`, { token });
+      setCargas(data);
+    } catch {
+      setError('No se pudo conectar con la API. ¿Está corriendo el servidor (server/) en el puerto 4000?');
+    } finally {
+      setCargando(false);
+    }
+  }, [filtro, token]);
+
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
+
+  function marcarDesbloqueada(cargaId: number) {
+    setCargas((prev) => prev.map((c) => (c.id === cargaId ? { ...c, desbloqueada: true } : c)));
+  }
 
   return (
     <section id="cargas" className="border-b border-zinc-800 bg-zinc-950 py-20">
@@ -122,18 +203,27 @@ export default function Marketplace() {
           </Tabs>
         </div>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {cargasFiltradas.map((carga) => (
-            <TarjetaCarga key={carga.id} carga={carga} />
-          ))}
-        </div>
+        {cargando && <p className="mt-10 text-center text-sm text-zinc-500">Cargando cargas…</p>}
+        {error && <p className="mt-10 text-center text-sm text-red-400">{error}</p>}
+
+        {!cargando && !error && (
+          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {cargas.map((carga) => (
+              <TarjetaCarga
+                key={carga.id}
+                carga={carga}
+                onDesbloqueada={marcarDesbloqueada}
+                onRequireAuth={() => setAuthAbierto(true)}
+              />
+            ))}
+          </div>
+        )}
 
         <p className="mt-8 text-center text-xs text-zinc-600">
-          * Prototipo: el desbloqueo es simulado. En producción se procesa con Wompi (PSE, tarjeta, Nequi)
-          y el contacto se habilita tras confirmación del pago.
+          * El desbloqueo cobra 4% del flete (mín. $15.000 COP) de forma real en el backend, pero
+          todavía sin pasarela de pago: en producción se procesa con Wompi (PSE, tarjeta, Nequi).
         </p>
 
-        {/* Protección anti-fuga del dato de contacto */}
         <div className="mx-auto mt-8 max-w-4xl rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
           <p className="text-sm font-semibold text-white">🛡️ El contacto desbloqueado está protegido</p>
           <div className="mt-3 grid gap-3 text-xs text-zinc-400 sm:grid-cols-2 lg:grid-cols-4">
@@ -144,6 +234,8 @@ export default function Marketplace() {
           </div>
         </div>
       </div>
+
+      <AuthDialog open={authAbierto} onOpenChange={setAuthAbierto} />
     </section>
   );
 }

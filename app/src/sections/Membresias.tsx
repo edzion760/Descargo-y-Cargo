@@ -1,10 +1,57 @@
+import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { PLANES, formatCOP } from '@/data/mock';
+import { formatCOP } from '@/data/mock';
+import { apiFetch, ApiError } from '@/lib/api';
+import { useAuth } from '@/lib/use-auth';
+import AuthDialog from '@/components/AuthDialog';
+
+interface Plan {
+  tipo: string;
+  nombre: string;
+  precio: number;
+  descripcion: string;
+  features: string[];
+  destacado: boolean;
+}
 
 export default function Membresias() {
+  const { token, tipo: tipoUsuario } = useAuth();
+  const [planes, setPlanes] = useState<Plan[]>([]);
+  const [planActual, setPlanActual] = useState<string | null>(null);
+  const [cambiando, setCambiando] = useState<string | null>(null);
+  const [authAbierto, setAuthAbierto] = useState(false);
+
+  useEffect(() => {
+    apiFetch<Plan[]>('/api/membresias/planes').then(setPlanes).catch(() => setPlanes([]));
+  }, []);
+
+  useEffect(() => {
+    if (token && tipoUsuario === 'TRANSPORTADOR') {
+      apiFetch<{ tipo: string }>('/api/membresias/actual', { token })
+        .then((m) => setPlanActual(m.tipo))
+        .catch(() => setPlanActual(null));
+    } else {
+      setPlanActual(null);
+    }
+  }, [token, tipoUsuario]);
+
+  async function elegirPlan(plan: Plan) {
+    if (!token) return setAuthAbierto(true);
+    if (tipoUsuario !== 'TRANSPORTADOR') return;
+    setCambiando(plan.tipo);
+    try {
+      await apiFetch('/api/membresias/actual', { method: 'POST', token, body: { tipo: plan.tipo } });
+      setPlanActual(plan.tipo);
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'No se pudo cambiar de plan');
+    } finally {
+      setCambiando(null);
+    }
+  }
+
   return (
     <section id="membresias" className="border-b border-zinc-800 bg-zinc-950 py-20">
       <div className="mx-auto max-w-7xl px-4">
@@ -12,13 +59,13 @@ export default function Membresias() {
           <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Membresías</p>
           <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">Paga menos por desbloquear más</h2>
           <p className="mt-3 text-zinc-400">
-            Un desbloqueo sin plan cuesta 4% del flete (mínimo $15.000). Con membresía,
-            cada contacto te sale hasta en $9.900.
+            Un desbloqueo sin plan cuesta 4% del flete (mínimo $15.000). Con membresía Ilimitada,
+            el desbloqueo es gratis.
           </p>
         </div>
 
         <div className="mx-auto mt-12 grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {PLANES.map((plan) => (
+          {planes.map((plan) => (
             <Card
               key={plan.nombre}
               className={`relative border-zinc-800 bg-zinc-900/60 ${
@@ -47,6 +94,8 @@ export default function Membresias() {
                   ))}
                 </ul>
                 <Button
+                  onClick={() => elegirPlan(plan)}
+                  disabled={cambiando === plan.tipo || planActual === plan.tipo}
                   className={`mt-6 w-full font-semibold ${
                     plan.destacado
                       ? 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400'
@@ -54,7 +103,13 @@ export default function Membresias() {
                   }`}
                   variant={plan.destacado ? 'default' : 'outline'}
                 >
-                  {plan.precio === 0 ? 'Crear cuenta gratis' : `Empezar con ${plan.nombre}`}
+                  {planActual === plan.tipo
+                    ? 'Tu plan actual'
+                    : cambiando === plan.tipo
+                      ? 'Cambiando…'
+                      : plan.precio === 0
+                        ? 'Crear cuenta gratis'
+                        : `Empezar con ${plan.nombre}`}
                 </Button>
               </CardContent>
             </Card>
@@ -65,6 +120,8 @@ export default function Membresias() {
           Renovación automática cancelable en cualquier momento desde tu cuenta. Facturación electrónica DIAN incluida.
         </p>
       </div>
+
+      <AuthDialog open={authAbierto} onOpenChange={setAuthAbierto} />
     </section>
   );
 }

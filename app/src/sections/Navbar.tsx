@@ -9,6 +9,8 @@ import {
   SheetTitle,
   SheetClose,
 } from '@/components/ui/sheet';
+import AuthDialog from '@/components/AuthDialog';
+import { useAuth } from '@/lib/use-auth';
 
 const LINKS = [
   { href: '#cargas', label: 'Cargas' },
@@ -20,6 +22,8 @@ const LINKS = [
 
 export default function Navbar() {
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [authAbierto, setAuthAbierto] = useState(false);
+  const { tipo, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
@@ -48,7 +52,15 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" className="hidden text-zinc-300 sm:inline-flex">Ingresar</Button>
+          {tipo ? (
+            <Button variant="ghost" className="hidden text-zinc-300 sm:inline-flex" onClick={logout}>
+              {tipo === 'PUBLICADOR' ? 'Publicador' : 'Transportador'} · Salir
+            </Button>
+          ) : (
+            <Button variant="ghost" className="hidden text-zinc-300 sm:inline-flex" onClick={() => setAuthAbierto(true)}>
+              Ingresar
+            </Button>
+          )}
           <Button className="bg-emerald-500 font-semibold text-zinc-950 hover:bg-emerald-400">
             Publicar carga gratis
           </Button>
@@ -81,11 +93,21 @@ export default function Navbar() {
               </SheetClose>
             ))}
             <SheetClose asChild>
-              <Button variant="ghost" className="mt-2 justify-start text-zinc-300">Ingresar</Button>
+              {tipo ? (
+                <Button variant="ghost" className="mt-2 justify-start text-zinc-300" onClick={logout}>
+                  {tipo === 'PUBLICADOR' ? 'Publicador' : 'Transportador'} · Salir
+                </Button>
+              ) : (
+                <Button variant="ghost" className="mt-2 justify-start text-zinc-300" onClick={() => setAuthAbierto(true)}>
+                  Ingresar
+                </Button>
+              )}
             </SheetClose>
           </nav>
         </SheetContent>
       </Sheet>
+
+      <AuthDialog open={authAbierto} onOpenChange={setAuthAbierto} />
     </header>
   );
 }
