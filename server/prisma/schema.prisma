@@ -1,0 +1,132 @@
+// schema.prisma — Descargo & Cargo API
+//
+// Subconjunto acotado (MVP) del esquema completo definido en
+// ../../PLAN_INTEGRAL_V3.md §5. Cubre lo que el frontend actual
+// necesita: auth, cargas, desbloqueo de contacto (monetización core)
+// y membresías. Deliberadamente NO incluye todavía: PostGIS/geo,
+// Oferta/Viaje (negociación y ejecución del viaje), Vehiculo, AuditLog,
+// rotación de refresh tokens, ni la pasarela Wompi real — eso llega
+// cuando se migre de SQLite a PostgreSQL siguiendo docs/GUIA_SERVIDOR_BAJO_COSTO.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum TipoUsuario {
+  PUBLICADOR
+  TRANSPORTADOR
+}
+
+enum TipoPublicacion {
+  NACIONAL
+  URBANA
+  BARBACHA
+}
+
+enum EstadoCarga {
+  DISPONIBLE
+  ASIGNADA
+  CANCELADA
+}
+
+enum EstadoPago {
+  PENDIENTE
+  VERIFICADO
+  RECHAZADO
+}
+
+enum TipoMembresia {
+  GRATIS
+  BASICA
+  GOLD
+  ILIMITADA
+}
+
+model Usuario {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  passwordHash  String
+  tipo          TipoUsuario
+  createdAt     DateTime @default(now())
+
+  publicador    Publicador?
+  transportador Transportador?
+}
+
+model Publicador {
+  id        Int    @id @default(autoincrement())
+  usuarioId Int    @unique
+  nombre    String
+  ciudad    String
+  telefono  String
+
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  cargas    Carga[]
+}
+
+model Transportador {
+  id        Int    @id @default(autoincrement())
+  usuarioId Int    @unique
+  nombre    String
+  ciudad    String
+  telefono  String
+
+  usuario         Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  membresia       Membresia?
+  pagosDesbloqueo PagoDesbloqueo[]
+}
+
+model Membresia {
+  id              Int           @id @default(autoincrement())
+  transportadorId Int           @unique
+  tipo            TipoMembresia @default(GRATIS)
+  createdAt       DateTime      @default(now())
+
+  transportador   Transportador @relation(fields: [transportadorId], references: [id], onDelete: Cascade)
+}
+
+model Carga {
+  id                Int             @id @default(autoincrement())
+  publicadorId      Int
+  titulo            String
+  tipoCarga         String
+  origen            String
+  destino           String
+  toneladas         Float
+  precio            Int
+  pisoSiceTac       Int
+  fechaCarga        DateTime
+  tipoPublicacion   TipoPublicacion
+  vehiculoRequerido String
+  verificado        Boolean         @default(false)
+  destacada         Boolean         @default(false)
+  estado            EstadoCarga     @default(DISPONIBLE)
+  createdAt         DateTime        @default(now())
+
+  publicador        Publicador       @relation(fields: [publicadorId], references: [id], onDelete: Cascade)
+  pagosDesbloqueo    PagoDesbloqueo[]
+
+  @@index([estado, tipoPublicacion])
+}
+
+// Monetización core: 4% del flete (mínimo $15.000 COP) por desbloquear
+// el contacto de una carga, o gratis si la membresía del transportador
+// todavía tiene cupos. Ver PLAN_INTEGRAL_V3.md §5 (PagoDesbloqueo).
+model PagoDesbloqueo {
+  id              Int        @id @default(autoincrement())
+  cargaId         Int
+  transportadorId Int
+  monto           Int
+  estado          EstadoPago @default(VERIFICADO) // simulado: sin pasarela real todavía
+  createdAt       DateTime   @default(now())
+
+  carga           Carga         @relation(fields: [cargaId], references: [id], onDelete: Cascade)
+  transportador   Transportador @relation(fields: [transportadorId], references: [id], onDelete: Cascade)
+
+  @@unique([cargaId, transportadorId])
+}
