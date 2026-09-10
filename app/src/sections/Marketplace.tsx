@@ -98,7 +98,7 @@ function TarjetaCarga({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-white">{carga.titulo}</h3>
-              {carga.verificado && <BadgeCheck className="h-4 w-4 text-emerald-400" />}
+              {carga.verificado && <BadgeCheck className="h-4 w-4 text-orange-400" />}
             </div>
             <p className="mt-0.5 text-xs text-zinc-500">{carga.tipoCarga} · {carga.vehiculoRequerido}</p>
           </div>
@@ -106,7 +106,7 @@ function TarjetaCarga({
         </div>
 
         <div className="mt-4 flex items-center gap-2 text-sm text-zinc-300">
-          <MapPin className="h-4 w-4 text-emerald-400" />
+          <MapPin className="h-4 w-4 text-orange-400" />
           <span>{carga.origen}</span>
           <span className="text-zinc-600">→</span>
           <span>{carga.destino}</span>
@@ -126,7 +126,7 @@ function TarjetaCarga({
             </div>
             <div className="text-right">
               <p className="text-[10px] uppercase tracking-wider text-zinc-500">Piso SICE-TAC</p>
-              <p className="text-sm font-semibold text-emerald-400">{formatCOP(carga.pisoSiceTac)} ✓</p>
+              <p className="text-sm font-semibold text-orange-400">{formatCOP(carga.pisoSiceTac)} ✓</p>
               <p className="text-[10px] text-zinc-500">+{formatCOP(sobrePiso)} sobre el mínimo</p>
             </div>
           </div>
@@ -134,15 +134,15 @@ function TarjetaCarga({
 
         <div className="mt-4 flex items-center justify-between gap-3">
           {desbloqueada ? (
-            <div className="w-full rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+            <div className="w-full rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-2">
               <div className="flex items-center justify-between">
                 <div className="text-sm">
-                  <p className="font-semibold text-emerald-300">Contacto desbloqueado</p>
+                  <p className="font-semibold text-orange-300">Contacto desbloqueado</p>
                   <p className="text-xs text-zinc-400">
                     {contacto ? `${contacto.nombre} · ${contacto.telefono}` : 'Cargando contacto…'}
                   </p>
                 </div>
-                <LockOpen className="h-4 w-4 shrink-0 text-emerald-400" />
+                <LockOpen className="h-4 w-4 shrink-0 text-orange-400" />
               </div>
             </div>
           ) : (
@@ -155,7 +155,7 @@ function TarjetaCarga({
                 size="sm"
                 onClick={desbloquear}
                 disabled={cargando}
-                className="bg-emerald-500 font-semibold text-zinc-950 hover:bg-emerald-400"
+                className="bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400"
               >
                 {cargando ? 'Procesando…' : `Desbloquear · ${formatCOP(tarifa)}`}
               </Button>
@@ -203,7 +203,7 @@ export default function Marketplace() {
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Marketplace</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">Marketplace</p>
             <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">Cargas disponibles ahora</h2>
             <p className="mt-2 max-w-xl text-zinc-400">
               Publicar es gratis. Ver el listado es gratis. Solo pagas cuando encuentras

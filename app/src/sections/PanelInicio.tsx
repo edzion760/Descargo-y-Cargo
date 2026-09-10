@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { Truck, PackagePlus, Radio, MapPin, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { NOTICIAS } from '@/data/mock';
+import AuthDialog from '@/components/AuthDialog';
 
 const TIPO_COLOR: Record<string, string> = {
   ACCIDENTE: 'text-red-400',
   CIERRE_VIA: 'text-amber-400',
-  VIA_LIBRE: 'text-emerald-400',
+  VIA_LIBRE: 'text-orange-400',
   CONDICION_CLIMA: 'text-sky-400',
 };
 
@@ -19,6 +20,7 @@ const TIPO_COLOR: Record<string, string> = {
  */
 export default function PanelInicio() {
   const [indice, setIndice] = useState(0);
+  const [authAbierto, setAuthAbierto] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setIndice((i) => (i + 1) % NOTICIAS.length), 4000);
@@ -32,7 +34,7 @@ export default function PanelInicio() {
       {/* Ticker de noticias rotativo */}
       <div className="border-b border-zinc-800 bg-zinc-900/60">
         <div className="mx-auto flex max-w-7xl items-center gap-3 overflow-hidden px-4 py-2.5">
-          <Badge variant="outline" className="shrink-0 gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+          <Badge variant="outline" className="shrink-0 gap-1.5 border-orange-500/30 bg-orange-500/10 text-orange-400">
             <Radio className="h-3 w-3 animate-pulse" /> En vivo
           </Badge>
           <div key={indice} className="flex min-w-0 items-center gap-2 animate-pulse-once">
@@ -47,7 +49,7 @@ export default function PanelInicio() {
             {NOTICIAS.map((_, i) => (
               <span
                 key={i}
-                className={`h-1.5 rounded-full transition-all ${i === indice ? 'w-4 bg-emerald-400' : 'w-1.5 bg-zinc-700'}`}
+                className={`h-1.5 rounded-full transition-all ${i === indice ? 'w-4 bg-orange-400' : 'w-1.5 bg-zinc-700'}`}
               />
             ))}
           </div>
@@ -58,10 +60,10 @@ export default function PanelInicio() {
       <div className="mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:grid-cols-2">
         <a
           href="#cargas"
-          className="group flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 to-transparent p-6 transition-all hover:border-emerald-400/60 hover:from-emerald-500/25"
+          className="group flex items-center justify-between rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-transparent p-6 transition-all hover:border-orange-400/60 hover:from-orange-500/25"
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-zinc-950">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500 text-zinc-950">
               <Truck className="h-7 w-7" />
             </div>
             <div>
@@ -69,15 +71,16 @@ export default function PanelInicio() {
               <p className="text-sm text-zinc-400">Buscar cargas disponibles cerca de mí</p>
             </div>
           </div>
-          <ChevronRight className="h-6 w-6 text-emerald-400 transition-transform group-hover:translate-x-1" />
+          <ChevronRight className="h-6 w-6 text-orange-400 transition-transform group-hover:translate-x-1" />
         </a>
 
-        <a
-          href="#cargas"
-          className="group flex items-center justify-between rounded-2xl border border-zinc-700 bg-zinc-900/60 p-6 transition-all hover:border-zinc-500 hover:bg-zinc-900"
+        <button
+          type="button"
+          onClick={() => setAuthAbierto(true)}
+          className="group flex items-center justify-between rounded-2xl border border-zinc-700 bg-zinc-900/60 p-6 text-left transition-all hover:border-zinc-500 hover:bg-zinc-900"
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-800 text-emerald-400">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-800 text-orange-400">
               <PackagePlus className="h-7 w-7" />
             </div>
             <div>
@@ -86,19 +89,21 @@ export default function PanelInicio() {
             </div>
           </div>
           <ChevronRight className="h-6 w-6 text-zinc-500 transition-transform group-hover:translate-x-1" />
-        </a>
+        </button>
       </div>
 
       {/* Cobertura nacional */}
       <div className="mx-auto max-w-7xl px-4 pb-6">
         <div className="flex items-center justify-center gap-2 text-xs text-zinc-500">
-          <MapPin className="h-3.5 w-3.5 text-emerald-400" />
+          <MapPin className="h-3.5 w-3.5 text-orange-400" />
           <span>
             Cobertura: <strong className="text-zinc-300">32 departamentos</strong> y{' '}
             <strong className="text-zinc-300">1.122 municipios</strong> de Colombia
           </span>
         </div>
       </div>
+
+      <AuthDialog open={authAbierto} onOpenChange={setAuthAbierto} defaultTab="registro" defaultTipo="PUBLICADOR" />
     </section>
   );
 }

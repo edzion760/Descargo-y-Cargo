@@ -56,7 +56,7 @@ export default function Membresias() {
     <section id="membresias" className="border-b border-zinc-800 bg-zinc-950 py-20">
       <div className="mx-auto max-w-7xl px-4">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Membresías</p>
+          <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">Membresías</p>
           <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">Paga menos por desbloquear más</h2>
           <p className="mt-3 text-zinc-400">
             Un desbloqueo sin plan cuesta 4% del flete (mínimo $15.000). Con membresía Ilimitada,
@@ -69,11 +69,11 @@ export default function Membresias() {
             <Card
               key={plan.nombre}
               className={`relative border-zinc-800 bg-zinc-900/60 ${
-                plan.destacado ? 'ring-2 ring-emerald-500 scale-[1.02]' : ''
+                plan.destacado ? 'ring-2 ring-orange-500 scale-[1.02]' : ''
               }`}
             >
               {plan.destacado && (
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-zinc-950">
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-zinc-950">
                   Más popular
                 </Badge>
               )}
@@ -89,7 +89,7 @@ export default function Membresias() {
                 <ul className="mt-6 flex-1 space-y-3">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm text-zinc-300">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" /> {f}
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" /> {f}
                     </li>
                   ))}
                 </ul>
@@ -98,7 +98,7 @@ export default function Membresias() {
                   disabled={cambiando === plan.tipo || planActual === plan.tipo}
                   className={`mt-6 w-full font-semibold ${
                     plan.destacado
-                      ? 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400'
+                      ? 'bg-orange-500 text-zinc-950 hover:bg-orange-400'
                       : 'border-zinc-700 text-zinc-200 hover:bg-zinc-800'
                   }`}
                   variant={plan.destacado ? 'default' : 'outline'}

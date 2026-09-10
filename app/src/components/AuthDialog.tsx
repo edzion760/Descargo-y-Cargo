@@ -23,9 +23,13 @@ import { ApiError } from '@/lib/api';
 export default function AuthDialog({
   open,
   onOpenChange,
+  defaultTab = 'login',
+  defaultTipo = 'TRANSPORTADOR',
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultTab?: 'login' | 'registro';
+  defaultTipo?: 'PUBLICADOR' | 'TRANSPORTADOR';
 }) {
   const { login, register } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +82,7 @@ export default function AuthDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="login" onValueChange={() => setError(null)}>
+        <Tabs defaultValue={defaultTab} onValueChange={() => setError(null)}>
           <TabsList className="w-full bg-zinc-900">
             <TabsTrigger value="login" className="flex-1">Ingresar</TabsTrigger>
             <TabsTrigger value="registro" className="flex-1">Crear cuenta</TabsTrigger>
@@ -95,7 +99,7 @@ export default function AuthDialog({
                 <Input name="password" type="password" required className="border-zinc-700 bg-zinc-900 text-white" />
               </div>
               {error && <p className="text-sm text-red-400">{error}</p>}
-              <Button type="submit" disabled={cargando} className="w-full bg-emerald-500 font-semibold text-zinc-950 hover:bg-emerald-400">
+              <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
                 {cargando ? 'Ingresando…' : 'Ingresar'}
               </Button>
             </form>
@@ -105,7 +109,7 @@ export default function AuthDialog({
             <form onSubmit={handleRegister} className="space-y-3">
               <div className="space-y-1.5">
                 <Label className="text-zinc-400">Soy…</Label>
-                <Select name="tipo" defaultValue="TRANSPORTADOR">
+                <Select name="tipo" defaultValue={defaultTipo}>
                   <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white">
                     <SelectValue />
                   </SelectTrigger>
@@ -138,7 +142,7 @@ export default function AuthDialog({
                 <Input name="password" type="password" required minLength={8} className="border-zinc-700 bg-zinc-900 text-white" />
               </div>
               {error && <p className="text-sm text-red-400">{error}</p>}
-              <Button type="submit" disabled={cargando} className="w-full bg-emerald-500 font-semibold text-zinc-950 hover:bg-emerald-400">
+              <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
                 {cargando ? 'Creando cuenta…' : 'Crear cuenta'}
               </Button>
             </form>

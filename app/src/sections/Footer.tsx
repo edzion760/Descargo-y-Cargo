@@ -7,11 +7,11 @@ export default function Footer() {
         <div className="grid gap-8 md:grid-cols-4">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 text-zinc-950">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-zinc-950">
                 <Truck className="h-5 w-5" strokeWidth={2.5} />
               </div>
               <p className="text-base font-bold text-white">
-                Descargo <span className="text-emerald-400">&</span> Cargo
+                Descargo <span className="text-orange-400">&</span> Cargo
               </p>
             </div>
             <p className="mt-4 max-w-sm text-sm text-zinc-500">
@@ -19,28 +19,25 @@ export default function Footer() {
               No somos empresa de transporte: conectamos publicadores y transportadores
               con herramientas de cumplimiento legal.
             </p>
-            <p className="mt-4 text-xs text-zinc-600">
-              [Razón Social S.A.S.] · NIT [XXX.XXX.XXX-X] · [Ciudad, Colombia]
-            </p>
           </div>
 
           <div>
             <p className="text-sm font-semibold text-white">Plataforma</p>
             <ul className="mt-4 space-y-2 text-sm text-zinc-500">
-              <li><a href="#cargas" className="hover:text-emerald-400">Cargas disponibles</a></li>
-              <li><a href="#calculadora" className="hover:text-emerald-400">Calculadora SICE-TAC</a></li>
-              <li><a href="#membresias" className="hover:text-emerald-400">Membresías</a></li>
-              <li><a href="#alertas" className="hover:text-emerald-400">Alertas de vía</a></li>
+              <li><a href="#cargas" className="hover:text-orange-400">Cargas disponibles</a></li>
+              <li><a href="#calculadora" className="hover:text-orange-400">Calculadora SICE-TAC</a></li>
+              <li><a href="#membresias" className="hover:text-orange-400">Membresías</a></li>
+              <li><a href="#alertas" className="hover:text-orange-400">Alertas de vía</a></li>
             </ul>
           </div>
 
           <div>
             <p className="text-sm font-semibold text-white">Legal</p>
             <ul className="mt-4 space-y-2 text-sm text-zinc-500">
-              <li><a href="#" className="hover:text-emerald-400">Términos y condiciones</a></li>
-              <li><a href="#" className="hover:text-emerald-400">Política de tratamiento de datos</a></li>
-              <li><a href="#" className="hover:text-emerald-400">Eliminar mi cuenta</a></li>
-              <li><a href="#" className="hover:text-emerald-400">PQRS</a></li>
+              <li><a href="#" className="hover:text-orange-400">Términos y condiciones</a></li>
+              <li><a href="#" className="hover:text-orange-400">Política de tratamiento de datos</a></li>
+              <li><a href="#" className="hover:text-orange-400">Eliminar mi cuenta</a></li>
+              <li><a href="#" className="hover:text-orange-400">PQRS</a></li>
             </ul>
           </div>
         </div>

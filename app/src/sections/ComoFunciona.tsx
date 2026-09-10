@@ -11,7 +11,7 @@ const PASOS = [
   {
     icono: Lock,
     titulo: '2. Desbloquea el contacto',
-    texto: 'El transportador ve la carga completa menos el contacto. Paga el desbloqueo (3% o mínimo $15.000) o usa su membresía. Así monetizamos sin cobrarle al que publica.',
+    texto: 'El transportador ve la carga completa menos el contacto. Paga el desbloqueo (4% o mínimo $15.000) o usa su membresía. Así monetizamos sin cobrarle al que publica.',
   },
   {
     icono: Truck,
@@ -32,7 +32,7 @@ const NIVELES = [
     icono: Fingerprint,
     nivel: 'Nivel 2 · Verificado',
     obligatorio: 'Para desbloquear cargas',
-    color: 'border-emerald-500/40',
+    color: 'border-orange-500/40',
     items: ['Validación documental RNEC', 'Consulta RUNT del vehículo', 'SOAT y tecnomecánica vigentes', 'Habilitación MinTransporte'],
   },
   {
@@ -51,14 +51,14 @@ export default function ComoFuncionaYVerificacion() {
       <section className="border-b border-zinc-800 bg-zinc-950 py-20">
         <div className="mx-auto max-w-7xl px-4">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Cómo funciona</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">Cómo funciona</p>
             <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">De la publicación a la entrega, en 3 pasos</h2>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {PASOS.map((paso) => (
               <Card key={paso.titulo} className="border-zinc-800 bg-zinc-900/60">
                 <CardContent className="p-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/15 text-orange-400">
                     <paso.icono className="h-6 w-6" />
                   </div>
                   <h3 className="mt-4 text-lg font-semibold text-white">{paso.titulo}</h3>
@@ -74,7 +74,7 @@ export default function ComoFuncionaYVerificacion() {
       <section id="verificacion" className="border-b border-zinc-800 bg-zinc-900/40 py-20">
         <div className="mx-auto max-w-7xl px-4">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Confianza gremial</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">Confianza gremial</p>
             <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">Verificación en 3 niveles</h2>
             <p className="mt-3 text-zinc-400">
               Identidad + habilitación MinTransporte + documentos del vehículo.
@@ -86,7 +86,7 @@ export default function ComoFuncionaYVerificacion() {
               <Card key={n.nivel} className={`border-zinc-800 bg-zinc-900/60 ${n.color}`}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-800 text-emerald-400">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-800 text-orange-400">
                       <n.icono className="h-5 w-5" />
                     </div>
                     <Badge variant="outline" className="border-zinc-700 text-xs text-zinc-400">{n.obligatorio}</Badge>
@@ -95,7 +95,7 @@ export default function ComoFuncionaYVerificacion() {
                   <ul className="mt-3 space-y-2">
                     {n.items.map((item) => (
                       <li key={item} className="flex items-start gap-2 text-sm text-zinc-400">
-                        <span className="mt-1 text-emerald-400">✓</span> {item}
+                        <span className="mt-1 text-orange-400">✓</span> {item}
                       </li>
                     ))}
                   </ul>

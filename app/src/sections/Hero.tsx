@@ -14,7 +14,7 @@ export default function Hero() {
     <section className="relative overflow-hidden border-b border-zinc-800 bg-zinc-950">
       {/* Fondo decorativo */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/2 h-96 w-[60rem] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="absolute -top-40 left-1/2 h-96 w-[60rem] -translate-x-1/2 rounded-full bg-orange-500/10 blur-3xl" />
         <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-amber-500/5 blur-3xl" />
       </div>
 
@@ -28,9 +28,9 @@ export default function Hero() {
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
             Consigue carga.
             <br />
-            Cobra lo <span className="text-emerald-400">justo</span>.
+            Cobra lo <span className="text-orange-400">justo</span>.
             <br />
-            Viaja <span className="text-emerald-400">legal</span>.
+            Viaja <span className="text-orange-400">legal</span>.
           </h1>
 
           <p className="mt-6 max-w-xl text-lg text-zinc-400">
@@ -40,7 +40,7 @@ export default function Hero() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button size="lg" className="gap-2 bg-emerald-500 font-semibold text-zinc-950 hover:bg-emerald-400">
+            <Button size="lg" className="gap-2 bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
               Soy transportador <ArrowRight className="h-4 w-4" />
             </Button>
             <Button size="lg" variant="outline" className="border-zinc-700 text-zinc-200 hover:bg-zinc-800">
@@ -64,7 +64,7 @@ export default function Hero() {
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-2xl backdrop-blur">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/15 text-orange-400">
                     <ShieldCheck className="h-5 w-5" />
                   </div>
                   <div>
@@ -72,14 +72,14 @@ export default function Hero() {
                     <p className="text-xs text-zinc-500">Bogotá → Medellín · 28 ton</p>
                   </div>
                 </div>
-                <Badge className="bg-emerald-500/15 text-emerald-400">RNDC OK</Badge>
+                <Badge className="bg-orange-500/15 text-orange-400">RNDC OK</Badge>
               </div>
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-800">
-                <div className="h-full w-2/3 rounded-full bg-emerald-500" />
+                <div className="h-full w-2/3 rounded-full bg-orange-500" />
               </div>
               <div className="mt-2 flex justify-between text-xs text-zinc-500">
                 <span>GPS reportando tiempos · Decreto 1017</span>
-                <span className="text-emerald-400">66%</span>
+                <span className="text-orange-400">66%</span>
               </div>
             </div>
 
@@ -97,13 +97,13 @@ export default function Hero() {
 
             <div className="ml-16 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-2xl backdrop-blur">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/15 text-orange-400">
                   <TrendingUp className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">Flete pactado: $5.6M</p>
                   <p className="text-xs text-zinc-500">
-                    Piso SICE-TAC: $5.32M · <span className="text-emerald-400">+$280k sobre el mínimo legal ✓</span>
+                    Piso SICE-TAC: $5.32M · <span className="text-orange-400">+$280k sobre el mínimo legal ✓</span>
                   </p>
                 </div>
               </div>

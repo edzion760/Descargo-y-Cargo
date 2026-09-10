@@ -32,9 +32,9 @@ export default function Calculadora() {
     <section id="calculadora" className="border-b border-zinc-800 bg-zinc-900/40 py-20">
       <div className="mx-auto max-w-7xl px-4">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">Calculadora inteligente</p>
+          <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">Calculadora inteligente</p>
           <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
-            Precio justo, <span className="text-emerald-400">siempre legal</span>
+            Precio justo, <span className="text-orange-400">siempre legal</span>
           </h2>
           <p className="mt-3 text-zinc-400">
             Desde el Decreto 1017 de 2025, pactar un flete por debajo del mínimo SICE-TAC
@@ -47,7 +47,7 @@ export default function Calculadora() {
           <Card className="border-zinc-800 bg-zinc-900/60">
             <CardContent className="space-y-6 p-6">
               <div className="flex items-center gap-2 text-white">
-                <Calculator className="h-5 w-5 text-emerald-400" />
+                <Calculator className="h-5 w-5 text-orange-400" />
                 <h3 className="font-semibold">Calcula tu flete</h3>
               </div>
 
@@ -108,18 +108,18 @@ export default function Calculadora() {
           <Card className="border-zinc-800 bg-zinc-900/60">
             <CardContent className="flex h-full flex-col justify-center space-y-5 p-6">
               <div className="flex items-center gap-2 text-white">
-                <Scale className="h-5 w-5 text-emerald-400" />
+                <Scale className="h-5 w-5 text-orange-400" />
                 <h3 className="font-semibold">Tres precios, cero ilegalidad</h3>
               </div>
 
               <div className="space-y-4">
                 <div>
                   <div className="mb-1 flex items-baseline justify-between">
-                    <span className="text-sm font-medium text-emerald-400">🟢 Mínimo legal (piso SICE-TAC)</span>
+                    <span className="text-sm font-medium text-orange-400">🟢 Mínimo legal (piso SICE-TAC)</span>
                     <span className="font-bold text-white">{formatCOP(resultado.piso)}</span>
                   </div>
                   <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
-                    <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: barra(resultado.piso) }} />
+                    <div className="h-full rounded-full bg-orange-500 transition-all duration-500" style={{ width: barra(resultado.piso) }} />
                   </div>
                 </div>
 

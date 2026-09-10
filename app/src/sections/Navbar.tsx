@@ -7,6 +7,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
   SheetClose,
 } from '@/components/ui/sheet';
 import AuthDialog from '@/components/AuthDialog';
@@ -23,22 +24,34 @@ const LINKS = [
 export default function Navbar() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [authAbierto, setAuthAbierto] = useState(false);
+  const [authTab, setAuthTab] = useState<'login' | 'registro'>('login');
   const { tipo, logout } = useAuth();
+
+  function abrirPublicar() {
+    setAuthTab('registro');
+    setAuthAbierto(true);
+    setMenuAbierto(false);
+  }
+
+  function abrirLogin() {
+    setAuthTab('login');
+    setAuthAbierto(true);
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 text-zinc-950">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-zinc-950">
             <Truck className="h-5 w-5" strokeWidth={2.5} />
           </div>
           <div className="leading-tight">
             <p className="text-base font-bold text-white">
-              Descargo <span className="text-emerald-400">&</span> Cargo
+              Descargo <span className="text-orange-400">&</span> Cargo
             </p>
             <p className="text-[10px] uppercase tracking-widest text-zinc-500">Logística legal · Colombia</p>
           </div>
-          <Badge className="ml-2 hidden gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 sm:flex" variant="outline">
+          <Badge className="ml-2 hidden gap-1 border-orange-500/30 bg-orange-500/10 text-orange-400 sm:flex" variant="outline">
             <ShieldCheck className="h-3 w-3" /> Piso SICE-TAC garantizado
           </Badge>
         </div>
@@ -57,11 +70,11 @@ export default function Navbar() {
               {tipo === 'PUBLICADOR' ? 'Publicador' : 'Transportador'} · Salir
             </Button>
           ) : (
-            <Button variant="ghost" className="hidden text-zinc-300 sm:inline-flex" onClick={() => setAuthAbierto(true)}>
+            <Button variant="ghost" className="hidden text-zinc-300 sm:inline-flex" onClick={abrirLogin}>
               Ingresar
             </Button>
           )}
-          <Button className="bg-emerald-500 font-semibold text-zinc-950 hover:bg-emerald-400">
+          <Button className="bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400" onClick={abrirPublicar}>
             Publicar carga gratis
           </Button>
           <Button
@@ -80,6 +93,7 @@ export default function Navbar() {
         <SheetContent side="right" className="border-zinc-800 bg-zinc-950 text-zinc-100">
           <SheetHeader>
             <SheetTitle className="text-white">Menú</SheetTitle>
+            <SheetDescription className="sr-only">Navegación principal de Descargo &amp; Cargo</SheetDescription>
           </SheetHeader>
           <nav className="flex flex-col gap-1 px-4">
             {LINKS.map((link) => (
@@ -107,7 +121,7 @@ export default function Navbar() {
         </SheetContent>
       </Sheet>
 
-      <AuthDialog open={authAbierto} onOpenChange={setAuthAbierto} />
+      <AuthDialog key={authTab} open={authAbierto} onOpenChange={setAuthAbierto} defaultTab={authTab} defaultTipo="PUBLICADOR" />
     </header>
   );
 }
