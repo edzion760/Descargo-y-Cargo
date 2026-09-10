@@ -194,6 +194,13 @@ export default function Marketplace() {
     cargar();
   }, [cargar]);
 
+  // Refresca el listado cuando se publica una carga nueva desde otra sección
+  // (Navbar / PanelInicio) sin necesitar un store global para algo tan puntual.
+  useEffect(() => {
+    window.addEventListener('cargas:publicada', cargar);
+    return () => window.removeEventListener('cargas:publicada', cargar);
+  }, [cargar]);
+
   function marcarDesbloqueada(cargaId: number) {
     setCargas((prev) => prev.map((c) => (c.id === cargaId ? { ...c, desbloqueada: true } : c)));
   }

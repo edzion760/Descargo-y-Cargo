@@ -11,6 +11,7 @@ import {
   SheetClose,
 } from '@/components/ui/sheet';
 import AuthDialog from '@/components/AuthDialog';
+import PublicarCargaDialog from '@/components/PublicarCargaDialog';
 import { useAuth } from '@/lib/use-auth';
 
 const LINKS = [
@@ -25,12 +26,21 @@ export default function Navbar() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [authAbierto, setAuthAbierto] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'registro'>('login');
+  const [publicarAbierto, setPublicarAbierto] = useState(false);
   const { tipo, logout } = useAuth();
 
   function abrirPublicar() {
-    setAuthTab('registro');
-    setAuthAbierto(true);
     setMenuAbierto(false);
+    if (!tipo) {
+      setAuthTab('registro');
+      setAuthAbierto(true);
+      return;
+    }
+    if (tipo === 'TRANSPORTADOR') {
+      alert('Esta cuenta es de transportador. Inicia sesión con una cuenta de publicador para publicar carga.');
+      return;
+    }
+    setPublicarAbierto(true);
   }
 
   function abrirLogin() {
@@ -112,7 +122,7 @@ export default function Navbar() {
                   {tipo === 'PUBLICADOR' ? 'Publicador' : 'Transportador'} · Salir
                 </Button>
               ) : (
-                <Button variant="ghost" className="mt-2 justify-start text-zinc-300" onClick={() => setAuthAbierto(true)}>
+                <Button variant="ghost" className="mt-2 justify-start text-zinc-300" onClick={abrirLogin}>
                   Ingresar
                 </Button>
               )}
@@ -122,6 +132,11 @@ export default function Navbar() {
       </Sheet>
 
       <AuthDialog key={authTab} open={authAbierto} onOpenChange={setAuthAbierto} defaultTab={authTab} defaultTipo="PUBLICADOR" />
+      <PublicarCargaDialog
+        open={publicarAbierto}
+        onOpenChange={setPublicarAbierto}
+        onPublicada={() => window.dispatchEvent(new Event('cargas:publicada'))}
+      />
     </header>
   );
 }

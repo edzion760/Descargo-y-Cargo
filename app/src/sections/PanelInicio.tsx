@@ -3,6 +3,8 @@ import { Truck, PackagePlus, Radio, MapPin, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { NOTICIAS } from '@/data/mock';
 import AuthDialog from '@/components/AuthDialog';
+import PublicarCargaDialog from '@/components/PublicarCargaDialog';
+import { useAuth } from '@/lib/use-auth';
 
 const TIPO_COLOR: Record<string, string> = {
   ACCIDENTE: 'text-red-400',
@@ -21,6 +23,17 @@ const TIPO_COLOR: Record<string, string> = {
 export default function PanelInicio() {
   const [indice, setIndice] = useState(0);
   const [authAbierto, setAuthAbierto] = useState(false);
+  const [publicarAbierto, setPublicarAbierto] = useState(false);
+  const { tipo } = useAuth();
+
+  function abrirPublicar() {
+    if (!tipo) return setAuthAbierto(true);
+    if (tipo === 'TRANSPORTADOR') {
+      alert('Esta cuenta es de transportador. Inicia sesión con una cuenta de publicador para publicar carga.');
+      return;
+    }
+    setPublicarAbierto(true);
+  }
 
   useEffect(() => {
     const t = setInterval(() => setIndice((i) => (i + 1) % NOTICIAS.length), 4000);
@@ -76,7 +89,7 @@ export default function PanelInicio() {
 
         <button
           type="button"
-          onClick={() => setAuthAbierto(true)}
+          onClick={abrirPublicar}
           className="group flex items-center justify-between rounded-2xl border border-zinc-700 bg-zinc-900/60 p-6 text-left transition-all hover:border-zinc-500 hover:bg-zinc-900"
         >
           <div className="flex items-center gap-4">
@@ -104,6 +117,11 @@ export default function PanelInicio() {
       </div>
 
       <AuthDialog open={authAbierto} onOpenChange={setAuthAbierto} defaultTab="registro" defaultTipo="PUBLICADOR" />
+      <PublicarCargaDialog
+        open={publicarAbierto}
+        onOpenChange={setPublicarAbierto}
+        onPublicada={() => window.dispatchEvent(new Event('cargas:publicada'))}
+      />
     </section>
   );
 }
