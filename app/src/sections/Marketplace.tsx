@@ -47,6 +47,21 @@ function TarjetaCarga({
   const tarifa = tarifaDesbloqueo(carga.precio);
   const sobrePiso = carga.precio - carga.pisoSiceTac;
 
+  // Ya desbloqueada (p. ej. tras recargar la página): el listado no trae el
+  // contacto, así que se pide al detalle en vez de mostrar un mensaje vacío.
+  useEffect(() => {
+    if (!carga.desbloqueada || contacto || !token) return;
+    let cancelado = false;
+    apiFetch<{ contacto: Contacto | null }>(`/api/cargas/${carga.id}`, { token })
+      .then((data) => {
+        if (!cancelado && data.contacto) setContacto(data.contacto);
+      })
+      .catch(() => {});
+    return () => {
+      cancelado = true;
+    };
+  }, [carga.desbloqueada, carga.id, contacto, token]);
+
   async function desbloquear() {
     if (!token) return onRequireAuth();
     if (tipo !== 'TRANSPORTADOR') {
@@ -123,7 +138,9 @@ function TarjetaCarga({
               <div className="flex items-center justify-between">
                 <div className="text-sm">
                   <p className="font-semibold text-emerald-300">Contacto desbloqueado</p>
-                  <p className="text-xs text-zinc-400">{contacto?.nombre ?? 'Contacto'} · {contacto?.telefono ?? 'oculto tras recargar — vuelve a abrir la carga'}</p>
+                  <p className="text-xs text-zinc-400">
+                    {contacto ? `${contacto.nombre} · ${contacto.telefono}` : 'Cargando contacto…'}
+                  </p>
                 </div>
                 <LockOpen className="h-4 w-4 shrink-0 text-emerald-400" />
               </div>
