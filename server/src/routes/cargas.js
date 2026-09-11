@@ -7,7 +7,7 @@ export const cargasRouter = Router();
 
 // Cobro por uso sin plan: 4% del flete, mínimo $15.000 COP.
 // Con membresía ILIMITADA el desbloqueo es gratis.
-function tarifaDesbloqueo(precio, tipoMembresia) {
+export function tarifaDesbloqueo(precio, tipoMembresia) {
   if (tipoMembresia === 'ILIMITADA') return 0;
   return Math.max(Math.round(precio * 0.04), 15000);
 }
