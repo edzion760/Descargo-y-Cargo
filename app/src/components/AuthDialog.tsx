@@ -63,6 +63,7 @@ export default function AuthDialog({
         nombre: String(form.get('nombre')),
         ciudad: String(form.get('ciudad')),
         telefono: String(form.get('telefono')),
+        documento: String(form.get('documento')),
       });
       onOpenChange(false);
     } catch (err) {
@@ -129,9 +130,15 @@ export default function AuthDialog({
                   <Input name="ciudad" required className="border-zinc-700 bg-zinc-900 text-white" />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-zinc-400">Teléfono</Label>
-                <Input name="telefono" required className="border-zinc-700 bg-zinc-900 text-white" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-400">Teléfono</Label>
+                  <Input name="telefono" required className="border-zinc-700 bg-zinc-900 text-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-400">Cédula</Label>
+                  <Input name="documento" required minLength={6} className="border-zinc-700 bg-zinc-900 text-white" />
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-zinc-400">Correo</Label>

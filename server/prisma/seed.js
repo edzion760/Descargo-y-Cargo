@@ -27,7 +27,7 @@ async function main() {
       passwordHash,
       tipo: 'PUBLICADOR',
       publicador: {
-        create: { nombre: 'Comercializadora Demo S.A.S.', ciudad: 'Bogotá', telefono: '+57 310 555 4521' },
+        create: { nombre: 'Comercializadora Demo S.A.S.', ciudad: 'Bogotá', telefono: '+57 310 555 4521', documento: '900123456' },
       },
     },
     include: { publicador: true },
@@ -45,6 +45,7 @@ async function main() {
           nombre: 'Juan Pérez',
           ciudad: 'Medellín',
           telefono: '+57 300 555 1234',
+          documento: '1020304050',
           membresia: { create: { tipo: 'GRATIS' } },
         },
       },

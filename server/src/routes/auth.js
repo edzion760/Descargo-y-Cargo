@@ -13,6 +13,7 @@ const registerSchema = z.object({
   nombre: z.string().min(2),
   ciudad: z.string().min(2),
   telefono: z.string().min(7),
+  documento: z.string().min(6, 'Documento de identidad inválido'),
 });
 
 function signToken(usuario) {
@@ -26,27 +27,32 @@ authRouter.post('/register', async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.issues[0].message });
   }
-  const { email, password, tipo, nombre, ciudad, telefono } = parsed.data;
-
-  const existente = await prisma.usuario.findUnique({ where: { email } });
-  if (existente) return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
-
+  const { email, password, tipo, nombre, ciudad, telefono, documento } = parsed.data;
   const passwordHash = await bcrypt.hash(password, 10);
 
-  const usuario = await prisma.usuario.create({
-    data: {
-      email,
-      passwordHash,
-      tipo,
-      ...(tipo === 'PUBLICADOR'
-        ? { publicador: { create: { nombre, ciudad, telefono } } }
-        : {
-            transportador: {
-              create: { nombre, ciudad, telefono, membresia: { create: { tipo: 'GRATIS' } } },
-            },
-          }),
-    },
-  });
+  let usuario;
+  try {
+    usuario = await prisma.usuario.create({
+      data: {
+        email,
+        passwordHash,
+        tipo,
+        ...(tipo === 'PUBLICADOR'
+          ? { publicador: { create: { nombre, ciudad, telefono, documento } } }
+          : {
+              transportador: {
+                create: { nombre, ciudad, telefono, documento, membresia: { create: { tipo: 'GRATIS' } } },
+              },
+            }),
+      },
+    });
+  } catch (err) {
+    if (err.code === 'P2002') {
+      const campo = err.meta?.target?.includes('documento') ? 'documento' : 'correo';
+      return res.status(409).json({ error: `Ya existe una cuenta con ese ${campo}` });
+    }
+    throw err;
+  }
 
   res.status(201).json({ token: signToken(usuario), tipo: usuario.tipo });
 });

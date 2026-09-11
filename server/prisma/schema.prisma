@@ -64,6 +64,7 @@ model Publicador {
   nombre    String
   ciudad    String
   telefono  String
+  documento String @unique // KYC nivel 1: cédula autodeclarada. Nivel 2 (RNEC/RUNT) pendiente de integración externa.
 
   usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   cargas    Carga[]
@@ -75,6 +76,7 @@ model Transportador {
   nombre    String
   ciudad    String
   telefono  String
+  documento String @unique // KYC nivel 1: cédula autodeclarada. Nivel 2 (RNEC/RUNT) pendiente de integración externa.
 
   usuario         Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   membresia       Membresia?

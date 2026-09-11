@@ -9,6 +9,7 @@ export interface RegisterInput {
   nombre: string;
   ciudad: string;
   telefono: string;
+  documento: string;
 }
 
 export interface AuthState {
