@@ -1,4 +1,7 @@
 import 'dotenv/config';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import { authRouter } from './routes/auth.js';
@@ -14,6 +17,18 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRouter);
 app.use('/api/cargas', cargasRouter);
 app.use('/api/membresias', membresiasRouter);
+
+// Sirve el build de app/ (npm run build en app/) para que un solo proceso/puerto
+// exponga frontend + API — así un único Cloudflare Tunnel cubre todo.
+const dirname = path.dirname(fileURLToPath(import.meta.url));
+const distDir = path.join(dirname, '../../app/dist');
+if (fs.existsSync(distDir)) {
+  app.use(express.static(distDir));
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(distDir, 'index.html'));
+  });
+}
 
 app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 
