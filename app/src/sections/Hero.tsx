@@ -19,7 +19,7 @@ export default function Hero() {
       </div>
 
       <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-20 lg:grid-cols-2 lg:py-28">
-        <div className="flex flex-col justify-center">
+        <div className="min-w-0 flex flex-col justify-center">
           <Badge className="mb-6 w-fit gap-2 border-amber-500/30 bg-amber-500/10 px-3 py-1 text-amber-400" variant="outline">
             <Scale className="h-3.5 w-3.5" />
             Nueva norma · Decreto 1017 de 2025: nosotros te dejamos legal

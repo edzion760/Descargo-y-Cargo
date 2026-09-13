@@ -49,11 +49,13 @@ const RUTAS_CAMIONES: { origen: number; destino: number; duracionMs: number; ini
   { origen: 3, destino: 14, duracionMs: 10000, inicio: 0.6 }, // Barranquilla-Maicao
 ];
 
+// Fucsia a propósito: tiene que contrastar contra el naranja de los camiones
+// y contra los colores propios del mapa (agua/tierra de OpenStreetMap).
 const iconoEmpresa = L.divIcon({
   className: '',
   html: `<span class="relative flex h-3 w-3">
-    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
-    <span class="relative inline-flex h-3 w-3 rounded-full bg-orange-500"></span>
+    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-fuchsia-400 opacity-75"></span>
+    <span class="relative inline-flex h-3 w-3 rounded-full bg-fuchsia-500"></span>
   </span>`,
   iconSize: [12, 12],
   iconAnchor: [6, 6],
@@ -61,10 +63,11 @@ const iconoEmpresa = L.divIcon({
 
 // SVG propio (no emoji): un emoji de camión se ve distinto — o directamente
 // como una caja vacía — según la fuente de cada sistema operativo.
+// Tamaño 45% más chico que el original (24px -> 13px).
 const iconoCamion = L.divIcon({
   className: '',
-  html: `<div class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 shadow-md shadow-black/50">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#09090b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  html: `<div class="flex h-[13px] w-[13px] items-center justify-center rounded-full bg-orange-500 shadow-md shadow-black/50">
+    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#09090b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
       <path d="M14 18V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h1"/>
       <path d="M15 18H9"/>
       <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14v10"/>
@@ -72,8 +75,8 @@ const iconoCamion = L.divIcon({
       <circle cx="7" cy="18" r="2"/>
     </svg>
   </div>`,
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
+  iconSize: [13, 13],
+  iconAnchor: [6.5, 6.5],
 });
 
 // Encuadra automáticamente todas las ciudades sin importar el tamaño real
@@ -140,8 +143,14 @@ export default function MapaColombia() {
           ))}
         </MapContainer>
       </div>
-      <div className="border-t border-zinc-800 bg-zinc-950/80 px-3 py-2 text-[10px] text-zinc-500">
-        🟠 Empresas publicando · 🚛 Transportadores en vía — actividad ilustrativa de cómo se ve la red
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-800 bg-zinc-950/80 px-3 py-2 text-[10px] text-zinc-500">
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-fuchsia-500" /> Empresas publicando
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-orange-500" /> Transportadores en vía
+        </span>
+        <span>— actividad ilustrativa de cómo se ve la red</span>
       </div>
     </div>
   );

@@ -68,7 +68,7 @@ export default function Navbar() {
           </Badge>
         </div>
 
-        <nav className="hidden items-center gap-6 text-sm text-zinc-400 md:flex">
+        <nav className="hidden items-center gap-6 text-sm text-zinc-400 lg:flex">
           {LINKS.map((link) => (
             <a key={link.href} href={link.href} className="transition-colors hover:text-white">
               {link.label}
@@ -93,7 +93,7 @@ export default function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="lg:hidden"
             aria-label="Abrir menú"
             onClick={() => setMenuAbierto(true)}
           >
