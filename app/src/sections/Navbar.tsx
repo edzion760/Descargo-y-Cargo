@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Truck, ShieldCheck, Menu } from 'lucide-react';
+import { Truck, ShieldCheck, Menu, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,6 +10,22 @@ import {
   SheetDescription,
   SheetClose,
 } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 import AuthDialog from '@/components/AuthDialog';
 import PublicarCargaDialog from '@/components/PublicarCargaDialog';
 import { useAuth } from '@/lib/use-auth';
@@ -27,7 +43,14 @@ export default function Navbar() {
   const [authAbierto, setAuthAbierto] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'registro'>('login');
   const [publicarAbierto, setPublicarAbierto] = useState(false);
-  const { tipo, logout } = useAuth();
+  const [eliminarAbierto, setEliminarAbierto] = useState(false);
+  const { tipo, logout, eliminarCuenta } = useAuth();
+
+  async function confirmarEliminar() {
+    await eliminarCuenta();
+    setEliminarAbierto(false);
+    setMenuAbierto(false);
+  }
 
   function abrirPublicar() {
     setMenuAbierto(false);
@@ -78,9 +101,23 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2">
           {tipo ? (
-            <Button variant="ghost" className="hidden text-zinc-300 sm:inline-flex" onClick={logout}>
-              {tipo === 'PUBLICADOR' ? 'Publicador' : 'Transportador'} · Salir
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="hidden gap-1 text-zinc-300 sm:inline-flex">
+                  {tipo === 'PUBLICADOR' ? 'Publicador' : 'Transportador'}
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-100">
+                <DropdownMenuItem onClick={logout}>Cerrar sesión</DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                  onSelect={() => setEliminarAbierto(true)}
+                >
+                  Eliminar mi cuenta
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Button variant="ghost" className="hidden text-zinc-300 sm:inline-flex" onClick={abrirLogin}>
               Ingresar
@@ -119,20 +156,51 @@ export default function Navbar() {
                 </a>
               </SheetClose>
             ))}
-            <SheetClose asChild>
-              {tipo ? (
-                <Button variant="ghost" className="mt-2 justify-start text-zinc-300" onClick={logout}>
-                  {tipo === 'PUBLICADOR' ? 'Publicador' : 'Transportador'} · Salir
+            {tipo ? (
+              <>
+                <SheetClose asChild>
+                  <Button variant="ghost" className="mt-2 justify-start text-zinc-300" onClick={logout}>
+                    {tipo === 'PUBLICADOR' ? 'Publicador' : 'Transportador'} · Cerrar sesión
+                  </Button>
+                </SheetClose>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-red-400 hover:text-red-400"
+                  onClick={() => setEliminarAbierto(true)}
+                >
+                  Eliminar mi cuenta
                 </Button>
-              ) : (
+              </>
+            ) : (
+              <SheetClose asChild>
                 <Button variant="ghost" className="mt-2 justify-start text-zinc-300" onClick={abrirLogin}>
                   Ingresar
                 </Button>
-              )}
-            </SheetClose>
+              </SheetClose>
+            )}
           </nav>
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={eliminarAbierto} onOpenChange={setEliminarAbierto}>
+        <AlertDialogContent className="border-zinc-800 bg-zinc-950 text-zinc-100">
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar tu cuenta?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Tu nombre, teléfono y documento se eliminan de la plataforma de inmediato y no podrás volver a
+              iniciar sesión con esta cuenta. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-900 hover:text-white">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarEliminar} className="bg-red-600 text-white hover:bg-red-500">
+              Sí, eliminar mi cuenta
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AuthDialog key={authTab} open={authAbierto} onOpenChange={setAuthAbierto} defaultTab={authTab} defaultTipo="PUBLICADOR" />
       <PublicarCargaDialog

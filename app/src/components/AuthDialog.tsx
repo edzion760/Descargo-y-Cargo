@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -34,6 +35,7 @@ export default function AuthDialog({
   const { login, register } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
   async function handleLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -64,6 +66,7 @@ export default function AuthDialog({
         ciudad: String(form.get('ciudad')),
         telefono: String(form.get('telefono')),
         documento: String(form.get('documento')),
+        aceptaTerminos,
       });
       onOpenChange(false);
     } catch (err) {
@@ -148,8 +151,31 @@ export default function AuthDialog({
                 <Label className="text-zinc-400">Contraseña</Label>
                 <Input name="password" type="password" required minLength={8} className="border-zinc-700 bg-zinc-900 text-white" />
               </div>
+              <div className="flex items-start gap-2 pt-1">
+                <Checkbox
+                  id="acepta-terminos"
+                  checked={aceptaTerminos}
+                  onCheckedChange={(v) => setAceptaTerminos(v === true)}
+                  className="mt-0.5 border-zinc-600"
+                />
+                <Label htmlFor="acepta-terminos" className="text-xs font-normal leading-snug text-zinc-400">
+                  Acepto los{' '}
+                  <a href="/legal/terminos.html" target="_blank" rel="noopener" className="text-orange-400 underline">
+                    Términos y Condiciones
+                  </a>{' '}
+                  y la{' '}
+                  <a href="/legal/politica-datos.html" target="_blank" rel="noopener" className="text-orange-400 underline">
+                    Política de Tratamiento de Datos
+                  </a>
+                  .
+                </Label>
+              </div>
               {error && <p className="text-sm text-red-400">{error}</p>}
-              <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
+              <Button
+                type="submit"
+                disabled={cargando || !aceptaTerminos}
+                className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400"
+              >
                 {cargando ? 'Creando cuenta…' : 'Crear cuenta'}
               </Button>
             </form>

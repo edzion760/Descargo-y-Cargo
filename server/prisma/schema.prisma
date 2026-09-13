@@ -54,6 +54,15 @@ model Usuario {
   tipo          TipoUsuario
   createdAt     DateTime @default(now())
 
+  // Ley 1581 de 2012: registro versionado de aceptación de Términos y
+  // Política de datos (Habeas Data), y marca de baja para el derecho de
+  // supresión (se anonimiza, no se borra la fila — hay pagos/cargas
+  // ligados que deben conservarse por obligación contable/fiscal).
+  terminosVersion     String    @default("1.0")
+  terminosAceptadosEn DateTime  @default(now())
+  terminosIp          String?
+  eliminadoEn         DateTime?
+
   publicador    Publicador?
   transportador Transportador?
 }

@@ -34,16 +34,16 @@ export default function Footer() {
           <div>
             <p className="text-sm font-semibold text-white">Legal</p>
             <ul className="mt-4 space-y-2 text-sm text-zinc-500">
-              <li><a href="#" className="hover:text-orange-400">Términos y condiciones</a></li>
-              <li><a href="#" className="hover:text-orange-400">Política de tratamiento de datos</a></li>
-              <li><a href="#" className="hover:text-orange-400">Eliminar mi cuenta</a></li>
-              <li><a href="#" className="hover:text-orange-400">PQRS</a></li>
+              <li><a href="/legal/terminos.html" target="_blank" rel="noopener" className="hover:text-orange-400">Términos y condiciones</a></li>
+              <li><a href="/legal/politica-datos.html" target="_blank" rel="noopener" className="hover:text-orange-400">Política de tratamiento de datos</a></li>
+              <li><a href="/legal/eliminar-cuenta.html" target="_blank" rel="noopener" className="hover:text-orange-400">Eliminar mi cuenta</a></li>
+              <li><a href="mailto:descargoycargo@gmail.com" className="hover:text-orange-400">PQRS</a></li>
             </ul>
           </div>
         </div>
 
         <div className="mt-10 border-t border-zinc-800 pt-6 text-center text-xs text-zinc-600">
-          © 2026 Descargo & Cargo · Prototipo de demostración — datos y tarifas referenciales, no oficiales.
+          © 2026 Descargo & Cargo SAS · NIT 901.563.460-9 · Tarifas SICE-TAC de referencia, no oficiales.
         </div>
       </div>
     </footer>

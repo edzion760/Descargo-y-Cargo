@@ -36,7 +36,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTipo(null);
   }
 
+  // Derecho de supresión (Ley 1581 de 2012): baja inmediata, en cualquier momento.
+  async function eliminarCuenta() {
+    await apiFetch('/api/auth/me', { method: 'DELETE', token });
+    logout();
+  }
+
   return (
-    <AuthContext.Provider value={{ token, tipo, login, register, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ token, tipo, login, register, logout, eliminarCuenta }}>
+      {children}
+    </AuthContext.Provider>
   );
 }

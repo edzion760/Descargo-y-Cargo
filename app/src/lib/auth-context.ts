@@ -10,6 +10,7 @@ export interface RegisterInput {
   ciudad: string;
   telefono: string;
   documento: string;
+  aceptaTerminos: boolean;
 }
 
 export interface AuthState {
@@ -18,6 +19,7 @@ export interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => void;
+  eliminarCuenta: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthState | null>(null);
