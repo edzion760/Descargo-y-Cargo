@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
-import { Calculator, Scale, TriangleAlert } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Calculator, Scale, TriangleAlert, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import {
   Select,
@@ -10,23 +12,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RUTAS, MULTIPLICADORES_TIPO_CARGA, formatCOP } from '@/data/mock';
+import { MULTIPLICADORES_TIPO_CARGA, formatCOP } from '@/data/mock';
+import { apiFetch, ApiError } from '@/lib/api';
+
+interface TarifaRuta {
+  km: number;
+  tarifaPorTon: number;
+}
 
 export default function Calculadora() {
-  const [rutaIdx, setRutaIdx] = useState(0);
+  const [origen, setOrigen] = useState('Bogotá');
+  const [destino, setDestino] = useState('Medellín');
   const [toneladas, setToneladas] = useState(20);
   const [tipoCarga, setTipoCarga] = useState<string>('general');
+  const [ruta, setRuta] = useState<TarifaRuta | null>(null);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function calcularRuta() {
+    setCargando(true);
+    setError(null);
+    try {
+      const data = await apiFetch<TarifaRuta>(
+        `/api/geo/ruta?origen=${encodeURIComponent(origen)}&destino=${encodeURIComponent(destino)}`
+      );
+      setRuta(data);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo calcular la ruta');
+      setRuta(null);
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  // Calcula la ruta por defecto una vez al cargar la página.
+  useEffect(() => {
+    calcularRuta();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const resultado = useMemo(() => {
-    const ruta = RUTAS[rutaIdx];
+    if (!ruta) return null;
     const factor = MULTIPLICADORES_TIPO_CARGA.find((t) => t.id === tipoCarga)?.factor ?? 1;
     const piso = Math.round(ruta.tarifaPorTon * toneladas * factor);
     const justo = Math.round(piso * 1.08);
     const premium = Math.round(piso * 1.2);
-    return { ruta, piso, justo, premium, max: premium };
-  }, [rutaIdx, toneladas, tipoCarga]);
+    return { piso, justo, premium, max: premium };
+  }, [ruta, toneladas, tipoCarga]);
 
-  const barra = (v: number) => `${Math.max((v / resultado.max) * 100, 8)}%`;
+  const barra = (v: number) => `${Math.max((v / (resultado?.max ?? 1)) * 100, 8)}%`;
 
   return (
     <section id="calculadora" className="border-b border-zinc-800 bg-zinc-900/40 py-20">
@@ -51,21 +85,33 @@ export default function Calculadora() {
                 <h3 className="font-semibold">Calcula tu flete</h3>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-zinc-400">Ruta</Label>
-                <Select value={String(rutaIdx)} onValueChange={(v) => setRutaIdx(Number(v))}>
-                  <SelectTrigger className="border-zinc-700 bg-zinc-950 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
-                    {RUTAS.map((r, i) => (
-                      <SelectItem key={i} value={String(i)}>
-                        {r.origen} → {r.destino} ({r.km} km)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-zinc-400">Origen</Label>
+                  <Input
+                    value={origen}
+                    onChange={(e) => setOrigen(e.target.value)}
+                    className="border-zinc-700 bg-zinc-950 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-zinc-400">Destino</Label>
+                  <Input
+                    value={destino}
+                    onChange={(e) => setDestino(e.target.value)}
+                    className="border-zinc-700 bg-zinc-950 text-white"
+                  />
+                </div>
               </div>
+              <Button
+                onClick={calcularRuta}
+                disabled={cargando}
+                variant="outline"
+                className="w-full gap-2 border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+              >
+                <MapPin className="h-4 w-4" />
+                {cargando ? 'Calculando ruta…' : 'Calcular distancia real'}
+              </Button>
 
               <div className="space-y-2">
                 <Label className="text-zinc-400">Tipo de carga</Label>
@@ -98,8 +144,16 @@ export default function Calculadora() {
               </div>
 
               <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 text-xs text-zinc-500">
-                Referencia: {formatCOP(resultado.ruta.tarifaPorTon)}/ton · {resultado.ruta.km} km ·
-                tarifa SICE-TAC referencial (demo, no oficial)
+                {error ? (
+                  <span className="text-red-400">{error}</span>
+                ) : ruta ? (
+                  <>
+                    Referencia: {formatCOP(ruta.tarifaPorTon)}/ton · {ruta.km} km reales (OpenStreetMap) ·
+                    tarifa SICE-TAC referencial (demo, no oficial)
+                  </>
+                ) : (
+                  'Calculando ruta…'
+                )}
               </div>
             </CardContent>
           </Card>
@@ -112,47 +166,53 @@ export default function Calculadora() {
                 <h3 className="font-semibold">Tres precios, cero ilegalidad</h3>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <div className="mb-1 flex items-baseline justify-between">
-                    <span className="text-sm font-medium text-orange-400">🟢 Mínimo legal (piso SICE-TAC)</span>
-                    <span className="font-bold text-white">{formatCOP(resultado.piso)}</span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
-                    <div className="h-full rounded-full bg-orange-500 transition-all duration-500" style={{ width: barra(resultado.piso) }} />
-                  </div>
-                </div>
+              {resultado ? (
+                <>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="mb-1 flex items-baseline justify-between">
+                        <span className="text-sm font-medium text-orange-400">🟢 Mínimo legal (piso SICE-TAC)</span>
+                        <span className="font-bold text-white">{formatCOP(resultado.piso)}</span>
+                      </div>
+                      <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
+                        <div className="h-full rounded-full bg-orange-500 transition-all duration-500" style={{ width: barra(resultado.piso) }} />
+                      </div>
+                    </div>
 
-                <div>
-                  <div className="mb-1 flex items-baseline justify-between">
-                    <span className="text-sm font-medium text-amber-400">🟡 Justo (mercado +8%)</span>
-                    <span className="font-bold text-white">{formatCOP(resultado.justo)}</span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
-                    <div className="h-full rounded-full bg-amber-500 transition-all duration-500" style={{ width: barra(resultado.justo) }} />
-                  </div>
-                </div>
+                    <div>
+                      <div className="mb-1 flex items-baseline justify-between">
+                        <span className="text-sm font-medium text-amber-400">🟡 Justo (mercado +8%)</span>
+                        <span className="font-bold text-white">{formatCOP(resultado.justo)}</span>
+                      </div>
+                      <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
+                        <div className="h-full rounded-full bg-amber-500 transition-all duration-500" style={{ width: barra(resultado.justo) }} />
+                      </div>
+                    </div>
 
-                <div>
-                  <div className="mb-1 flex items-baseline justify-between">
-                    <span className="text-sm font-medium text-orange-400">🔴 Premium (+20%)</span>
-                    <span className="font-bold text-white">{formatCOP(resultado.premium)}</span>
+                    <div>
+                      <div className="mb-1 flex items-baseline justify-between">
+                        <span className="text-sm font-medium text-orange-400">🔴 Premium (+20%)</span>
+                        <span className="font-bold text-white">{formatCOP(resultado.premium)}</span>
+                      </div>
+                      <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
+                        <div className="h-full rounded-full bg-orange-500 transition-all duration-500" style={{ width: barra(resultado.premium) }} />
+                      </div>
+                    </div>
                   </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
-                    <div className="h-full rounded-full bg-orange-500 transition-all duration-500" style={{ width: barra(resultado.premium) }} />
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-                <p className="text-xs text-zinc-400">
-                  Cualquier oferta por debajo de{' '}
-                  <strong className="text-red-400">{formatCOP(resultado.piso)}</strong> es{' '}
-                  <strong className="text-red-400">ilegal</strong> para esta operación y el RNDC
-                  puede bloquear el despacho. La plataforma no permite publicarla.
-                </p>
-              </div>
+                  <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                    <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+                    <p className="text-xs text-zinc-400">
+                      Cualquier oferta por debajo de{' '}
+                      <strong className="text-red-400">{formatCOP(resultado.piso)}</strong> es{' '}
+                      <strong className="text-red-400">ilegal</strong> para esta operación y el RNDC
+                      puede bloquear el despacho. La plataforma no permite publicarla.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-zinc-500">Calcula una ruta para ver los precios.</p>
+              )}
             </CardContent>
           </Card>
         </div>

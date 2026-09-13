@@ -8,6 +8,7 @@ import { authRouter } from './routes/auth.js';
 import { cargasRouter } from './routes/cargas.js';
 import { membresiasRouter } from './routes/membresias.js';
 import { webhooksRouter } from './routes/webhooks.js';
+import { geoRouter } from './routes/geo.js';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/cargas', cargasRouter);
 app.use('/api/membresias', membresiasRouter);
 app.use('/api/webhooks', webhooksRouter);
+app.use('/api/geo', geoRouter);
 
 // Sirve el build de app/ (npm run build en app/) para que un solo proceso/puerto
 // exponga frontend + API — así un único Cloudflare Tunnel cubre todo.
