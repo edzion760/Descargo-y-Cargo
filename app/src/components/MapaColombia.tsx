@@ -49,13 +49,13 @@ const RUTAS_CAMIONES: { origen: number; destino: number; duracionMs: number; ini
   { origen: 3, destino: 14, duracionMs: 10000, inicio: 0.6 }, // Barranquilla-Maicao
 ];
 
-// Fucsia a propósito: tiene que contrastar contra el naranja de los camiones
-// y contra los colores propios del mapa (agua/tierra de OpenStreetMap).
+// Verde esmeralda: el color de marca original (antes del cambio a naranja),
+// contrasta bien contra los camiones naranjas y contra el mapa.
 const iconoEmpresa = L.divIcon({
   className: '',
   html: `<span class="relative flex h-3 w-3">
-    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-fuchsia-400 opacity-75"></span>
-    <span class="relative inline-flex h-3 w-3 rounded-full bg-fuchsia-500"></span>
+    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+    <span class="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
   </span>`,
   iconSize: [12, 12],
   iconAnchor: [6, 6],
@@ -145,7 +145,7 @@ export default function MapaColombia() {
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-800 bg-zinc-950/80 px-3 py-2 text-[10px] text-zinc-500">
         <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-fuchsia-500" /> Empresas publicando
+          <span className="h-2 w-2 rounded-full bg-emerald-500" /> Empresas publicando
         </span>
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-orange-500" /> Transportadores en vía
