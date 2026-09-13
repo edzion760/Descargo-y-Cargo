@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { enviarBienvenida } from '../email.js';
 
 export const authRouter = Router();
 
@@ -70,6 +71,10 @@ authRouter.post('/register', async (req, res) => {
     }
     throw err;
   }
+
+  // No se espera (await) para no retrasar la respuesta -- enviarCorreo ya
+  // atrapa sus propios errores, un correo caído nunca debe romper el registro.
+  enviarBienvenida(email, { nombre, tipo });
 
   res.status(201).json({ token: signToken(usuario), tipo: usuario.tipo });
 });

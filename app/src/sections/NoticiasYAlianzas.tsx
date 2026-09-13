@@ -1,14 +1,14 @@
-import { Radio, MapPin, Sparkles, Fuel, ShieldPlus, Wrench, CreditCard } from 'lucide-react';
+import { Radio, ExternalLink, Fuel, ShieldPlus, Wrench, CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { NOTICIAS, type Noticia } from '@/data/mock';
+import { useNoticiasVia, type Noticia } from '@/lib/use-noticias';
 
 const TIPO_ESTILO: Record<Noticia['tipo'], { etiqueta: string; clase: string }> = {
   ACCIDENTE: { etiqueta: 'Accidente', clase: 'bg-red-500/15 text-red-400 border-red-500/30' },
   CIERRE_VIA: { etiqueta: 'Cierre de vía', clase: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
   VIA_LIBRE: { etiqueta: 'Vía libre', clase: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
   CONDICION_CLIMA: { etiqueta: 'Clima', clase: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
+  INFO: { etiqueta: 'Vías', clase: 'bg-zinc-700/50 text-zinc-300 border-zinc-600/40' },
 };
 
 const ALIANZAS = [
@@ -19,52 +19,43 @@ const ALIANZAS = [
 ];
 
 export default function NoticiasYAlianzas() {
+  const noticias = useNoticiasVia();
+
   return (
     <>
-      {/* Noticias IA */}
+      {/* Noticias de vía */}
       <section id="alertas" className="border-b border-zinc-800 bg-zinc-950 py-20">
         <div className="mx-auto max-w-7xl px-4">
-          <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-end">
-            <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">Alertas de carretera</p>
-              <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
-                Noticias de la vía, <span className="text-orange-400">verificadas por IA</span>
-              </h2>
-              <p className="mt-3 text-zinc-400">
-                Cada 15 minutos la IA evalúa fuentes públicas (INVÍAS, noticias, reportes), descarta
-                rumores y geolocaliza el evento. Solo recibes alertas en tu radio de ruta.
-              </p>
-            </div>
-            <Badge className="gap-2 border-orange-500/30 bg-orange-500/10 px-3 py-1.5 text-orange-400" variant="outline">
-              <Sparkles className="h-3.5 w-3.5" /> Solo se publica con confianza ≥ 75%
-            </Badge>
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">Alertas de carretera</p>
+            <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">Noticias de la vía en Colombia</h2>
+            <p className="mt-3 text-zinc-400">
+              Titulares reales sobre cierres, accidentes y estado de las principales vías del país,
+              actualizados automáticamente cada pocos minutos.
+            </p>
           </div>
 
           <div className="mt-10 grid gap-5 md:grid-cols-2">
-            {NOTICIAS.map((n) => {
+            {noticias.length === 0 && (
+              <p className="text-sm text-zinc-500 md:col-span-2">Cargando noticias de vía…</p>
+            )}
+            {noticias.map((n) => {
               const estilo = TIPO_ESTILO[n.tipo];
               return (
-                <Card key={n.id} className="border-zinc-800 bg-zinc-900/60">
-                  <CardContent className="p-5">
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant="outline" className={estilo.clase}>{estilo.etiqueta}</Badge>
-                      <span className="text-xs text-zinc-500">{n.hace}</span>
-                    </div>
-                    <h3 className="mt-3 font-semibold text-white">{n.titulo}</h3>
-                    <p className="mt-1 flex items-center gap-1 text-sm text-zinc-400">
-                      <MapPin className="h-3.5 w-3.5 text-orange-400" /> {n.via} · {n.zona}
-                    </p>
-                    <div className="mt-4 flex items-center gap-3">
-                      <Progress value={n.confianza * 100} className="h-1.5 flex-1 bg-zinc-800" />
-                      <span className="text-xs font-semibold text-zinc-300">{Math.round(n.confianza * 100)}%</span>
-                      {n.verificada ? (
-                        <Badge className="bg-orange-500/15 text-orange-400">✓ Verificada IA</Badge>
-                      ) : (
-                        <Badge className="bg-zinc-700/50 text-zinc-300">Sin verificar</Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                <a key={n.id} href={n.url} target="_blank" rel="noopener" className="block">
+                  <Card className="border-zinc-800 bg-zinc-900/60 transition-colors hover:border-zinc-600">
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge variant="outline" className={estilo.clase}>{estilo.etiqueta}</Badge>
+                        <span className="text-xs text-zinc-500">{n.hace}</span>
+                      </div>
+                      <h3 className="mt-3 font-semibold text-white">{n.titulo}</h3>
+                      <p className="mt-2 flex items-center gap-1 text-sm text-zinc-500">
+                        <ExternalLink className="h-3.5 w-3.5" /> {n.fuente}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </a>
               );
             })}
           </div>
@@ -72,8 +63,8 @@ export default function NoticiasYAlianzas() {
           <div className="mt-8 flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
             <Radio className="h-5 w-5 shrink-0 text-orange-400" />
             <p className="text-sm text-zinc-400">
-              Los transportadores suscritos reciben estas alertas por push en un radio de 50 km de su
-              ruta activa. Los reportes de la comunidad se cruzan con fuentes oficiales antes de publicarse.
+              Titulares recopilados de medios colombianos por palabras clave de vías y carreteras — no
+              son reportes oficiales de INVÍAS ni de la Plataforma. Verifica siempre en la fuente citada.
             </p>
           </div>
 

@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Truck, PackagePlus, Radio, MapPin, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { NOTICIAS } from '@/data/mock';
 import AuthDialog from '@/components/AuthDialog';
 import PublicarCargaDialog from '@/components/PublicarCargaDialog';
 import MapaColombia from '@/components/MapaColombia';
 import { useAuth } from '@/lib/use-auth';
+import { useNoticiasVia } from '@/lib/use-noticias';
 
 const TIPO_COLOR: Record<string, string> = {
   ACCIDENTE: 'text-red-400',
   CIERRE_VIA: 'text-amber-400',
   VIA_LIBRE: 'text-orange-400',
   CONDICION_CLIMA: 'text-sky-400',
+  INFO: 'text-zinc-400',
 };
 
 /**
@@ -26,6 +27,7 @@ export default function PanelInicio() {
   const [authAbierto, setAuthAbierto] = useState(false);
   const [publicarAbierto, setPublicarAbierto] = useState(false);
   const { tipo } = useAuth();
+  const noticias = useNoticiasVia();
 
   function abrirPublicar() {
     if (!tipo) return setAuthAbierto(true);
@@ -37,38 +39,47 @@ export default function PanelInicio() {
   }
 
   useEffect(() => {
-    const t = setInterval(() => setIndice((i) => (i + 1) % NOTICIAS.length), 4000);
+    if (noticias.length === 0) return;
+    const t = setInterval(() => setIndice((i) => (i + 1) % noticias.length), 4000);
     return () => clearInterval(t);
-  }, []);
+  }, [noticias.length]);
 
-  const noticia = NOTICIAS[indice];
+  const noticia = noticias[indice];
 
   return (
     <section className="border-b border-zinc-800 bg-zinc-950">
-      {/* Ticker de noticias rotativo */}
-      <div className="border-b border-zinc-800 bg-zinc-900/60">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 overflow-hidden px-4 py-2.5">
-          <Badge variant="outline" className="shrink-0 gap-1.5 border-orange-500/30 bg-orange-500/10 text-orange-400">
-            <Radio className="h-3 w-3 animate-pulse" /> En vivo
-          </Badge>
-          <div key={indice} className="flex min-w-0 items-center gap-2 animate-pulse-once">
-            <span className={`shrink-0 text-xs font-bold uppercase ${TIPO_COLOR[noticia.tipo]}`}>
-              {noticia.tipo.replace('_', ' ')}
-            </span>
-            <p className="truncate text-sm text-zinc-300">
-              {noticia.titulo} — <span className="text-zinc-500">{noticia.via}</span>
-            </p>
-          </div>
-          <div className="ml-auto hidden shrink-0 gap-1 sm:flex">
-            {NOTICIAS.map((_, i) => (
-              <span
-                key={i}
-                className={`h-1.5 rounded-full transition-all ${i === indice ? 'w-4 bg-orange-400' : 'w-1.5 bg-zinc-700'}`}
-              />
-            ))}
+      {/* Ticker de noticias rotativo — titulares reales, ver useNoticiasVia */}
+      {noticia && (
+        <div className="border-b border-zinc-800 bg-zinc-900/60">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 overflow-hidden px-4 py-2.5">
+            <Badge variant="outline" className="shrink-0 gap-1.5 border-orange-500/30 bg-orange-500/10 text-orange-400">
+              <Radio className="h-3 w-3 animate-pulse" /> En vivo
+            </Badge>
+            <a
+              href={noticia.url}
+              target="_blank"
+              rel="noopener"
+              key={indice}
+              className="flex min-w-0 items-center gap-2 animate-pulse-once hover:underline"
+            >
+              <span className={`shrink-0 text-xs font-bold uppercase ${TIPO_COLOR[noticia.tipo]}`}>
+                {noticia.tipo.replace('_', ' ')}
+              </span>
+              <p className="truncate text-sm text-zinc-300">
+                {noticia.titulo} — <span className="text-zinc-500">{noticia.fuente}</span>
+              </p>
+            </a>
+            <div className="ml-auto hidden shrink-0 gap-1 sm:flex">
+              {noticias.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all ${i === indice ? 'w-4 bg-orange-400' : 'w-1.5 bg-zinc-700'}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Dos acciones principales + mapa de actividad */}
       <div className="mx-auto grid max-w-7xl gap-4 px-4 py-8 lg:grid-cols-2">

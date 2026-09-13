@@ -6,7 +6,7 @@ const STATS = [
   { valor: '400+', label: 'cargas publicadas / mes' },
   { valor: '100%', label: 'fletes sobre el piso legal' },
   { valor: '15 min', label: 'para crear tu cuenta' },
-  { valor: '24/7', label: 'alertas de carretera IA' },
+  { valor: '24/7', label: 'alertas de vía en vivo' },
 ];
 
 export default function Hero() {
@@ -36,7 +36,7 @@ export default function Hero() {
           <p className="mt-6 max-w-xl text-lg text-zinc-400">
             El marketplace de transporte de carga de Colombia con piso tarifario{' '}
             <strong className="text-zinc-200">SICE-TAC garantizado</strong>, verificación de
-            transportadores, manifiesto RNDC asistido y alertas de carretera verificadas por IA.
+            transportadores, manifiesto RNDC asistido y alertas de vía en tiempo real.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
