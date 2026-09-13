@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -26,9 +26,17 @@ const CIUDADES: Ciudad[] = [
   { nombre: 'Neiva', lat: 2.9273, lon: -75.2819 },
   { nombre: 'Santa Marta', lat: 11.2408, lon: -74.199 },
   { nombre: 'Montería', lat: 8.7479, lon: -75.8814 },
+  { nombre: 'Buenaventura', lat: 3.8801, lon: -77.0312 },
+  { nombre: 'Leticia', lat: -4.2153, lon: -69.9406 },
+  { nombre: 'Maicao', lat: 11.3548, lon: -72.24 },
+  { nombre: 'Arauca', lat: 7.0847, lon: -70.759 },
+  { nombre: 'Inírida', lat: 3.8653, lon: -67.9239 },
+  { nombre: 'Puerto Carreño', lat: 6.1891, lon: -67.4859 },
 ];
 
-const EMPRESAS_ACTIVAS = [0, 1, 2, 3, 4, 5, 7, 9]; // índices en CIUDADES
+// índices en CIUDADES — incluye las periféricas para que el mapa muestre
+// cobertura de todo el país, no solo el centro andino.
+const EMPRESAS_ACTIVAS = [0, 1, 2, 3, 4, 5, 7, 9, 12, 13, 14, 15, 16, 17];
 
 const RUTAS_CAMIONES: { origen: number; destino: number; duracionMs: number; inicio: number }[] = [
   { origen: 0, destino: 1, duracionMs: 9000, inicio: 0.1 },
@@ -36,6 +44,9 @@ const RUTAS_CAMIONES: { origen: number; destino: number; duracionMs: number; ini
   { origen: 0, destino: 2, duracionMs: 12000, inicio: 0.7 },
   { origen: 3, destino: 4, duracionMs: 6000, inicio: 0.2 },
   { origen: 0, destino: 9, duracionMs: 8000, inicio: 0.55 },
+  { origen: 2, destino: 12, duracionMs: 7000, inicio: 0.3 }, // Cali-Buenaventura: corredor portuario real
+  { origen: 0, destino: 15, duracionMs: 14000, inicio: 0.15 }, // Bogotá-Arauca
+  { origen: 3, destino: 14, duracionMs: 10000, inicio: 0.6 }, // Barranquilla-Maicao
 ];
 
 const iconoEmpresa = L.divIcon({
@@ -54,6 +65,18 @@ const iconoCamion = L.divIcon({
   iconSize: [24, 24],
   iconAnchor: [12, 12],
 });
+
+// Encuadra automáticamente todas las ciudades sin importar el tamaño real
+// del contenedor (varía entre móvil y escritorio) — más confiable que fijar
+// center/zoom a mano.
+function AjustarVista() {
+  const map = useMap();
+  useEffect(() => {
+    const bounds = L.latLngBounds(CIUDADES.map((c) => [c.lat, c.lon]));
+    map.fitBounds(bounds, { padding: [16, 16] });
+  }, [map]);
+  return null;
+}
 
 function interpolar(a: Ciudad, b: Ciudad, t: number): [number, number] {
   return [a.lat + (b.lat - a.lat) * t, a.lon + (b.lon - a.lon) * t];
@@ -90,13 +113,14 @@ export default function MapaColombia() {
       <div className="h-56 w-full lg:h-full lg:min-h-[220px]">
         <MapContainer
           center={[4.5, -74.5]}
-          zoom={5.4}
+          zoom={5}
           scrollWheelZoom={false}
           dragging={false}
           zoomControl={false}
           attributionControl={false}
           className="h-full w-full"
         >
+          <AjustarVista />
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {EMPRESAS_ACTIVAS.map((i) => (
             <Marker key={CIUDADES[i].nombre} position={[CIUDADES[i].lat, CIUDADES[i].lon]} icon={iconoEmpresa} />
