@@ -20,7 +20,15 @@ async function enviarCorreo({ para, asunto, html }) {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ from: REMITENTE, to: para, subject: asunto, html }),
+      body: JSON.stringify({
+        from: REMITENTE,
+        to: para,
+        subject: asunto,
+        // Sin el <meta charset> algunos clientes (Gmail app) asumen Latin-1
+        // y las tildes/ñ llegan como "�". El fragmento de cada plantilla
+        // solo trae el <div>; aquí se envuelve en un documento completo.
+        html: `<!doctype html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`,
+      }),
     });
     if (!res.ok) console.error('Resend rechazó el correo:', res.status, await res.text());
   } catch (err) {
@@ -50,10 +58,29 @@ export function plantillaPagoConfirmado({ monto, carga }) {
     </div>`;
 }
 
+export function plantillaRecuperarPassword({ url }) {
+  return `
+    <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto">
+      <h1 style="color:#18181b">Recupera tu contraseña</h1>
+      <p>Alguien (esperamos que hayas sido tú) pidió restablecer la contraseña de tu cuenta en Descargo &amp; Cargo.</p>
+      <p><a href="${url}" style="background:#f97316;color:#09090b;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Elegir nueva contraseña</a></p>
+      <p style="color:#71717a;font-size:12px">Este enlace vence en 1 hora. Si no fuiste tú, ignora este correo -- tu contraseña actual sigue funcionando.</p>
+      <p style="color:#71717a;font-size:12px">Descargo &amp; Cargo SAS · NIT 901.563.460-9</p>
+    </div>`;
+}
+
 export function enviarBienvenida(para, datos) {
   return enviarCorreo({ para, asunto: 'Bienvenido a Descargo & Cargo', html: plantillaBienvenida(datos) });
 }
 
 export function enviarPagoConfirmado(para, datos) {
   return enviarCorreo({ para, asunto: 'Pago confirmado — Descargo & Cargo', html: plantillaPagoConfirmado(datos) });
+}
+
+export function enviarRecuperarPassword(para, datos) {
+  return enviarCorreo({
+    para,
+    asunto: 'Recupera tu contraseña — Descargo & Cargo',
+    html: plantillaRecuperarPassword(datos),
+  });
 }

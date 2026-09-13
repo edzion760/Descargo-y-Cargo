@@ -69,6 +69,10 @@ model Usuario {
   ultimaLon        Float?
   ultimaUbicacionEn DateTime?
 
+  // Recuperar contraseña: token de un solo uso con vencimiento corto.
+  resetToken        String?   @unique
+  resetTokenExpira   DateTime?
+
   publicador     Publicador?
   transportador  Transportador?
   suscripciones  SuscripcionPush[]

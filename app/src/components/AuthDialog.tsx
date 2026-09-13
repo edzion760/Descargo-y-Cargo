@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/lib/use-auth';
-import { ApiError } from '@/lib/api';
+import { ApiError, apiFetch } from '@/lib/api';
 
 export default function AuthDialog({
   open,
@@ -36,6 +36,26 @@ export default function AuthDialog({
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [modoOlvide, setModoOlvide] = useState(false);
+  const [mensajeOlvide, setMensajeOlvide] = useState<string | null>(null);
+
+  async function handleOlvide(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setCargando(true);
+    const form = new FormData(e.currentTarget);
+    try {
+      const data = await apiFetch<{ mensaje: string }>('/api/auth/olvide-password', {
+        method: 'POST',
+        body: { email: String(form.get('email')) },
+      });
+      setMensajeOlvide(data.mensaje);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo procesar la solicitud');
+    } finally {
+      setCargando(false);
+    }
+  }
 
   async function handleLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -93,20 +113,62 @@ export default function AuthDialog({
           </TabsList>
 
           <TabsContent value="login" className="mt-4">
-            <form onSubmit={handleLogin} className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-zinc-400">Correo</Label>
-                <Input name="email" type="email" required className="border-zinc-700 bg-zinc-900 text-white" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-zinc-400">Contraseña</Label>
-                <Input name="password" type="password" required className="border-zinc-700 bg-zinc-900 text-white" />
-              </div>
-              {error && <p className="text-sm text-red-400">{error}</p>}
-              <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
-                {cargando ? 'Ingresando…' : 'Ingresar'}
-              </Button>
-            </form>
+            {modoOlvide ? (
+              mensajeOlvide ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-zinc-300">{mensajeOlvide}</p>
+                  <Button
+                    variant="ghost"
+                    className="w-full text-zinc-400"
+                    onClick={() => {
+                      setModoOlvide(false);
+                      setMensajeOlvide(null);
+                    }}
+                  >
+                    Volver a ingresar
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleOlvide} className="space-y-3">
+                  <p className="text-sm text-zinc-400">
+                    Escribe tu correo y te enviamos un enlace para elegir una nueva contraseña.
+                  </p>
+                  <div className="space-y-1.5">
+                    <Label className="text-zinc-400">Correo</Label>
+                    <Input name="email" type="email" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  </div>
+                  {error && <p className="text-sm text-red-400">{error}</p>}
+                  <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
+                    {cargando ? 'Enviando…' : 'Enviar enlace'}
+                  </Button>
+                  <Button type="button" variant="ghost" className="w-full text-zinc-400" onClick={() => setModoOlvide(false)}>
+                    Volver
+                  </Button>
+                </form>
+              )
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-400">Correo</Label>
+                  <Input name="email" type="email" required className="border-zinc-700 bg-zinc-900 text-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-400">Contraseña</Label>
+                  <Input name="password" type="password" required className="border-zinc-700 bg-zinc-900 text-white" />
+                </div>
+                {error && <p className="text-sm text-red-400">{error}</p>}
+                <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
+                  {cargando ? 'Ingresando…' : 'Ingresar'}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setModoOlvide(true)}
+                  className="w-full text-center text-xs text-zinc-500 hover:text-orange-400 hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </form>
+            )}
           </TabsContent>
 
           <TabsContent value="registro" className="mt-4">

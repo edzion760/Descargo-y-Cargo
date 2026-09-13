@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { authRouter } from './routes/auth.js';
 import { cargasRouter } from './routes/cargas.js';
 import { membresiasRouter } from './routes/membresias.js';
@@ -14,10 +16,46 @@ import { pushRouter } from './routes/push.js';
 
 const app = express();
 
+// Detrás del Cloudflare Tunnel: sin esto, req.ip sería siempre la IP local
+// del túnel y el rate-limit trataría a todos los usuarios como uno solo.
+app.set('trust proxy', 1);
+
+// CSP y COEP por defecto de helmet pueden bloquear las tiles del mapa
+// (tile.openstreetmap.org, cross-origin) -- se desactivan por ahora en vez
+// de arriesgar romper el mapa en silencio; el resto de cabeceras de
+// helmet (X-Frame-Options, HSTS, etc.) sí quedan activas.
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*' }));
 app.use(express.json());
 
+// Cloudflare ya entrega la IP real del cliente en este header (más
+// confiable detrás del túnel que fiarse solo de X-Forwarded-For).
+const ipReal = (req) => req.headers['cf-connecting-ip'] || req.ip;
+
+const limiteGeneral = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  keyGenerator: ipReal,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+// Más estricto en login/registro: es el objetivo típico de fuerza bruta.
+const limiteAuth = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  keyGenerator: ipReal,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.' },
+});
+
+app.use('/api', limiteGeneral);
+
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+app.use('/api/auth/login', limiteAuth);
+app.use('/api/auth/register', limiteAuth);
+app.use('/api/auth/olvide-password', limiteAuth);
+app.use('/api/auth/restablecer-password', limiteAuth);
 app.use('/api/auth', authRouter);
 app.use('/api/cargas', cargasRouter);
 app.use('/api/membresias', membresiasRouter);

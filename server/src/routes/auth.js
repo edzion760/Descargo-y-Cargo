@@ -1,10 +1,11 @@
+import { randomBytes } from 'node:crypto';
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
-import { enviarBienvenida } from '../email.js';
+import { enviarBienvenida, enviarRecuperarPassword } from '../email.js';
 
 export const authRouter = Router();
 
@@ -92,6 +93,49 @@ authRouter.post('/login', async (req, res) => {
   }
 
   res.json({ token: signToken(usuario), tipo: usuario.tipo });
+});
+
+const RESET_VIGENCIA_MS = 60 * 60 * 1000; // 1 hora
+
+// Siempre responde igual exista o no la cuenta -- si no, se filtra qué
+// correos están registrados (enumeración de usuarios).
+authRouter.post('/olvide-password', async (req, res) => {
+  const { email } = req.body ?? {};
+  const respuestaGenerica = { ok: true, mensaje: 'Si el correo existe, te enviamos un enlace para recuperar tu contraseña.' };
+  if (!email) return res.json(respuestaGenerica);
+
+  const usuario = await prisma.usuario.findUnique({ where: { email } });
+  if (usuario && !usuario.eliminadoEn) {
+    const resetToken = randomBytes(32).toString('hex');
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { resetToken, resetTokenExpira: new Date(Date.now() + RESET_VIGENCIA_MS) },
+    });
+    const url = `${process.env.APP_URL}/restablecer?token=${resetToken}`;
+    enviarRecuperarPassword(email, { url });
+  }
+
+  res.json(respuestaGenerica);
+});
+
+authRouter.post('/restablecer-password', async (req, res) => {
+  const { token, password } = req.body ?? {};
+  if (!token || !password || password.length < 8) {
+    return res.status(400).json({ error: 'Token o contraseña inválidos (mínimo 8 caracteres)' });
+  }
+
+  const usuario = await prisma.usuario.findUnique({ where: { resetToken: token } });
+  if (!usuario || !usuario.resetTokenExpira || usuario.resetTokenExpira < new Date()) {
+    return res.status(400).json({ error: 'El enlace es inválido o ya venció. Solicita uno nuevo.' });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await prisma.usuario.update({
+    where: { id: usuario.id },
+    data: { passwordHash, resetToken: null, resetTokenExpira: null },
+  });
+
+  res.json({ ok: true });
 });
 
 // Derecho de supresión (Ley 1581 de 2012, art. 8): el usuario puede darse de
