@@ -192,6 +192,9 @@ model Prospecto {
   departamento  String?
   sector        String?
   contactadoEn  DateTime?
+  // Derecho de oposición a mercadeo directo (Ley 1581 de 2012, art. 8):
+  // clic en el enlace de baja del correo, sin necesidad de cuenta.
+  noContactar   Boolean              @default(false)
   createdAt     DateTime             @default(now())
 
   @@index([tipoInteres])
