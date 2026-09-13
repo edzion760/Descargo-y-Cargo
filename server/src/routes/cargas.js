@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db.js';
-import { requireAuth, requireTipo } from '../middleware/auth.js';
+import { requireAuth, requireTipo, optionalAuth } from '../middleware/auth.js';
 import { urlCheckout } from '../wompi.js';
 
 export const cargasRouter = Router();
@@ -11,13 +11,6 @@ export const cargasRouter = Router();
 export function tarifaDesbloqueo(precio, tipoMembresia) {
   if (tipoMembresia === 'ILIMITADA') return 0;
   return Math.max(Math.round(precio * 0.04), 15000);
-}
-
-function maybeAuth(req, _res, next) {
-  const header = req.headers.authorization;
-  const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token) return next();
-  requireAuth(req, _res, next);
 }
 
 const cargaPublica = {
@@ -37,7 +30,7 @@ const cargaPublica = {
   estado: true,
 };
 
-cargasRouter.get('/', maybeAuth, async (req, res) => {
+cargasRouter.get('/', optionalAuth, async (req, res) => {
   const { tipoPublicacion } = req.query;
   const cargas = await prisma.carga.findMany({
     where: {
@@ -89,7 +82,7 @@ cargasRouter.post('/', requireAuth, requireTipo('PUBLICADOR'), async (req, res) 
   res.status(201).json(carga);
 });
 
-cargasRouter.get('/:id', maybeAuth, async (req, res) => {
+cargasRouter.get('/:id', optionalAuth, async (req, res) => {
   const id = Number(req.params.id);
   const carga = await prisma.carga.findUnique({
     where: { id },
