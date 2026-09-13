@@ -167,3 +167,32 @@ model PagoDesbloqueo {
 
   @@unique([cargaId, transportadorId])
 }
+
+enum TipoInteresProspecto {
+  TRANSPORTADOR
+  PUBLICADOR
+}
+
+// Leads de la prospección 2023 (registro MinTransporte, Facebook, sectorial)
+// -- NO son cuentas de Usuario: nunca aceptaron los Términos/Política
+// actuales ni tienen contraseña. Se usan solo para campañas de invitación
+// (correo/WhatsApp) a registrarse de verdad en la plataforma ya en vivo.
+// Importado una vez con server/scripts/importar-prospectos.js — ver
+// server/scripts/normalizar_prospectos.py para cómo se limpió el origen.
+model Prospecto {
+  id            Int                  @id @default(autoincrement())
+  nombre        String?
+  tipoInteres   TipoInteresProspecto
+  fuente        String
+  telefonos     String // separados por coma, ya normalizados a 10 dígitos
+  email         String?
+  nit           String?
+  direccion     String?
+  ciudad        String?
+  departamento  String?
+  sector        String?
+  contactadoEn  DateTime?
+  createdAt     DateTime             @default(now())
+
+  @@index([tipoInteres])
+}
