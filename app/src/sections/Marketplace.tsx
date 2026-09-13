@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCOP, tarifaDesbloqueo } from '@/data/mock';
 import { apiFetch, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/use-auth';
+import { idDesdeToken } from '@/lib/jwt';
 import AuthDialog from '@/components/AuthDialog';
 
 interface Carga {
@@ -91,6 +92,7 @@ function TarjetaCarga({
   }
 
   const desbloqueada = carga.desbloqueada || !!contacto;
+  const miId = token ? idDesdeToken(token) : null;
 
   return (
     <Card className={`relative overflow-hidden border-zinc-800 bg-zinc-900/60 transition-all hover:border-zinc-700 ${carga.destacada ? 'ring-1 ring-amber-500/40' : ''}`}>
@@ -140,8 +142,15 @@ function TarjetaCarga({
 
         <div className="mt-4 flex items-center justify-between gap-3">
           {desbloqueada ? (
-            <div className="w-full rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-2">
-              <div className="flex items-center justify-between">
+            <div className="relative w-full overflow-hidden rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-2">
+              {miId != null && (
+                <div className="pointer-events-none absolute inset-0 flex select-none items-center justify-center overflow-hidden opacity-10">
+                  <span className="rotate-[-15deg] whitespace-nowrap text-xs font-bold tracking-widest text-orange-200">
+                    USUARIO-{miId} · USUARIO-{miId} · USUARIO-{miId}
+                  </span>
+                </div>
+              )}
+              <div className="relative flex items-center justify-between">
                 <div className="text-sm">
                   <p className="font-semibold text-orange-300">Contacto desbloqueado</p>
                   <p className="text-xs text-zinc-400">
@@ -279,15 +288,16 @@ export default function Marketplace() {
           modo de pruebas mientras se lanza al público.
         </p>
 
-        <div className="mx-auto mt-8 max-w-4xl rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
-          <p className="text-sm font-semibold text-white">🛡️ El contacto desbloqueado está protegido</p>
-          <div className="mt-3 grid gap-3 text-xs text-zinc-400 sm:grid-cols-2 lg:grid-cols-4">
-            <p>📵 <strong className="text-zinc-200">Bloqueo de capturas</strong> en la app móvil (FLAG_SECURE en Android, detección en iOS)</p>
-            <p>💧 <strong className="text-zinc-200">Marca de agua</strong> con tu ID de usuario sobre cada dato revelado — si se filtra, sabemos quién lo hizo</p>
-            <p>📞 <strong className="text-zinc-200">Número enmascarado</strong>: la llamada y el chat pasan por la plataforma, el número real no se muestra completo</p>
-            <p>📝 <strong className="text-zinc-200">Auditoría + TyC</strong>: cada revelación queda registrada; compartir el dato con no registrados es causal de expulsión</p>
-          </div>
-        </div>
+        {/* Medidas de protección del contacto revelado (uso interno, no se le
+            explica al cliente cómo funciona la seguridad):
+            - Marca de agua con el ID del usuario sobre el contacto (ver
+              TarjetaCarga más arriba) — sí es real y visible a propósito,
+              actúa como disuasivo.
+            - Cada desbloqueo queda registrado en PagoDesbloqueo, asociado a
+              la cuenta y al pago.
+            - Pendiente (no implementado, no anunciar): número enmascarado /
+              llamadas por la plataforma, bloqueo de capturas en una futura
+              app móvil. */}
       </div>
 
       <AuthDialog open={authAbierto} onOpenChange={setAuthAbierto} />
