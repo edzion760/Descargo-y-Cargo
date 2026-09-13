@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RUTAS, MULTIPLICADORES_TIPO_CARGA, formatCOP } from '@/data/mock';
+import { RUTAS, MULTIPLICADORES_TIPO_CARGA, CONFIGURACIONES_VEHICULO, formatCOP } from '@/data/mock';
 import { apiFetch, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/use-auth';
 
@@ -180,7 +180,16 @@ export default function PublicarCargaDialog({
 
               <div className="space-y-1.5">
                 <Label className="text-zinc-400">Vehículo requerido</Label>
-                <Input name="vehiculoRequerido" required placeholder="Ej. Tractocamión" className="border-zinc-700 bg-zinc-900 text-white" />
+                <Select name="vehiculoRequerido" defaultValue={CONFIGURACIONES_VEHICULO[0].label} required>
+                  <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
+                    {CONFIGURACIONES_VEHICULO.map((v) => (
+                      <SelectItem key={v.codigo} value={v.label}>{v.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">

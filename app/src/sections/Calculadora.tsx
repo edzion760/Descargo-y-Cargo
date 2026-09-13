@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Calculator, Scale, TriangleAlert, MapPin } from 'lucide-react';
+import { Calculator, Scale, TriangleAlert, MapPin, Landmark } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,15 @@ interface TarifaRuta {
   tarifaPorTon: number;
 }
 
+interface DespachoRndc {
+  mes: string;
+  configuracionVehiculo: string;
+  mercancia: string;
+  municipioOrigen: string;
+  municipioDestino: string;
+  valorPagado: number | null;
+}
+
 export default function Calculadora() {
   const [origen, setOrigen] = useState('Bogotá');
   const [destino, setDestino] = useState('Medellín');
@@ -28,10 +37,27 @@ export default function Calculadora() {
   const [ruta, setRuta] = useState<TarifaRuta | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [despachosRndc, setDespachosRndc] = useState<DespachoRndc[] | null>(null);
+  const [cargandoRndc, setCargandoRndc] = useState(false);
+
+  async function verDespachosRndc() {
+    setCargandoRndc(true);
+    try {
+      const data = await apiFetch<DespachoRndc[]>(
+        `/api/rndc/referencia?origen=${encodeURIComponent(origen)}&destino=${encodeURIComponent(destino)}`
+      );
+      setDespachosRndc(data);
+    } catch {
+      setDespachosRndc([]);
+    } finally {
+      setCargandoRndc(false);
+    }
+  }
 
   async function calcularRuta() {
     setCargando(true);
     setError(null);
+    setDespachosRndc(null);
     try {
       const data = await apiFetch<TarifaRuta>(
         `/api/geo/ruta?origen=${encodeURIComponent(origen)}&destino=${encodeURIComponent(destino)}`
@@ -155,6 +181,41 @@ export default function Calculadora() {
                   'Calculando ruta…'
                 )}
               </div>
+
+              {ruta && (
+                <Button
+                  onClick={verDespachosRndc}
+                  disabled={cargandoRndc}
+                  variant="outline"
+                  className="w-full gap-2 border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+                >
+                  <Landmark className="h-4 w-4" />
+                  {cargandoRndc ? 'Consultando RNDC…' : 'Ver despachos reales del RNDC en esta ruta'}
+                </Button>
+              )}
+
+              {despachosRndc && (
+                <div className="space-y-2 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 text-xs">
+                  {despachosRndc.length === 0 ? (
+                    <p className="text-zinc-500">
+                      El RNDC (Ministerio de Transporte) no tiene despachos registrados y públicos para esta
+                      ruta exacta.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-zinc-500">
+                        Despachos reales reportados al RNDC (dato abierto oficial, datos.gov.co):
+                      </p>
+                      {despachosRndc.map((d, i) => (
+                        <div key={i} className="rounded border border-zinc-800 bg-zinc-900/60 p-2 text-zinc-400">
+                          <span className="text-zinc-300">{d.mes}</span> · {d.configuracionVehiculo}
+                          {d.valorPagado && <> · valor pagado reportado: {formatCOP(d.valorPagado)}</>}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
