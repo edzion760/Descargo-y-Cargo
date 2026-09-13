@@ -55,11 +55,13 @@ export default function Navbar() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-zinc-950">
             <Truck className="h-5 w-5" strokeWidth={2.5} />
           </div>
-          <div className="leading-tight">
-            <p className="text-base font-bold text-white">
+          <div className="min-w-0 leading-tight">
+            <p className="whitespace-nowrap text-base font-bold text-white">
               Descargo <span className="text-orange-400">&</span> Cargo
             </p>
-            <p className="text-[10px] uppercase tracking-widest text-zinc-500">Logística legal · Colombia</p>
+            <p className="hidden whitespace-nowrap text-[10px] uppercase tracking-widest text-zinc-500 sm:block">
+              Logística legal · Colombia
+            </p>
           </div>
           <Badge className="ml-2 hidden gap-1 border-orange-500/30 bg-orange-500/10 text-orange-400 sm:flex" variant="outline">
             <ShieldCheck className="h-3 w-3" /> Piso SICE-TAC garantizado
@@ -84,8 +86,9 @@ export default function Navbar() {
               Ingresar
             </Button>
           )}
-          <Button className="bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400" onClick={abrirPublicar}>
-            Publicar carga gratis
+          <Button className="whitespace-nowrap bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400" onClick={abrirPublicar}>
+            <span className="sm:hidden">Publicar carga</span>
+            <span className="hidden sm:inline">Publicar carga gratis</span>
           </Button>
           <Button
             variant="ghost"

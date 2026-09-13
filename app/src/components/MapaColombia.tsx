@@ -59,9 +59,19 @@ const iconoEmpresa = L.divIcon({
   iconAnchor: [6, 6],
 });
 
+// SVG propio (no emoji): un emoji de camión se ve distinto — o directamente
+// como una caja vacía — según la fuente de cada sistema operativo.
 const iconoCamion = L.divIcon({
   className: '',
-  html: `<span class="text-lg drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]">🚛</span>`,
+  html: `<div class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 shadow-md shadow-black/50">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#09090b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 18V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h1"/>
+      <path d="M15 18H9"/>
+      <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14v10"/>
+      <circle cx="17" cy="18" r="2"/>
+      <circle cx="7" cy="18" r="2"/>
+    </svg>
+  </div>`,
   iconSize: [24, 24],
   iconAnchor: [12, 12],
 });
