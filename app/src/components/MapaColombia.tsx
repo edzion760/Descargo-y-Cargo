@@ -53,12 +53,12 @@ const RUTAS_CAMIONES: { origen: number; destino: number; duracionMs: number; ini
 // contrasta bien contra los camiones naranjas y contra el mapa.
 const iconoEmpresa = L.divIcon({
   className: '',
-  html: `<span class="relative flex h-3 w-3">
+  html: `<span class="relative flex h-1.5 w-1.5">
     <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-    <span class="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
+    <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
   </span>`,
-  iconSize: [12, 12],
-  iconAnchor: [6, 6],
+  iconSize: [6, 6],
+  iconAnchor: [3, 3],
 });
 
 // SVG propio (no emoji): un emoji de camión se ve distinto — o directamente

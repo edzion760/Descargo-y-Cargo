@@ -27,9 +27,24 @@ app.use('/api/geo', geoRouter);
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(dirname, '../../app/dist');
 if (fs.existsSync(distDir)) {
-  app.use(express.static(distDir));
+  // index.html cambia de contenido en cada deploy (apunta a un bundle con hash
+  // distinto) pero mantiene el mismo nombre — nunca debe cachearse, o el
+  // navegador (o Cloudflare) puede seguir sirviendo una versión vieja del
+  // sitio después de un cambio. Los archivos bajo /assets sí tienen hash en
+  // el nombre, así que esos sí pueden cachearse para siempre sin riesgo.
+  app.use(
+    express.static(distDir, {
+      setHeaders: (res, filePath) => {
+        res.setHeader(
+          'Cache-Control',
+          filePath.endsWith('index.html') ? 'no-cache' : 'public, max-age=31536000, immutable'
+        );
+      },
+    })
+  );
   app.use((req, res, next) => {
     if (req.path.startsWith('/api')) return next();
+    res.setHeader('Cache-Control', 'no-cache');
     res.sendFile(path.join(distDir, 'index.html'));
   });
 }
