@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { NOTICIAS } from '@/data/mock';
 import AuthDialog from '@/components/AuthDialog';
 import PublicarCargaDialog from '@/components/PublicarCargaDialog';
+import MapaColombia from '@/components/MapaColombia';
 import { useAuth } from '@/lib/use-auth';
 
 const TIPO_COLOR: Record<string, string> = {
@@ -69,40 +70,44 @@ export default function PanelInicio() {
         </div>
       </div>
 
-      {/* Dos acciones principales */}
-      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:grid-cols-2">
-        <a
-          href="#cargas"
-          className="group flex items-center justify-between rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-transparent p-6 transition-all hover:border-orange-400/60 hover:from-orange-500/25"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500 text-zinc-950">
-              <Truck className="h-7 w-7" />
+      {/* Dos acciones principales + mapa de actividad */}
+      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-8 lg:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          <a
+            href="#cargas"
+            className="group flex items-center justify-between rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-transparent p-6 transition-all hover:border-orange-400/60 hover:from-orange-500/25"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500 text-zinc-950">
+                <Truck className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-white">Quiero transportar</p>
+                <p className="text-sm text-zinc-400">Buscar cargas disponibles cerca de mí</p>
+              </div>
             </div>
-            <div>
-              <p className="text-lg font-bold text-white">Quiero transportar</p>
-              <p className="text-sm text-zinc-400">Buscar cargas disponibles cerca de mí</p>
-            </div>
-          </div>
-          <ChevronRight className="h-6 w-6 text-orange-400 transition-transform group-hover:translate-x-1" />
-        </a>
+            <ChevronRight className="h-6 w-6 text-orange-400 transition-transform group-hover:translate-x-1" />
+          </a>
 
-        <button
-          type="button"
-          onClick={abrirPublicar}
-          className="group flex items-center justify-between rounded-2xl border border-zinc-700 bg-zinc-900/60 p-6 text-left transition-all hover:border-zinc-500 hover:bg-zinc-900"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-800 text-orange-400">
-              <PackagePlus className="h-7 w-7" />
+          <button
+            type="button"
+            onClick={abrirPublicar}
+            className="group flex items-center justify-between rounded-2xl border border-zinc-700 bg-zinc-900/60 p-6 text-left transition-all hover:border-zinc-500 hover:bg-zinc-900"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-800 text-orange-400">
+                <PackagePlus className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-white">Publicar carga</p>
+                <p className="text-sm text-zinc-400">Gratis · llega a miles de transportadores</p>
+              </div>
             </div>
-            <div>
-              <p className="text-lg font-bold text-white">Publicar carga</p>
-              <p className="text-sm text-zinc-400">Gratis · llega a miles de transportadores</p>
-            </div>
-          </div>
-          <ChevronRight className="h-6 w-6 text-zinc-500 transition-transform group-hover:translate-x-1" />
-        </button>
+            <ChevronRight className="h-6 w-6 text-zinc-500 transition-transform group-hover:translate-x-1" />
+          </button>
+        </div>
+
+        <MapaColombia />
       </div>
 
       {/* Cobertura nacional */}
