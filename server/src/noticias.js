@@ -9,6 +9,8 @@
 // <item>); si algún día se agrega otra fuente con XML más irregular, pasar
 // a un parser real (ej. fast-xml-parser).
 
+import { geocodificar } from './geo.js';
+
 const USER_AGENT = 'DescargoYCargo/1.0 (+https://descargoycargo.com)';
 const QUERY = '("derrumbe" OR "cierre" OR "trancón" OR "accidente") ("vía" OR "vial" OR "carretera" OR "corredor") Colombia';
 const RSS_URL = `https://news.google.com/rss/search?${new URLSearchParams({
@@ -46,6 +48,33 @@ export function clasificarTipo(titulo) {
     if (palabras.some((p) => t.includes(p))) return tipo;
   }
   return 'INFO';
+}
+
+// Corredores/ciudades más nombrados en noticias de vía en Colombia -- lista
+// curada a mano, no exhaustiva (crece según lo que se vea en producción).
+// Sin esto no se puede geolocalizar una noticia para las alertas push; con
+// esto solo se geolocalizan las que mencionan uno de estos lugares, el
+// resto se muestra igual en el feed pero sin alerta de proximidad.
+const CORREDORES = [
+  { patron: /vía al llano|bogotá\s*[-–]?\s*villavicencio|villavicencio\s*[-–]?\s*bogotá/i, lugar: 'Villavicencio' },
+  { patron: /la línea|calarcá|cajamarca/i, lugar: 'Calarcá' },
+  { patron: /medellín\s*[-–]?\s*manizales|manizales\s*[-–]?\s*medellín/i, lugar: 'Manizales' },
+  { patron: /buenaventura/i, lugar: 'Buenaventura' },
+  { patron: /barranquilla/i, lugar: 'Barranquilla' },
+  { patron: /cartagena/i, lugar: 'Cartagena' },
+  { patron: /bucaramanga/i, lugar: 'Bucaramanga' },
+  { patron: /pasto/i, lugar: 'Pasto' },
+  { patron: /ibagué/i, lugar: 'Ibagué' },
+  { patron: /medellín/i, lugar: 'Medellín' },
+  { patron: /bogotá/i, lugar: 'Bogotá' },
+  { patron: /\bcali\b/i, lugar: 'Cali' },
+];
+
+export function detectarLugar(titulo) {
+  for (const { patron, lugar } of CORREDORES) {
+    if (patron.test(titulo)) return lugar;
+  }
+  return null;
 }
 
 export function tiempoRelativo(pubDate, ahora = new Date()) {
@@ -95,14 +124,27 @@ export async function obtenerNoticiasVia() {
     .filter((item) => esRelevante(item.titulo))
     .slice(0, 8);
   const ahora = new Date();
-  const noticias = items.map((item, i) => ({
-    id: i + 1,
-    tipo: clasificarTipo(item.titulo),
-    titulo: item.titulo.replace(new RegExp(`\\s*-\\s*${item.fuente}$`), ''),
-    fuente: item.fuente,
-    url: item.link,
-    hace: tiempoRelativo(item.pubDate, ahora),
-  }));
+
+  const noticias = [];
+  for (const [i, item] of items.entries()) {
+    const titulo = item.titulo.replace(new RegExp(`\\s*-\\s*${item.fuente}$`), '');
+    const lugar = detectarLugar(titulo);
+    let coords = null;
+    if (lugar) {
+      // Secuencial (no Promise.all): mismo límite de Nominatim que geo.js.
+      coords = await geocodificar(lugar).catch(() => null);
+    }
+    noticias.push({
+      id: i + 1,
+      tipo: clasificarTipo(titulo),
+      titulo,
+      fuente: item.fuente,
+      url: item.link,
+      hace: tiempoRelativo(item.pubDate, ahora),
+      lat: coords?.lat ?? null,
+      lon: coords?.lon ?? null,
+    });
+  }
 
   cache = { datos: noticias, obtenidoEn: Date.now() };
   return noticias;

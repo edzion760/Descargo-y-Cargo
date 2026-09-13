@@ -1,7 +1,11 @@
-import { Radio, ExternalLink, Fuel, ShieldPlus, Wrench, CreditCard } from 'lucide-react';
+import { useState } from 'react';
+import { Radio, ExternalLink, Bell, Fuel, ShieldPlus, Wrench, CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNoticiasVia, type Noticia } from '@/lib/use-noticias';
+import { useAuth } from '@/lib/use-auth';
+import { activarAlertasDeVia } from '@/lib/push';
 
 const TIPO_ESTILO: Record<Noticia['tipo'], { etiqueta: string; clase: string }> = {
   ACCIDENTE: { etiqueta: 'Accidente', clase: 'bg-red-500/15 text-red-400 border-red-500/30' },
@@ -20,6 +24,22 @@ const ALIANZAS = [
 
 export default function NoticiasYAlianzas() {
   const noticias = useNoticiasVia();
+  const { token, tipo } = useAuth();
+  const [estadoAlertas, setEstadoAlertas] = useState<'inactivo' | 'cargando' | 'activo' | 'error'>('inactivo');
+  const [errorAlertas, setErrorAlertas] = useState<string | null>(null);
+
+  async function activar() {
+    if (!token) return;
+    setEstadoAlertas('cargando');
+    setErrorAlertas(null);
+    try {
+      await activarAlertasDeVia(token);
+      setEstadoAlertas('activo');
+    } catch (err) {
+      setEstadoAlertas('error');
+      setErrorAlertas(err instanceof Error ? err.message : 'No se pudo activar');
+    }
+  }
 
   return (
     <>
@@ -68,32 +88,34 @@ export default function NoticiasYAlianzas() {
             </p>
           </div>
 
-          {/* Notificación geolocalizada de carga — apunte del fundador */}
-          <div className="mx-auto mt-6 max-w-2xl">
-            <div className="rounded-2xl border border-orange-500/30 bg-zinc-900 p-5 shadow-2xl">
-              <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-2xl">
-                  🚛
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Descargo & Cargo · ahora</p>
-                    <span className="text-[10px] text-zinc-600">push</span>
-                  </div>
-                  <p className="mt-1 text-sm font-semibold text-white">
-                    Carga nueva en <span className="text-orange-400">Bucaramanga, Santander</span>
-                  </p>
-                  <p className="mt-0.5 text-xs text-zinc-400">
-                    28 ton · Tractocamión · $5.4M (sobre el piso SICE-TAC ✓) ·{' '}
-                    <strong className="text-zinc-200">estás a 96 km</strong> — ¿la tomas?
-                  </p>
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-center text-xs text-zinc-600">
-              Sí: si hay carga ofertada y vienes pasando a menos de 100 km, la notificación llega a tu celular.
-              El radio es configurable (25 / 50 / 100 km) y solo se activa cuando marcas tu camión como "disponible".
-            </p>
+          {/* Alertas push reales, geolocalizadas: ver server/src/push.js */}
+          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-orange-500/30 bg-zinc-900 p-5 text-center shadow-2xl">
+            {!tipo ? (
+              <p className="text-sm text-zinc-400">
+                <span className="font-semibold text-white">Inicia sesión</span> para activar notificaciones cuando
+                haya una alerta de vía a menos de 50 km de ti.
+              </p>
+            ) : estadoAlertas === 'activo' ? (
+              <p className="flex items-center justify-center gap-2 text-sm font-semibold text-orange-400">
+                <Bell className="h-4 w-4" /> Alertas activas — te avisamos si hay algo a menos de 50 km
+              </p>
+            ) : (
+              <>
+                <Button
+                  onClick={activar}
+                  disabled={estadoAlertas === 'cargando'}
+                  className="gap-2 bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400"
+                >
+                  <Bell className="h-4 w-4" />
+                  {estadoAlertas === 'cargando' ? 'Activando…' : 'Activar alertas de vía cerca de mí'}
+                </Button>
+                <p className="mt-3 text-xs text-zinc-500">
+                  Pide permiso de ubicación y de notificaciones del navegador. Si hay una noticia de vía a menos de
+                  50 km de ti, te llega un aviso aunque no tengas la página abierta.
+                </p>
+                {errorAlertas && <p className="mt-2 text-xs text-red-400">{errorAlertas}</p>}
+              </>
+            )}
           </div>
         </div>
       </section>

@@ -63,8 +63,29 @@ model Usuario {
   terminosIp          String?
   eliminadoEn         DateTime?
 
-  publicador    Publicador?
-  transportador Transportador?
+  // Última ubicación reportada por el navegador (con permiso del usuario),
+  // para las alertas de vía geolocalizadas. Nula hasta que active la opción.
+  ultimaLat        Float?
+  ultimaLon        Float?
+  ultimaUbicacionEn DateTime?
+
+  publicador     Publicador?
+  transportador  Transportador?
+  suscripciones  SuscripcionPush[]
+}
+
+// Una fila por navegador/dispositivo donde el usuario activó las
+// notificaciones (Web Push estándar -- gratis, la entrega la hace el
+// navegador/SO, no un servicio de terceros pago).
+model SuscripcionPush {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 }
 
 model Publicador {

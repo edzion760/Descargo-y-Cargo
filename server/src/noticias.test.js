@@ -1,6 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clasificarTipo, tiempoRelativo, parsearItemsRss, esRelevante } from './noticias.js';
+import { clasificarTipo, tiempoRelativo, parsearItemsRss, esRelevante, detectarLugar } from './noticias.js';
+
+test('detecta un corredor conocido para poder geolocalizar', () => {
+  assert.equal(detectarLugar('Cierre total en la vía al Llano por derrumbe'), 'Villavicencio');
+});
+
+test('detecta La Línea como corredor', () => {
+  assert.equal(detectarLugar('Emergencia en La Línea: paso restringido'), 'Calarcá');
+});
+
+test('sin corredor conocido, no inventa una ubicación', () => {
+  assert.equal(detectarLugar('Cierre vial en una vereda sin nombre reconocible'), null);
+});
 
 test('rechaza noticias sin mención de vía/carretera aunque digan "accidente"', () => {
   assert.equal(esRelevante('David Alonso sufrió un duro accidente en la Moto 2 en San Marino'), false);
