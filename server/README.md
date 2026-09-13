@@ -4,8 +4,11 @@ Backend real (Node + Express + Prisma) que reemplaza los datos mock de
 `../app/src/data/mock.ts`. Sigue el stack definido en
 `../PLAN_INTEGRAL_V3.md` §4-5, con un subconjunto acotado del esquema
 completo — ver el comentario al inicio de `prisma/schema.prisma` para el
-detalle de qué queda fuera de este MVP (PostGIS, Oferta/Viaje, Wompi real,
-etc.) y cuándo se agrega.
+detalle de qué queda fuera de este MVP (PostGIS, Oferta/Viaje, etc.) y
+cuándo se agrega.
+
+En producción corre detrás de un Cloudflare Tunnel en `descargoycargo.com`
+(este mismo proceso sirve también el build de `../app`, ver `src/index.js`).
 
 ## Stack
 
@@ -40,13 +43,23 @@ Cuentas de prueba tras `npm run seed`:
 | GET | `/api/cargas` | opcional | Lista cargas disponibles; si el transportador está autenticado marca `desbloqueada` |
 | POST | `/api/cargas` | PUBLICADOR | Publica carga — rechaza precio bajo el piso SICE-TAC (422) |
 | GET | `/api/cargas/:id` | opcional | Detalle; revela `contacto` solo si está desbloqueada |
-| POST | `/api/cargas/:id/desbloqueo` | TRANSPORTADOR | Cobra 4% del flete (mín. $15.000, gratis con membresía ILIMITADA) y revela el contacto |
+| POST | `/api/cargas/:id/desbloqueo` | TRANSPORTADOR | Gratis con membresía ILIMITADA (revela el contacto directo); si no, cobra 4% del flete (mín. $15.000) vía Wompi y devuelve `checkoutUrl` |
+| POST | `/api/webhooks/wompi` | — (firma) | Wompi confirma aquí el pago; recién ahí el `PagoDesbloqueo` pasa a `VERIFICADO` |
 | GET | `/api/membresias/planes` | — | Los 4 planes (mismo contenido que hoy en el frontend) |
 | GET/POST | `/api/membresias/actual` | TRANSPORTADOR | Consulta / cambia de plan (simulado, sin pasarela real) |
 
+### Wompi (pagos)
+
+Sandbox: crea una cuenta gratis en [comercios.wompi.co](https://comercios.wompi.co)
+→ Desarrolladores, y copia las 3 llaves a `.env` (`WOMPI_PUBLIC_KEY`,
+`WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`). Sin esas llaves, el
+`checkoutUrl` se genera igual pero no es una transacción real. Configura el
+webhook en el dashboard de Wompi apuntando a
+`https://descargoycargo.com/api/webhooks/wompi`.
+
 ## Pendiente antes de producción
 
-- Pasarela de pagos real (Wompi) en vez del desbloqueo simulado.
+- Llaves de Wompi reales (producción) en vez de sandbox.
 - PostgreSQL + PostGIS para búsqueda por radio geográfico.
-- Oferta/Viaje (negociación y ejecución), KYC de verificación, AuditLog.
-- Conectar el frontend (`../app`) a esta API en vez de `src/data/mock.ts`.
+- Oferta/Viaje (negociación y ejecución), KYC nivel 2/3 (RNEC/RUNT,
+  requiere acceso a esos registros externos), AuditLog.

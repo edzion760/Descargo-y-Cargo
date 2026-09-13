@@ -71,12 +71,18 @@ function TarjetaCarga({
     setCargando(true);
     setError(null);
     try {
-      const data = await apiFetch<{ monto: number; contacto: Contacto }>(
+      const data = await apiFetch<{ monto: number; contacto?: Contacto; checkoutUrl?: string }>(
         `/api/cargas/${carga.id}/desbloqueo`,
         { method: 'POST', token }
       );
-      setContacto(data.contacto);
-      onDesbloqueada(carga.id, data.contacto);
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl; // paga en Wompi, vuelve a esta página
+        return;
+      }
+      if (data.contacto) {
+        setContacto(data.contacto);
+        onDesbloqueada(carga.id, data.contacto);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo desbloquear el contacto');
     } finally {
@@ -201,6 +207,28 @@ export default function Marketplace() {
     return () => window.removeEventListener('cargas:publicada', cargar);
   }, [cargar]);
 
+  // Al volver de pagar en Wompi (?wompi_carga=<id>): el webhook puede tardar
+  // unos segundos en confirmar, así que se reintenta unas cuantas veces.
+  const [verificandoPago, setVerificandoPago] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('wompi_carga')) return;
+    window.history.replaceState({}, '', window.location.pathname);
+    setVerificandoPago(true);
+
+    let intentos = 0;
+    const intervalo = setInterval(async () => {
+      intentos += 1;
+      await cargar();
+      if (intentos >= 5) {
+        clearInterval(intervalo);
+        setVerificandoPago(false);
+      }
+    }, 2500);
+    return () => clearInterval(intervalo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function marcarDesbloqueada(cargaId: number) {
     setCargas((prev) => prev.map((c) => (c.id === cargaId ? { ...c, desbloqueada: true } : c)));
   }
@@ -229,6 +257,9 @@ export default function Marketplace() {
 
         {cargando && <p className="mt-10 text-center text-sm text-zinc-500">Cargando cargas…</p>}
         {error && <p className="mt-10 text-center text-sm text-red-400">{error}</p>}
+        {verificandoPago && (
+          <p className="mt-10 text-center text-sm text-orange-400">Verificando tu pago con Wompi…</p>
+        )}
 
         {!cargando && !error && (
           <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -244,8 +275,8 @@ export default function Marketplace() {
         )}
 
         <p className="mt-8 text-center text-xs text-zinc-600">
-          * El desbloqueo cobra 4% del flete (mín. $15.000 COP) de forma real en el backend, pero
-          todavía sin pasarela de pago: en producción se procesa con Wompi (PSE, tarjeta, Nequi).
+          * El desbloqueo cobra 4% del flete (mín. $15.000 COP) vía Wompi (PSE, tarjeta, Nequi) — en
+          modo de pruebas mientras se lanza al público.
         </p>
 
         <div className="mx-auto mt-8 max-w-4xl rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">

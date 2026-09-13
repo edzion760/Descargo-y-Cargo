@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db.js';
 import { requireAuth, requireTipo } from '../middleware/auth.js';
+import { urlCheckout } from '../wompi.js';
 
 export const cargasRouter = Router();
 
@@ -121,17 +122,35 @@ cargasRouter.post('/:id/desbloqueo', requireAuth, requireTipo('TRANSPORTADOR'), 
 
   const monto = tarifaDesbloqueo(carga.precio, transportador.membresia?.tipo);
 
-  // Simulado: en producción esto se crea en PENDIENTE y se verifica por webhook de Wompi.
-  const pago = await prisma.pagoDesbloqueo.upsert({
+  // Gratis por membresía ILIMITADA: no hay nada que cobrar, se confirma de una vez.
+  if (monto === 0) {
+    await prisma.pagoDesbloqueo.upsert({
+      where: { cargaId_transportadorId: { cargaId, transportadorId: transportador.id } },
+      update: { estado: 'VERIFICADO' },
+      create: { cargaId, transportadorId: transportador.id, monto, estado: 'VERIFICADO' },
+    });
+    const publicador = await prisma.publicador.findUnique({
+      where: { id: carga.publicadorId },
+      select: { nombre: true, telefono: true },
+    });
+    return res.status(201).json({ monto, contacto: publicador });
+  }
+
+  // Con costo: se manda a pagar a Wompi. El webhook (/api/webhooks/wompi) confirma
+  // el pago y recién ahí queda VERIFICADO — ver GET /:id para el estado real.
+  const referencia = `carga${cargaId}-t${transportador.id}-${Date.now()}`;
+  await prisma.pagoDesbloqueo.upsert({
     where: { cargaId_transportadorId: { cargaId, transportadorId: transportador.id } },
-    update: {},
-    create: { cargaId, transportadorId: transportador.id, monto, estado: 'VERIFICADO' },
+    update: { monto, referencia, estado: 'PENDIENTE' },
+    create: { cargaId, transportadorId: transportador.id, monto, referencia, estado: 'PENDIENTE' },
   });
 
-  const publicador = await prisma.publicador.findUnique({
-    where: { id: carga.publicadorId },
-    select: { nombre: true, telefono: true },
+  const appUrl = process.env.APP_URL ?? 'http://localhost:4000';
+  const checkoutUrl = urlCheckout({
+    referencia,
+    montoEnCentavos: monto * 100,
+    redirectUrl: `${appUrl}/?wompi_carga=${cargaId}`,
   });
 
-  res.status(201).json({ monto: pago.monto, contacto: publicador });
+  res.status(201).json({ monto, checkoutUrl });
 });

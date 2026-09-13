@@ -124,7 +124,8 @@ model PagoDesbloqueo {
   cargaId         Int
   transportadorId Int
   monto           Int
-  estado          EstadoPago @default(VERIFICADO) // simulado: sin pasarela real todavía
+  referencia      String?    @unique // referencia única de Wompi; se regenera en cada reintento
+  estado          EstadoPago @default(PENDIENTE)
   createdAt       DateTime   @default(now())
 
   carga           Carga         @relation(fields: [cargaId], references: [id], onDelete: Cascade)

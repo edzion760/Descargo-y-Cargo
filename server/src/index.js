@@ -7,6 +7,7 @@ import cors from 'cors';
 import { authRouter } from './routes/auth.js';
 import { cargasRouter } from './routes/cargas.js';
 import { membresiasRouter } from './routes/membresias.js';
+import { webhooksRouter } from './routes/webhooks.js';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRouter);
 app.use('/api/cargas', cargasRouter);
 app.use('/api/membresias', membresiasRouter);
+app.use('/api/webhooks', webhooksRouter);
 
 // Sirve el build de app/ (npm run build en app/) para que un solo proceso/puerto
 // exponga frontend + API — así un único Cloudflare Tunnel cubre todo.
