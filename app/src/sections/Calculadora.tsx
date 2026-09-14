@@ -113,16 +113,18 @@ export default function Calculadora() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-zinc-400">Origen</Label>
+                  <Label htmlFor="calc-origen" className="text-zinc-400">Origen</Label>
                   <Input
+                    id="calc-origen"
                     value={origen}
                     onChange={(e) => setOrigen(e.target.value)}
                     className="border-zinc-700 bg-zinc-950 text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-zinc-400">Destino</Label>
+                  <Label htmlFor="calc-destino" className="text-zinc-400">Destino</Label>
                   <Input
+                    id="calc-destino"
                     value={destino}
                     onChange={(e) => setDestino(e.target.value)}
                     className="border-zinc-700 bg-zinc-950 text-white"
@@ -140,9 +142,9 @@ export default function Calculadora() {
               </Button>
 
               <div className="space-y-2">
-                <Label className="text-zinc-400">Tipo de carga</Label>
+                <Label htmlFor="calc-tipo-carga" className="text-zinc-400">Tipo de carga</Label>
                 <Select value={tipoCarga} onValueChange={setTipoCarga}>
-                  <SelectTrigger className="border-zinc-700 bg-zinc-950 text-white">
+                  <SelectTrigger id="calc-tipo-carga" className="border-zinc-700 bg-zinc-950 text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
@@ -166,6 +168,7 @@ export default function Calculadora() {
                   min={1}
                   max={34}
                   step={1}
+                  aria-label="Toneladas"
                 />
               </div>
 

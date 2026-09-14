@@ -117,7 +117,7 @@ function CamionAnimado({ origen, destino, duracionMs, inicio }: (typeof RUTAS_CA
     return () => cancelAnimationFrame(marcoRef.current);
   }, [origen, destino, duracionMs, inicio]);
 
-  return <Marker position={posicion} icon={iconoCamion} />;
+  return <Marker position={posicion} icon={iconoCamion} interactive={false} keyboard={false} />;
 }
 
 export default function MapaColombia() {
@@ -136,7 +136,7 @@ export default function MapaColombia() {
           <AjustarVista />
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {EMPRESAS_ACTIVAS.map((i) => (
-            <Marker key={CIUDADES[i].nombre} position={[CIUDADES[i].lat, CIUDADES[i].lon]} icon={iconoEmpresa} />
+            <Marker key={CIUDADES[i].nombre} position={[CIUDADES[i].lat, CIUDADES[i].lon]} icon={iconoEmpresa} interactive={false} keyboard={false} />
           ))}
           {RUTAS_CAMIONES.map((ruta, i) => (
             <CamionAnimado key={i} {...ruta} />

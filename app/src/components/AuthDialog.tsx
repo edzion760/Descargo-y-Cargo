@@ -134,8 +134,8 @@ export default function AuthDialog({
                     Escribe tu correo y te enviamos un enlace para elegir una nueva contraseña.
                   </p>
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-400">Correo</Label>
-                    <Input name="email" type="email" required className="border-zinc-700 bg-zinc-900 text-white" />
+                    <Label htmlFor="olvide-email" className="text-zinc-400">Correo</Label>
+                    <Input id="olvide-email" name="email" type="email" autoComplete="email" required className="border-zinc-700 bg-zinc-900 text-white" />
                   </div>
                   {error && <p className="text-sm text-red-400">{error}</p>}
                   <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
@@ -149,12 +149,12 @@ export default function AuthDialog({
             ) : (
               <form onSubmit={handleLogin} className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-400">Correo</Label>
-                  <Input name="email" type="email" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="login-email" className="text-zinc-400">Correo</Label>
+                  <Input id="login-email" name="email" type="email" autoComplete="email" required className="border-zinc-700 bg-zinc-900 text-white" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-400">Contraseña</Label>
-                  <Input name="password" type="password" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="login-password" className="text-zinc-400">Contraseña</Label>
+                  <Input id="login-password" name="password" type="password" autoComplete="current-password" required className="border-zinc-700 bg-zinc-900 text-white" />
                 </div>
                 {error && <p className="text-sm text-red-400">{error}</p>}
                 <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
@@ -174,9 +174,9 @@ export default function AuthDialog({
           <TabsContent value="registro" className="mt-4">
             <form onSubmit={handleRegister} className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-zinc-400">Soy…</Label>
+                <Label htmlFor="registro-tipo" className="text-zinc-400">Soy…</Label>
                 <Select name="tipo" defaultValue={defaultTipo}>
-                  <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white">
+                  <SelectTrigger id="registro-tipo" className="border-zinc-700 bg-zinc-900 text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
@@ -187,31 +187,31 @@ export default function AuthDialog({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-400">Nombre</Label>
-                  <Input name="nombre" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="registro-nombre" className="text-zinc-400">Nombre</Label>
+                  <Input id="registro-nombre" name="nombre" autoComplete="name" required className="border-zinc-700 bg-zinc-900 text-white" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-400">Ciudad</Label>
-                  <Input name="ciudad" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="registro-ciudad" className="text-zinc-400">Ciudad</Label>
+                  <Input id="registro-ciudad" name="ciudad" autoComplete="address-level2" required className="border-zinc-700 bg-zinc-900 text-white" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-400">Teléfono</Label>
-                  <Input name="telefono" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="registro-telefono" className="text-zinc-400">Teléfono</Label>
+                  <Input id="registro-telefono" name="telefono" autoComplete="tel" required className="border-zinc-700 bg-zinc-900 text-white" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-400">Cédula</Label>
-                  <Input name="documento" required minLength={6} className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="registro-documento" className="text-zinc-400">Cédula</Label>
+                  <Input id="registro-documento" name="documento" autoComplete="off" required minLength={6} className="border-zinc-700 bg-zinc-900 text-white" />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-zinc-400">Correo</Label>
-                <Input name="email" type="email" required className="border-zinc-700 bg-zinc-900 text-white" />
+                <Label htmlFor="registro-email" className="text-zinc-400">Correo</Label>
+                <Input id="registro-email" name="email" type="email" autoComplete="email" required className="border-zinc-700 bg-zinc-900 text-white" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-zinc-400">Contraseña</Label>
-                <Input name="password" type="password" required minLength={8} className="border-zinc-700 bg-zinc-900 text-white" />
+                <Label htmlFor="registro-password" className="text-zinc-400">Contraseña</Label>
+                <Input id="registro-password" name="password" type="password" autoComplete="new-password" required minLength={8} className="border-zinc-700 bg-zinc-900 text-white" />
               </div>
               <div className="flex items-start gap-2 pt-1">
                 <Checkbox

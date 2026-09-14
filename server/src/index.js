@@ -88,8 +88,13 @@ if (fs.existsSync(distDir)) {
       },
     })
   );
+  // Solo estas rutas existen en react-router (App.tsx) -- cualquier otra
+  // ruta debe devolver 404 real en vez de servir index.html con 200
+  // (soft-404: confunde a Google y a herramientas de enlaces rotos).
+  const RUTAS_SPA = new Set(['/', '/restablecer']);
   app.use((req, res, next) => {
     if (req.path.startsWith('/api')) return next();
+    if (!RUTAS_SPA.has(req.path)) return next();
     res.setHeader('Cache-Control', 'no-cache');
     res.sendFile(path.join(distDir, 'index.html'));
   });

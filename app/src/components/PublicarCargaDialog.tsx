@@ -111,14 +111,14 @@ export default function PublicarCargaDialog({
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-zinc-400">Título</Label>
-                <Input name="titulo" required placeholder="Ej. Café pergamino en sacos" className="border-zinc-700 bg-zinc-900 text-white" />
+                <Label htmlFor="carga-titulo" className="text-zinc-400">Título</Label>
+                <Input id="carga-titulo" name="titulo" required placeholder="Ej. Café pergamino en sacos" className="border-zinc-700 bg-zinc-900 text-white" />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-zinc-400">Ruta</Label>
+                <Label htmlFor="carga-ruta" className="text-zinc-400">Ruta</Label>
                 <Select value={String(rutaIdx)} onValueChange={(v) => setRutaIdx(Number(v))}>
-                  <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white">
+                  <SelectTrigger id="carga-ruta" className="border-zinc-700 bg-zinc-900 text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
@@ -133,9 +133,9 @@ export default function PublicarCargaDialog({
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-400">Tipo de carga</Label>
+                  <Label htmlFor="carga-tipo" className="text-zinc-400">Tipo de carga</Label>
                   <Select value={tipoCarga} onValueChange={setTipoCarga}>
-                    <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white">
+                    <SelectTrigger id="carga-tipo" className="border-zinc-700 bg-zinc-900 text-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
@@ -146,8 +146,9 @@ export default function PublicarCargaDialog({
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-400">Toneladas</Label>
+                  <Label htmlFor="carga-toneladas" className="text-zinc-400">Toneladas</Label>
                   <Input
+                    id="carga-toneladas"
                     type="number"
                     min={1}
                     max={34}
@@ -160,9 +161,9 @@ export default function PublicarCargaDialog({
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-400">Tipo de publicación</Label>
+                  <Label htmlFor="carga-tipo-publicacion" className="text-zinc-400">Tipo de publicación</Label>
                   <Select name="tipoPublicacion" defaultValue="NACIONAL">
-                    <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white">
+                    <SelectTrigger id="carga-tipo-publicacion" className="border-zinc-700 bg-zinc-900 text-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
@@ -173,15 +174,15 @@ export default function PublicarCargaDialog({
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-400">Fecha de carga</Label>
-                  <Input name="fechaCarga" type="date" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="carga-fecha" className="text-zinc-400">Fecha de carga</Label>
+                  <Input id="carga-fecha" name="fechaCarga" type="date" required className="border-zinc-700 bg-zinc-900 text-white" />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-zinc-400">Vehículo requerido</Label>
+                <Label htmlFor="carga-vehiculo" className="text-zinc-400">Vehículo requerido</Label>
                 <Select name="vehiculoRequerido" defaultValue={CONFIGURACIONES_VEHICULO[0].label} required>
-                  <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white">
+                  <SelectTrigger id="carga-vehiculo" className="border-zinc-700 bg-zinc-900 text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
@@ -194,10 +195,10 @@ export default function PublicarCargaDialog({
 
               <div className="space-y-1.5">
                 <div className="flex items-baseline justify-between">
-                  <Label className="text-zinc-400">Flete ofrecido (COP)</Label>
+                  <Label htmlFor="carga-precio" className="text-zinc-400">Flete ofrecido (COP)</Label>
                   <span className="text-xs text-zinc-500">Piso SICE-TAC: {formatCOP(piso)}</span>
                 </div>
-                <Input name="precio" type="number" min={piso} required defaultValue={piso} className="border-zinc-700 bg-zinc-900 text-white" />
+                <Input id="carga-precio" name="precio" type="number" min={piso} required defaultValue={piso} className="border-zinc-700 bg-zinc-900 text-white" />
               </div>
 
               {error && <p className="text-sm text-red-400">{error}</p>}
