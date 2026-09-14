@@ -8,10 +8,14 @@
 
 const REMITENTE = 'Descargo & Cargo <notificaciones@descargoycargo.com>';
 
+// Devuelve si el envío realmente se entregó a Resend (2xx). Los llamadores
+// transaccionales (registro, pago) ignoran el valor a propósito -- un correo
+// caído nunca debe bloquear esos flujos. La campaña de prospectos sí lo usa:
+// necesita saber qué marcar como contactado de verdad.
 async function enviarCorreo({ para, asunto, html }) {
   if (!process.env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY no configurada -- correo no enviado:', asunto);
-    return;
+    return false;
   }
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -30,9 +34,14 @@ async function enviarCorreo({ para, asunto, html }) {
         html: `<!doctype html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`,
       }),
     });
-    if (!res.ok) console.error('Resend rechazó el correo:', res.status, await res.text());
+    if (!res.ok) {
+      console.error('Resend rechazó el correo:', res.status, await res.text());
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error('No se pudo enviar el correo:', err);
+    return false;
   }
 }
 

@@ -33,15 +33,30 @@ async function main() {
   console.log(`Enviando a ${pendientes.length} prospectos...`);
 
   let enviados = 0;
+  let fallidosSeguidos = 0;
   for (const p of pendientes) {
-    await enviarInvitacionProspecto(p.email, { nombre: p.nombre ?? 'equipo', id: p.id });
-    await prisma.prospecto.update({ where: { id: p.id }, data: { contactadoEn: new Date() } });
-    enviados++;
-    if (enviados % 50 === 0) console.log(`${enviados}/${pendientes.length}...`);
+    const ok = await enviarInvitacionProspecto(p.email, { nombre: p.nombre ?? 'equipo', id: p.id });
+    if (ok) {
+      await prisma.prospecto.update({ where: { id: p.id }, data: { contactadoEn: new Date() } });
+      enviados++;
+      fallidosSeguidos = 0;
+      if (enviados % 50 === 0) console.log(`${enviados}/${pendientes.length}...`);
+    } else {
+      // No marcamos contactadoEn: si no se marcara así, la próxima corrida
+      // (idempotente) los saltaría para siempre creyendo que ya se enviaron.
+      fallidosSeguidos++;
+      // 5 fallos seguidos = típicamente cuota diaria de Resend agotada, no
+      // un problema puntual de un correo -- seguir insistiendo solo quema
+      // tiempo (y en el log, ruido) hasta que se reinicie mañana.
+      if (fallidosSeguidos >= 5) {
+        console.error(`Se cortó tras ${fallidosSeguidos} fallos seguidos (¿cuota diaria de Resend agotada?). Reintenta más tarde.`);
+        break;
+      }
+    }
     await new Promise((r) => setTimeout(r, 550)); // ~2/seg, dentro del límite gratuito de Resend
   }
 
-  console.log(`Listo: ${enviados} correos enviados.`);
+  console.log(`Listo: ${enviados} correos realmente enviados (de ${pendientes.length} intentados).`);
 }
 
 await main();
