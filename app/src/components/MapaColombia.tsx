@@ -1,11 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import { MapContainer, ImageOverlay, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // Mapa ilustrativo de actividad en la red — las posiciones y el movimiento
 // son animación de ambiente (no telemetría real todavía; eso llega con
 // Oferta/Viaje). Las ciudades sí son coordenadas reales de Colombia.
+//
+// El fondo NO usa tiles de un servidor externo: primero tile.openstreetmap.org
+// devolvió 403 en producción (esos servidores son solo para uso ligero, ver
+// osm.wiki/Tile_usage_policy), y las tiles gratis de CARTO resultaron pedir
+// una API key para tráfico real. En vez de seguir dependiendo de un tercero,
+// se usa una imagen estática propia (app/public/mapas/colombia-oscuro.png,
+// recoloreada del blanco original a partir de "Colombiamapblank.png" de
+// Wikimedia Commons, dominio público) posicionada con coordenadas reales
+// vía ImageOverlay -- cero llamadas de red, cero riesgo de que la bloqueen.
+const MAPA_BOUNDS: [[number, number], [number, number]] = [
+  [-4.5, -81.35],
+  [12.5, -66.65],
+];
 
 interface Ciudad {
   nombre: string;
@@ -130,19 +143,11 @@ export default function MapaColombia() {
           scrollWheelZoom={false}
           dragging={false}
           zoomControl={false}
-          className="h-full w-full [&_.leaflet-control-attribution]:bg-zinc-950/70 [&_.leaflet-control-attribution]:text-[9px] [&_.leaflet-control-attribution]:text-zinc-500 [&_.leaflet-control-attribution_a]:text-zinc-400"
+          attributionControl={false}
+          className="h-full w-full"
         >
           <AjustarVista />
-          {/* Las tiles de tile.openstreetmap.org son solo para uso ligero/
-              prototipos (osm.wiki/Tile_usage_policy) -- bloquearon el sitio
-              con 403 al recibir tráfico real de producción. CARTO ofrece
-              tiles gratis pensadas para justamente este caso (apps en
-              producción con tráfico moderado); requieren atribución, por
-              eso el control de abajo ya no está desactivado. */}
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          />
+          <ImageOverlay url="/mapas/colombia-oscuro.png" bounds={MAPA_BOUNDS} />
           {EMPRESAS_ACTIVAS.map((i) => (
             <Marker key={CIUDADES[i].nombre} position={[CIUDADES[i].lat, CIUDADES[i].lon]} icon={iconoEmpresa} interactive={false} keyboard={false} />
           ))}
