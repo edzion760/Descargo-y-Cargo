@@ -130,11 +130,19 @@ export default function MapaColombia() {
           scrollWheelZoom={false}
           dragging={false}
           zoomControl={false}
-          attributionControl={false}
-          className="h-full w-full"
+          className="h-full w-full [&_.leaflet-control-attribution]:bg-zinc-950/70 [&_.leaflet-control-attribution]:text-[9px] [&_.leaflet-control-attribution]:text-zinc-500 [&_.leaflet-control-attribution_a]:text-zinc-400"
         >
           <AjustarVista />
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          {/* Las tiles de tile.openstreetmap.org son solo para uso ligero/
+              prototipos (osm.wiki/Tile_usage_policy) -- bloquearon el sitio
+              con 403 al recibir tráfico real de producción. CARTO ofrece
+              tiles gratis pensadas para justamente este caso (apps en
+              producción con tráfico moderado); requieren atribución, por
+              eso el control de abajo ya no está desactivado. */}
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          />
           {EMPRESAS_ACTIVAS.map((i) => (
             <Marker key={CIUDADES[i].nombre} position={[CIUDADES[i].lat, CIUDADES[i].lon]} icon={iconoEmpresa} interactive={false} keyboard={false} />
           ))}
