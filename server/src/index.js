@@ -28,7 +28,9 @@ app.set('trust proxy', 1);
 // helmet (X-Frame-Options, HSTS, etc.) sí quedan activas.
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*' }));
-app.use(express.json());
+// rawBody: necesario para verificar la firma del webhook de Resend, que se
+// calcula sobre los bytes exactos recibidos (no sobre el JSON re-serializado).
+app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf.toString('utf8'); } }));
 
 // Cloudflare ya entrega la IP real del cliente en este header (más
 // confiable detrás del túnel que fiarse solo de X-Forwarded-For).
