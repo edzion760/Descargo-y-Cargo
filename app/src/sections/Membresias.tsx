@@ -18,7 +18,7 @@ interface Plan {
 }
 
 export default function Membresias() {
-  const { token, tipo: tipoUsuario } = useAuth();
+  const { autenticado, tipo: tipoUsuario } = useAuth();
   const [planes, setPlanes] = useState<Plan[]>([]);
   const [planActual, setPlanActual] = useState<string | null>(null);
   const [cambiando, setCambiando] = useState<string | null>(null);
@@ -29,21 +29,21 @@ export default function Membresias() {
   }, []);
 
   useEffect(() => {
-    if (token && tipoUsuario === 'TRANSPORTADOR') {
-      apiFetch<{ tipo: string }>('/api/membresias/actual', { token })
+    if (autenticado && tipoUsuario === 'TRANSPORTADOR') {
+      apiFetch<{ tipo: string }>('/api/membresias/actual')
         .then((m) => setPlanActual(m.tipo))
         .catch(() => setPlanActual(null));
     } else {
       setPlanActual(null);
     }
-  }, [token, tipoUsuario]);
+  }, [autenticado, tipoUsuario]);
 
   async function elegirPlan(plan: Plan) {
-    if (!token) return setAuthAbierto(true);
+    if (!autenticado) return setAuthAbierto(true);
     if (tipoUsuario !== 'TRANSPORTADOR') return;
     setCambiando(plan.tipo);
     try {
-      await apiFetch('/api/membresias/actual', { method: 'POST', token, body: { tipo: plan.tipo } });
+      await apiFetch('/api/membresias/actual', { method: 'POST', body: { tipo: plan.tipo } });
       setPlanActual(plan.tipo);
     } catch (err) {
       alert(err instanceof ApiError ? err.message : 'No se pudo cambiar de plan');

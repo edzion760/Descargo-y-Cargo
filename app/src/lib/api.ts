@@ -4,14 +4,12 @@ export class ApiError extends Error {}
 
 export async function apiFetch<T>(
   path: string,
-  options: { method?: string; body?: unknown; token?: string | null } = {}
+  options: { method?: string; body?: unknown } = {}
 ): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     method: options.method ?? 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
-    },
+    credentials: 'include', // envía/recibe la cookie httpOnly de sesión
+    headers: { 'Content-Type': 'application/json' },
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 

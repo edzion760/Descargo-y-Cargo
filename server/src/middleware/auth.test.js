@@ -6,7 +6,7 @@ import { optionalAuth } from './auth.js';
 process.env.JWT_SECRET ??= 'test-secret';
 
 function llamar(token) {
-  const req = { headers: token ? { authorization: `Bearer ${token}` } : {} };
+  const req = { cookies: token ? { dyc_token: token } : {} };
   let siguiente = false;
   optionalAuth(req, {}, () => (siguiente = true));
   return { req, siguiente };

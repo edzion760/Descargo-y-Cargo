@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { authRouter } from './routes/auth.js';
@@ -27,7 +28,12 @@ app.set('trust proxy', 1);
 // de arriesgar romper el mapa en silencio; el resto de cabeceras de
 // helmet (X-Frame-Options, HSTS, etc.) sí quedan activas.
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
-app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*' }));
+// credentials:true + origin explícito (nunca '*') -- la sesión ahora vive en
+// una cookie httpOnly, y el navegador solo la envía en cross-origin si el
+// servidor confirma un origen exacto. En local (sin CORS_ORIGIN) se refleja
+// el origen de la petición para no romper el dev server de Vite.
+app.use(cors({ origin: process.env.CORS_ORIGIN ?? true, credentials: true }));
+app.use(cookieParser());
 // rawBody: necesario para verificar la firma del webhook de Resend, que se
 // calcula sobre los bytes exactos recibidos (no sobre el JSON re-serializado).
 app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf.toString('utf8'); } }));

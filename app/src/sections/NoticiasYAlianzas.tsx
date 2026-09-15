@@ -24,16 +24,16 @@ const ALIANZAS = [
 
 export default function NoticiasYAlianzas() {
   const noticias = useNoticiasVia();
-  const { token, tipo } = useAuth();
+  const { autenticado, tipo } = useAuth();
   const [estadoAlertas, setEstadoAlertas] = useState<'inactivo' | 'cargando' | 'activo' | 'error'>('inactivo');
   const [errorAlertas, setErrorAlertas] = useState<string | null>(null);
 
   async function activar() {
-    if (!token) return;
+    if (!autenticado) return;
     setEstadoAlertas('cargando');
     setErrorAlertas(null);
     try {
-      await activarAlertasDeVia(token);
+      await activarAlertasDeVia();
       setEstadoAlertas('activo');
     } catch (err) {
       setEstadoAlertas('error');

@@ -7,7 +7,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCOP, tarifaDesbloqueo } from '@/data/mock';
 import { apiFetch, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/use-auth';
-import { idDesdeToken } from '@/lib/jwt';
 import AuthDialog from '@/components/AuthDialog';
 
 interface Carga {
@@ -41,7 +40,7 @@ function TarjetaCarga({
   onDesbloqueada: (cargaId: number, contacto: Contacto) => void;
   onRequireAuth: () => void;
 }) {
-  const { token, tipo } = useAuth();
+  const { autenticado, miId, tipo } = useAuth();
   const [contacto, setContacto] = useState<Contacto | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +50,9 @@ function TarjetaCarga({
   // Ya desbloqueada (p. ej. tras recargar la página): el listado no trae el
   // contacto, así que se pide al detalle en vez de mostrar un mensaje vacío.
   useEffect(() => {
-    if (!carga.desbloqueada || contacto || !token) return;
+    if (!carga.desbloqueada || contacto || !autenticado) return;
     let cancelado = false;
-    apiFetch<{ contacto: Contacto | null }>(`/api/cargas/${carga.id}`, { token })
+    apiFetch<{ contacto: Contacto | null }>(`/api/cargas/${carga.id}`)
       .then((data) => {
         if (!cancelado && data.contacto) setContacto(data.contacto);
       })
@@ -61,10 +60,10 @@ function TarjetaCarga({
     return () => {
       cancelado = true;
     };
-  }, [carga.desbloqueada, carga.id, contacto, token]);
+  }, [carga.desbloqueada, carga.id, contacto, autenticado]);
 
   async function desbloquear() {
-    if (!token) return onRequireAuth();
+    if (!autenticado) return onRequireAuth();
     if (tipo !== 'TRANSPORTADOR') {
       setError('Solo los transportadores pueden desbloquear contactos');
       return;
@@ -74,7 +73,7 @@ function TarjetaCarga({
     try {
       const data = await apiFetch<{ monto: number; contacto?: Contacto; checkoutUrl?: string }>(
         `/api/cargas/${carga.id}/desbloqueo`,
-        { method: 'POST', token }
+        { method: 'POST' }
       );
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl; // paga en Wompi, vuelve a esta página
@@ -92,7 +91,6 @@ function TarjetaCarga({
   }
 
   const desbloqueada = carga.desbloqueada || !!contacto;
-  const miId = token ? idDesdeToken(token) : null;
 
   return (
     <Card className={`relative overflow-hidden border-zinc-800 bg-zinc-900/60 transition-all hover:border-zinc-700 ${carga.destacada ? 'ring-1 ring-amber-500/40' : ''}`}>
@@ -189,21 +187,21 @@ export default function Marketplace() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authAbierto, setAuthAbierto] = useState(false);
-  const { token } = useAuth();
+  const { autenticado } = useAuth();
 
   const cargar = useCallback(async () => {
     setCargando(true);
     setError(null);
     try {
       const query = filtro !== 'TODAS' ? `?tipoPublicacion=${filtro}` : '';
-      const data = await apiFetch<Carga[]>(`/api/cargas${query}`, { token });
+      const data = await apiFetch<Carga[]>(`/api/cargas${query}`);
       setCargas(data);
     } catch {
       setError('No se pudo conectar con la API. ¿Está corriendo el servidor (server/) en el puerto 4000?');
     } finally {
       setCargando(false);
     }
-  }, [filtro, token]);
+  }, [filtro, autenticado]);
 
   useEffect(() => {
     cargar();

@@ -35,6 +35,20 @@ function signToken(usuario) {
   });
 }
 
+// httpOnly: inaccesible para JS del navegador -- si algún día aparece un XSS,
+// no puede robar la sesión leyendo localStorage (así vivía el token antes).
+// secure: req.secure ya considera el X-Forwarded-Proto del Cloudflare Tunnel
+// (ver 'trust proxy' en index.js), así que sigue funcionando en local (http).
+function ponerCookieSesion(req, res, usuario) {
+  res.cookie('dyc_token', signToken(usuario), {
+    httpOnly: true,
+    secure: req.secure,
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/',
+  });
+}
+
 authRouter.post('/register', async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -77,7 +91,8 @@ authRouter.post('/register', async (req, res) => {
   // atrapa sus propios errores, un correo caído nunca debe romper el registro.
   enviarBienvenida(email, { nombre, tipo });
 
-  res.status(201).json({ token: signToken(usuario), tipo: usuario.tipo });
+  ponerCookieSesion(req, res, usuario);
+  res.status(201).json({ id: usuario.id, tipo: usuario.tipo });
 });
 
 authRouter.post('/login', async (req, res) => {
@@ -92,7 +107,19 @@ authRouter.post('/login', async (req, res) => {
     return res.status(401).json({ error: 'Esta cuenta fue eliminada' });
   }
 
-  res.json({ token: signToken(usuario), tipo: usuario.tipo });
+  ponerCookieSesion(req, res, usuario);
+  res.json({ id: usuario.id, tipo: usuario.tipo });
+});
+
+authRouter.post('/logout', (req, res) => {
+  res.clearCookie('dyc_token', { path: '/' });
+  res.json({ ok: true });
+});
+
+// El frontend ya no puede leer el JWT (vive en cookie httpOnly) -- esta es
+// la forma de saber, al cargar la página, si hay sesión y quién es.
+authRouter.get('/me', requireAuth, (req, res) => {
+  res.json({ id: req.user.sub, tipo: req.user.tipo });
 });
 
 const RESET_VIGENCIA_MS = 60 * 60 * 1000; // 1 hora

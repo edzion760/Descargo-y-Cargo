@@ -11,7 +11,7 @@ function base64UrlAUint8Array(base64Url: string): Uint8Array {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
-export async function activarAlertasDeVia(token: string): Promise<void> {
+export async function activarAlertasDeVia(): Promise<void> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     throw new Error('Este navegador no soporta notificaciones push');
   }
@@ -35,12 +35,10 @@ export async function activarAlertasDeVia(token: string): Promise<void> {
   const json = suscripcion.toJSON();
   await apiFetch('/api/push/suscribir', {
     method: 'POST',
-    token,
     body: { endpoint: json.endpoint, keys: json.keys },
   });
   await apiFetch('/api/push/ubicacion', {
     method: 'POST',
-    token,
     body: { lat: posicion.coords.latitude, lon: posicion.coords.longitude },
   });
 }

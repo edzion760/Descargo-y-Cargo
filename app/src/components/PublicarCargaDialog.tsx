@@ -29,7 +29,7 @@ export default function PublicarCargaDialog({
   onOpenChange: (open: boolean) => void;
   onPublicada: () => void;
 }) {
-  const { token } = useAuth();
+  const { autenticado } = useAuth();
   const [rutaIdx, setRutaIdx] = useState(0);
   const [tipoCarga, setTipoCarga] = useState<string>('general');
   const [toneladas, setToneladas] = useState(20);
@@ -45,7 +45,7 @@ export default function PublicarCargaDialog({
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!token) return;
+    if (!autenticado) return;
     setError(null);
 
     const form = new FormData(e.currentTarget);
@@ -59,7 +59,6 @@ export default function PublicarCargaDialog({
     try {
       await apiFetch('/api/cargas', {
         method: 'POST',
-        token,
         body: {
           titulo: String(form.get('titulo')),
           tipoCarga: MULTIPLICADORES_TIPO_CARGA.find((t) => t.id === tipoCarga)?.label ?? tipoCarga,

@@ -1,49 +1,56 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { apiFetch } from './api';
 import { AuthContext, type RegisterInput, type Tipo } from './auth-context';
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('dyc_token'));
-  const [tipo, setTipo] = useState<Tipo | null>(() => localStorage.getItem('dyc_tipo') as Tipo | null);
+interface Sesion {
+  id: number;
+  tipo: Tipo;
+}
 
-  function persist(token: string, tipo: Tipo) {
-    localStorage.setItem('dyc_token', token);
-    localStorage.setItem('dyc_tipo', tipo);
-    setToken(token);
-    setTipo(tipo);
-  }
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [sesion, setSesion] = useState<Sesion | null>(null);
+  const [cargando, setCargando] = useState(true);
+
+  // El JWT vive en una cookie httpOnly (el JS ya no puede leerlo) -- esta es
+  // la única forma de saber, al cargar la página, si hay sesión activa.
+  useEffect(() => {
+    apiFetch<Sesion>('/api/auth/me')
+      .then(setSesion)
+      .catch(() => setSesion(null))
+      .finally(() => setCargando(false));
+  }, []);
 
   async function login(email: string, password: string) {
-    const data = await apiFetch<{ token: string; tipo: Tipo }>('/api/auth/login', {
-      method: 'POST',
-      body: { email, password },
-    });
-    persist(data.token, data.tipo);
+    setSesion(await apiFetch<Sesion>('/api/auth/login', { method: 'POST', body: { email, password } }));
   }
 
   async function register(input: RegisterInput) {
-    const data = await apiFetch<{ token: string; tipo: Tipo }>('/api/auth/register', {
-      method: 'POST',
-      body: input,
-    });
-    persist(data.token, data.tipo);
+    setSesion(await apiFetch<Sesion>('/api/auth/register', { method: 'POST', body: input }));
   }
 
-  function logout() {
-    localStorage.removeItem('dyc_token');
-    localStorage.removeItem('dyc_tipo');
-    setToken(null);
-    setTipo(null);
+  async function logout() {
+    await apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    setSesion(null);
   }
 
   // Derecho de supresión (Ley 1581 de 2012): baja inmediata, en cualquier momento.
   async function eliminarCuenta() {
-    await apiFetch('/api/auth/me', { method: 'DELETE', token });
-    logout();
+    await apiFetch('/api/auth/me', { method: 'DELETE' });
+    await logout();
   }
 
   return (
-    <AuthContext.Provider value={{ token, tipo, login, register, logout, eliminarCuenta }}>
+    <AuthContext.Provider
+      value={{
+        autenticado: !cargando && sesion !== null,
+        miId: sesion?.id ?? null,
+        tipo: sesion?.tipo ?? null,
+        login,
+        register,
+        logout,
+        eliminarCuenta,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

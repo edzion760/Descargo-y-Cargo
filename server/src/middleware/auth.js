@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 export function requireAuth(req, res, next) {
-  const header = req.headers.authorization;
-  const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
+  const token = req.cookies?.dyc_token;
   if (!token) return res.status(401).json({ error: 'Falta el token de autenticación' });
 
   try {
@@ -19,8 +18,7 @@ export function requireAuth(req, res, next) {
 // vencido o inválido (ej. tras rotar JWT_SECRET) simplemente se trata como
 // "sin sesión" -- nunca bloquea la respuesta con 401.
 export function optionalAuth(req, _res, next) {
-  const header = req.headers.authorization;
-  const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
+  const token = req.cookies?.dyc_token;
   if (token) {
     try {
       req.user = jwt.verify(token, process.env.JWT_SECRET);
