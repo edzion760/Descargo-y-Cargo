@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, ImageOverlay, Marker, useMap } from 'react-leaflet';
+import { MapContainer, GeoJSON, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import colombiaGeoJson from '@/data/colombia.geo.json';
 
 // Mapa ilustrativo de actividad en la red — las posiciones y el movimiento
 // son animación de ambiente (no telemetría real todavía; eso llega con
@@ -10,15 +11,19 @@ import 'leaflet/dist/leaflet.css';
 // El fondo NO usa tiles de un servidor externo: primero tile.openstreetmap.org
 // devolvió 403 en producción (esos servidores son solo para uso ligero, ver
 // osm.wiki/Tile_usage_policy), y las tiles gratis de CARTO resultaron pedir
-// una API key para tráfico real. En vez de seguir dependiendo de un tercero,
-// se usa una imagen estática propia (app/public/mapas/colombia-oscuro.png,
-// recoloreada del blanco original a partir de "Colombiamapblank.png" de
-// Wikimedia Commons, dominio público) posicionada con coordenadas reales
-// vía ImageOverlay -- cero llamadas de red, cero riesgo de que la bloqueen.
-const MAPA_BOUNDS: [[number, number], [number, number]] = [
-  [-4.5, -81.35],
-  [12.5, -66.65],
-];
+// una API key para tráfico real. Tampoco usa una imagen estática con bounds
+// calculados a mano -- ese primer intento (ImageOverlay + coordenadas
+// estimadas) dejó camiones y ciudades "flotando" fuera de la silueta porque
+// el recuadro geográfico de la imagen era una aproximación, no un dato real.
+// En vez de eso, se dibuja el contorno real de Colombia como geometría
+// (GeoJSON, Natural Earth 1:110m, dominio público) vía <GeoJSON> de Leaflet:
+// los marcadores usan las mismas coordenadas lat/lon reales que el contorno,
+// así que quedan alineados por construcción, sin calibrar nada a mano.
+const ESTILO_COLOMBIA: L.PathOptions = {
+  fillColor: '#27272e',
+  fillOpacity: 0.92,
+  stroke: false,
+};
 
 interface Ciudad {
   nombre: string;
@@ -147,7 +152,7 @@ export default function MapaColombia() {
           className="h-full w-full"
         >
           <AjustarVista />
-          <ImageOverlay url="/mapas/colombia-oscuro.png" bounds={MAPA_BOUNDS} />
+          <GeoJSON data={colombiaGeoJson as GeoJSON.GeoJsonObject} style={ESTILO_COLOMBIA} interactive={false} />
           {EMPRESAS_ACTIVAS.map((i) => (
             <Marker key={CIUDADES[i].nombre} position={[CIUDADES[i].lat, CIUDADES[i].lon]} icon={iconoEmpresa} interactive={false} keyboard={false} />
           ))}
