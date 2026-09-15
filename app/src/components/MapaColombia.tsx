@@ -150,6 +150,7 @@ export default function MapaColombia() {
           zoomControl={false}
           attributionControl={false}
           className="h-full w-full"
+          style={{ background: 'transparent' }}
         >
           <AjustarVista />
           <GeoJSON data={colombiaGeoJson as GeoJSON.GeoJsonObject} style={ESTILO_COLOMBIA} interactive={false} />
