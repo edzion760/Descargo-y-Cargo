@@ -239,18 +239,39 @@ El sistema de costos eficientes (**SICE-TAC**) es la evolución del esquema de t
 ```
                     Carga pesada (camiones)
                               ▲
-              CargoX (BR)     │   ◄── ¡NADIE en Colombia
-              managed flete   │      combina marketplace +
-                              │      cumplimiento SICE-TAC!
+              CargoX (BR)     │      FletX, Liftit, CargaYa
+              managed flete   │      (escala/capital alto)
+                              │
         Enterprise ───────────┼─────────── Independiente
-                              │      ★ DESCARGO & CARGO 2.0 ★
-              CleverMarket    │      (posición objetivo)
-              Cubbo, IGO      │
+                              │      Kamyon, GoCargo,
+              CleverMarket    │      Boletín de Carga
+              Cubbo, IGO      │      ★ DESCARGO & CARGO 2.0 ★
+                              │      (hueco: SICE-TAC + KYC + gratis para entrar)
                               ▼
                     Última milla / paquetes / domicilios
 ```
 
-**Conclusión:** el espacio "marketplace de carga pesada + cumplimiento regulatorio integrado + transportador independiente" está **vacío en Colombia**. CargoX valida el mercado pero su modelo es enterprise y no está aquí; los locales están en última milla.
+**Conclusión (corregida 2026-09-16 — la versión anterior de este documento decía que el espacio estaba "vacío en Colombia"; una revisión real de mercado lo desmiente):** SÍ hay competencia directa colombiana de carga pesada — ver §4.7. Lo que sigue vacío, verificado contra los 6 sitios de §4.7, es la combinación específica **marketplace abierto + piso SICE-TAC aplicado en cada precio + KYC gremial + registro gratis en minutos**. Cada competidor tiene 1-2 de esas piezas, ninguno las 4.
+
+---
+
+### 4.7 🇨🇴 Competidores directos colombianos de carga pesada (revisión 2026-09-16)
+
+Estos 6 sí operan en el mismo negocio que Descargo & Cargo — conectar generador de carga con transportador/camión en Colombia — a diferencia de CargoX (BR, managed enterprise), 99 (pasajeros), CleverMarket/Cubbo/IGO (última milla/productos) de §4.1-4.5, que son referencias de modelo, no competencia directa.
+
+| Plataforma | Qué es | Escala / prueba | Modelo de ingreso visible | Lección clave |
+|---|---|---|---|---|
+| **FletX** (fletx.co) | "Ecosistema" con 3 roles (conductor/generador/propietario) + Store de insumos + GPS propio | +25.000 conductores, +35.000 vehículos, +365 generadores; prensa nacional (Forbes, Portafolio); empresa matriz con 40 años en transporte tradicional | Multi-línea: marketplace + tarjeta débito de anticipos + seguros + tienda + GPS. Sin precio público — todo generador/propietario pasa por "Contáctanos" (ventas asistidas) | 🔑 El dinero grande está en anticipos+seguros, no en la comisión de match — mismo patrón que CargoX (§4.1). Pero su onboarding B2B lento deja hueco para self-service |
+| **Liftit** (soylifter.com) | Marketplace on-demand: pides camión, ves precio/tiempo al instante, matching con el conductor más cercano | Fundada 2017 Bogotá, 300+ empleados, +3.000 conductores ("Lifters"), opera en Colombia/Brasil/México/Ecuador | Comisión por viaje (modelo tipo Uber Freight) | 🔑 **Precedente legal a favor nuestro:** la Superintendencia de Transporte investigó a Liftit junto con Didi/Beat/Cabify/Fory por presunto transporte ilegal y **archivó el caso contra Liftit** (sí imputó a las de pasajeros) — confirma que el modelo "marketplace tecnológico + transportador habilitado hace el servicio" es legal en Colombia si no se disfraza de transportador. Citar este precedente con el abogado del proyecto |
+| **Kamyon** (kamyon.com.co) | Plataforma con IA/analítica para optimizar flotas, reducir viajes vacíos, gestionar documentos y seguimiento en tiempo real | Sin cifras públicas de escala | No publica precios/comisión | Apunta al mismo generador corporativo que FletX Business — validación de que "reducir km vacíos" es el gancho de venta B2B repetido por todos (CargoX, FletX, Kamyon) |
+| **Boletín de Carga** (boletindecarga.com) | **El más parecido a nuestro Marketplace hoy:** tablón público de cargas visible sin registro (origen/destino/tipo + botón "OFERTAR"), con "BUSCA TU CARGA" / "PUBLICA CARGA" | Con base en Cali, "50 años de experiencia combinada" del equipo, operación visiblemente pequeña/regional | Marketplace + venta de "pase electrónico de peajes" como servicio adicional | 🔑 **Idea barata a copiar:** vender pases de peaje electrónico (recarga que todo camionero necesita) es un add-on de ingreso de una línea de código de integración, sin construir nada propio — encaja con la filosofía de "menos código, más ingreso" |
+| **GoCargo** (gocargo.co) | Marketplace + fintech: su aliado financiero **GoCargoPay** garantiza pago puntual del flete al transportador (capital de trabajo para empresas de transporte) | Fundada 2016 Barranquilla (José Lominett), respaldada por "Atlántico Acelera" (fondo de coinversión local) | Financiamiento del flete vía aliado financiero separado (NO balance propio) | 🔑 **Confirma la recomendación #4 de §6:** GoCargo literalmente separó el fintech en una entidad aliada (GoCargoPay) en vez de prestar desde su propio balance — exactamente el patrón "aliado regulado, nunca balance propio" que ya recomendábamos por la lección CargoX |
+| **CargaYa** (cargaya.com) | Fintech de triple impacto (S.A.S. BIC) enfocada en automatizar el pago de flete a transportadores independientes + programa de "padrinos"/patrocinadores para renovar flota a vehículos de bajo impacto | **+10.000 transportadores** reciben pago por esta plataforma, +$100.000 millones COP transados | Fee sobre el pago/anticipo gestionado, no comisión de matching | El jugador más grande de los 6 en volumen de transportadores — pero es 100% fintech de pago, no un tablón de cargas: no compite por publicar/buscar carga, compite por quedarse con el flujo de pago. Su vocabulario "padrino" coincide con el que ya viste en el grupo de WhatsApp — validación de que es término gremial real, no jerga inventada |
+
+**Qué corregir en nuestra estrategia con esto:**
+1. El diferenciador de §6 sigue siendo válido, pero ya no podemos decir "nadie más lo tiene" sobre el marketplace en sí — sí hay marketplaces (FletX, Liftit, Kamyon, Boletín de Carga). Lo defendible sigue siendo la combinación SICE-TAC-en-cada-precio + KYC + gratis-para-entrar, que ninguno de los 6 ofrece junto.
+2. Con Liftit archivado por Supertransporte, el riesgo legal A3 (¿somos transportador de facto?) tiene un precedente favorable citable, no solo teórico.
+3. Vender pases de peaje (Boletín de Carga) y separar cualquier futuro anticipo en un aliado financiero externo (GoCargo) son dos ideas de bajo esfuerzo/alto valor que valen la pena evaluar antes que construir algo propio.
 
 ---
 
@@ -336,5 +357,12 @@ El sistema de costos eficientes (**SICE-TAC**) es la evolución del esquema de t
 - MYM Integral — "Hablemos de SICE TAC 2025" (2025-09-25)
 - Legiscomex — Tablas históricas de tarifas por tonelada MinTransporte
 - Sitios oficiales: cargox.com.br, 99app.com, clevermarket.com.co, cubbo.com/en, igocolombia.co
+
+### Fuentes de la revisión de competencia directa (2026-09-16)
+
+- Sitios oficiales: fletx.co, soylifter.com, kamyon.com.co, boletindecarga.com, gocargo.co, cargaya.com
+- Supertransporte — "Supertransporte archivó actuación contra Liftit y abrió investigación contra otras 4 empresas" (supertransporte.gov.co / mintransporte.gov.co)
+- El Espectador — "Supertransporte imputa cargos contra Didi, Beat, Cabify y Fory"
+- Misión Pyme — "CargaYa: una fintech de triple impacto para el sector transportador" (misionpyme.com)
 
 > ⚠️ **Nota de rigor:** la interpretación de normas (Decreto 1017/2025, resoluciones RNDC) proviene de fuentes sectoriales verificadas en esta fecha, pero **la validación definitiva debe hacerla el abogado del proyecto** con los textos oficiales del Diario Oficial. Las resoluciones RNDC cambian con frecuencia (4 en 3 años).
