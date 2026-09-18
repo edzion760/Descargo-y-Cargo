@@ -195,6 +195,10 @@ model Prospecto {
   // Primera apertura del correo de invitación, vía webhook email.opened de
   // Resend (requiere tracking activado en el dominio -- ver routes/webhooks.js).
   abiertoEn     DateTime?
+  // Primer clic real al botón del correo hacia la página (vía nuestro propio
+  // redirect /api/prospectos/visita) -- no depende de configurar nada en
+  // Resend, así que es la señal de interés real más confiable que tenemos.
+  visitadoEn    DateTime?
   // Derecho de oposición a mercadeo directo (Ley 1581 de 2012, art. 8):
   // clic en el enlace de baja del correo, sin necesidad de cuenta.
   noContactar   Boolean              @default(false)

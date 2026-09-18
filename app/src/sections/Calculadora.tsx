@@ -33,7 +33,7 @@ export default function Calculadora() {
   const [origen, setOrigen] = useState('Bogotá');
   const [destino, setDestino] = useState('Medellín');
   const [toneladas, setToneladas] = useState(20);
-  const [tipoCarga, setTipoCarga] = useState<string>('general');
+  const [tipoCarga, setTipoCarga] = useState<string>('normal');
   const [ruta, setRuta] = useState<TarifaRuta | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);

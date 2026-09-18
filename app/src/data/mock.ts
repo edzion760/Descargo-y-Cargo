@@ -52,10 +52,19 @@ export const CONFIGURACIONES_VEHICULO = [
   { codigo: '3B3', label: 'Camión rígido 3 ejes + remolque balanceado 3 ejes (3B3)' },
 ] as const;
 
+// Categorías reales de NATURALEZACARGA del RNDC (datos.gov.co/resource/v7bz-7nq2),
+// confirmadas por conteo real de despachos, no inventadas. Los factores (%)
+// SÍ son una decisión de negocio nuestra -- MinTransporte no publica una
+// tabla oficial de recargo por tipo de carga, solo el costo eficiente total
+// que calcula su propia herramienta SICE-TAC.
 export const MULTIPLICADORES_TIPO_CARGA = [
-  { id: 'general', label: 'General', factor: 1.0 },
-  { id: 'perecedera', label: 'Perecedera / Refrigerada', factor: 1.1 },
-  { id: 'peligrosa', label: 'Peligrosa', factor: 1.2 },
+  { id: 'normal', label: 'Carga Normal', factor: 1.0 },
+  { id: 'refrigerada', label: 'Refrigerada', factor: 1.1 },
+  { id: 'peligrosa', label: 'Carga Peligrosa', factor: 1.2 },
+  { id: 'semovientes', label: 'Semovientes', factor: 1.15 },
+  { id: 'extrapesada', label: 'Carga Extrapesada', factor: 1.25 },
+  { id: 'extradimensionada', label: 'Carga Extradimensionada', factor: 1.3 },
+  { id: 'desechos-peligrosos', label: 'Desechos Peligrosos', factor: 1.3 },
 ] as const;
 
 export function formatCOP(valor: number): string {

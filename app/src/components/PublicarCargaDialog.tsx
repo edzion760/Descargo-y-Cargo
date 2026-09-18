@@ -31,7 +31,7 @@ export default function PublicarCargaDialog({
 }) {
   const { autenticado } = useAuth();
   const [rutaIdx, setRutaIdx] = useState(0);
-  const [tipoCarga, setTipoCarga] = useState<string>('general');
+  const [tipoCarga, setTipoCarga] = useState<string>('normal');
   const [toneladas, setToneladas] = useState(20);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);

@@ -86,6 +86,7 @@ export function plantillaRecuperarPassword({ url }) {
 // llegue igual en cualquier cliente.
 export function plantillaInvitacionProspecto({ nombre, id }) {
   const bajaUrl = `https://descargoycargo.com/api/prospectos/baja?id=${id}`;
+  const visitaUrl = `https://descargoycargo.com/api/prospectos/visita?id=${id}`;
   return `
   <div style="max-width:520px;margin:0 auto;font-family:Arial,Helvetica,sans-serif">
     <table role="presentation" width="100%" style="background:#09090b;padding:24px 28px" cellpadding="0" cellspacing="0"><tr><td>
@@ -122,7 +123,7 @@ export function plantillaInvitacionProspecto({ nombre, id }) {
       </tr></table>
 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px"><tr><td align="center">
-        <a href="https://descargoycargo.com" style="display:inline-block;background:#f97316;color:#09090b;text-decoration:none;font-weight:bold;font-size:14px;padding:13px 30px;border-radius:8px">Publicar mi carga gratis →</a>
+        <a href="${visitaUrl}" style="display:inline-block;background:#f97316;color:#09090b;text-decoration:none;font-weight:bold;font-size:14px;padding:13px 30px;border-radius:8px">Publicar mi carga gratis →</a>
         <p style="font-size:11px;color:#a1a1aa;margin:10px 0 0">Publicar y ver el listado no cuesta nada — solo pagan al desbloquear un contacto.</p>
       </td></tr></table>
 

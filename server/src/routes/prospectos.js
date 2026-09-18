@@ -19,3 +19,14 @@ prospectosRouter.get('/baja', async (req, res) => {
       <p style="color:#71717a;font-size:14px">Tu empresa fue removida de la lista de invitación de Descargo &amp; Cargo.</p>
     </body></html>`);
 });
+
+// El botón del correo de la campaña pasa por aquí antes de llegar al sitio.
+// Igual que /baja: sin auth a propósito, riesgo bajo (en el peor caso alguien
+// marca una visita que no ocurrió, no expone ni cambia datos sensibles).
+prospectosRouter.get('/visita', async (req, res) => {
+  const id = Number(req.query.id);
+  if (id) {
+    await prisma.prospecto.updateMany({ where: { id, visitadoEn: null }, data: { visitadoEn: new Date() } });
+  }
+  res.redirect(302, 'https://descargoycargo.com');
+});
