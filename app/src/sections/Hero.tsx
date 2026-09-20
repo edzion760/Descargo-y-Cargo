@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { ArrowRight, ShieldCheck, Scale, Radio, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import AuthDialog from '@/components/AuthDialog';
+import PublicarCargaDialog from '@/components/PublicarCargaDialog';
+import { useAuth } from '@/lib/use-auth';
 
 const STATS = [
   { valor: '400+', label: 'cargas publicadas / mes' },
@@ -10,6 +14,36 @@ const STATS = [
 ];
 
 export default function Hero() {
+  const { tipo } = useAuth();
+  const [authAbierto, setAuthAbierto] = useState(false);
+  const [authTab, setAuthTab] = useState<'login' | 'registro'>('registro');
+  const [authTipo, setAuthTipo] = useState<'PUBLICADOR' | 'TRANSPORTADOR'>('TRANSPORTADOR');
+  const [publicarAbierto, setPublicarAbierto] = useState(false);
+
+  function irTransportador() {
+    if (tipo) {
+      document.querySelector('#cargas')?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    setAuthTipo('TRANSPORTADOR');
+    setAuthTab('registro');
+    setAuthAbierto(true);
+  }
+
+  function irPublicar() {
+    if (!tipo) {
+      setAuthTipo('PUBLICADOR');
+      setAuthTab('registro');
+      setAuthAbierto(true);
+      return;
+    }
+    if (tipo === 'TRANSPORTADOR') {
+      alert('Esta cuenta es de transportador. Inicia sesión con una cuenta de publicador para publicar carga.');
+      return;
+    }
+    setPublicarAbierto(true);
+  }
+
   return (
     <section className="relative overflow-hidden border-b border-zinc-800 bg-zinc-950">
       {/* Fondo decorativo */}
@@ -20,8 +54,8 @@ export default function Hero() {
 
       <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-20 lg:grid-cols-2 lg:py-28">
         <div className="min-w-0 flex flex-col justify-center">
-          <Badge className="mb-6 w-fit gap-2 border-amber-500/30 bg-amber-500/10 px-3 py-1 text-amber-400" variant="outline">
-            <Scale className="h-3.5 w-3.5" />
+          <Badge className="mb-6 w-fit max-w-full gap-2 whitespace-normal rounded-xl border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-left text-amber-400" variant="outline">
+            <Scale className="h-3.5 w-3.5 shrink-0" />
             Nueva norma · Decreto 1017 de 2025: nosotros te dejamos legal
           </Badge>
 
@@ -40,10 +74,19 @@ export default function Hero() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button size="lg" className="gap-2 bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
+            <Button
+              size="lg"
+              className="gap-2 bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400"
+              onClick={irTransportador}
+            >
               Soy transportador <ArrowRight className="h-4 w-4" />
             </Button>
-            <Button size="lg" variant="outline" className="border-zinc-700 text-zinc-200 hover:bg-zinc-800">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+              onClick={irPublicar}
+            >
               Publicar mi carga gratis
             </Button>
           </div>
@@ -111,6 +154,19 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+      <AuthDialog
+        key={authTab + authTipo}
+        open={authAbierto}
+        onOpenChange={setAuthAbierto}
+        defaultTab={authTab}
+        defaultTipo={authTipo}
+      />
+      <PublicarCargaDialog
+        open={publicarAbierto}
+        onOpenChange={setPublicarAbierto}
+        onPublicada={() => window.dispatchEvent(new Event('cargas:publicada'))}
+      />
     </section>
   );
 }
