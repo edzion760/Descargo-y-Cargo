@@ -190,9 +190,9 @@ export default function Calculadora() {
                   onClick={verDespachosRndc}
                   disabled={cargandoRndc}
                   variant="outline"
-                  className="w-full gap-2 border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+                  className="h-auto w-full gap-2 whitespace-normal border-zinc-700 py-2 text-zinc-200 hover:bg-zinc-800"
                 >
-                  <Landmark className="h-4 w-4" />
+                  <Landmark className="h-4 w-4 shrink-0" />
                   {cargandoRndc ? 'Consultando RNDC…' : 'Ver despachos reales del RNDC en esta ruta'}
                 </Button>
               )}
