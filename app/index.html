@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Sin esto, iOS/Android convierten CUALQUIER texto con forma de
+         teléfono en un enlace "Llamar" tocable -- incluso el número de
+         ejemplo borroso de las cargas bloqueadas (confundía: parecía que el
+         desbloqueo se saltó el pago). El contacto real sí se puede llamar
+         una vez desbloqueado, vía un <a href="tel:..."> explícito. -->
+    <meta name="format-detection" content="telephone=no" />
     <title>Descargo &amp; Cargo · Marketplace de carga legal en Colombia</title>
     <meta
       name="description"

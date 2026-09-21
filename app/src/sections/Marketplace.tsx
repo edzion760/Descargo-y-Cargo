@@ -152,7 +152,16 @@ function TarjetaCarga({
                 <div className="text-sm">
                   <p className="font-semibold text-orange-300">Contacto desbloqueado</p>
                   <p className="text-xs text-zinc-400">
-                    {contacto ? `${contacto.nombre} · ${contacto.telefono}` : 'Cargando contacto…'}
+                    {contacto ? (
+                      <>
+                        {contacto.nombre} ·{' '}
+                        <a href={`tel:${contacto.telefono}`} className="underline">
+                          {contacto.telefono}
+                        </a>
+                      </>
+                    ) : (
+                      'Cargando contacto…'
+                    )}
                   </p>
                 </div>
                 <LockOpen className="h-4 w-4 shrink-0 text-orange-400" />

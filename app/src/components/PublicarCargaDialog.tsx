@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
+import { MapPin } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -16,9 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RUTAS, MULTIPLICADORES_TIPO_CARGA, CONFIGURACIONES_VEHICULO, formatCOP } from '@/data/mock';
+import { MULTIPLICADORES_TIPO_CARGA, CONFIGURACIONES_VEHICULO, formatCOP } from '@/data/mock';
 import { apiFetch, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/use-auth';
+
+interface TarifaRuta {
+  km: number;
+  tarifaPorTon: number;
+}
 
 export default function PublicarCargaDialog({
   open,
@@ -30,22 +36,42 @@ export default function PublicarCargaDialog({
   onPublicada: () => void;
 }) {
   const { autenticado } = useAuth();
-  const [rutaIdx, setRutaIdx] = useState(0);
+  const [origen, setOrigen] = useState('');
+  const [destino, setDestino] = useState('');
+  const [ruta, setRuta] = useState<TarifaRuta | null>(null);
+  const [cargandoRuta, setCargandoRuta] = useState(false);
   const [tipoCarga, setTipoCarga] = useState<string>('normal');
   const [toneladas, setToneladas] = useState(20);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [publicada, setPublicada] = useState(false);
 
+  async function calcularRuta() {
+    if (!origen.trim() || !destino.trim()) return;
+    setCargandoRuta(true);
+    setError(null);
+    setRuta(null);
+    try {
+      const data = await apiFetch<TarifaRuta>(
+        `/api/geo/ruta?origen=${encodeURIComponent(origen)}&destino=${encodeURIComponent(destino)}`
+      );
+      setRuta(data);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo calcular la ruta');
+    } finally {
+      setCargandoRuta(false);
+    }
+  }
+
   const piso = useMemo(() => {
-    const ruta = RUTAS[rutaIdx];
+    if (!ruta) return null;
     const factor = MULTIPLICADORES_TIPO_CARGA.find((t) => t.id === tipoCarga)?.factor ?? 1;
     return Math.round(ruta.tarifaPorTon * toneladas * factor);
-  }, [rutaIdx, tipoCarga, toneladas]);
+  }, [ruta, tipoCarga, toneladas]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!autenticado) return;
+    if (!autenticado || piso == null) return;
     setError(null);
 
     const form = new FormData(e.currentTarget);
@@ -62,8 +88,8 @@ export default function PublicarCargaDialog({
         body: {
           titulo: String(form.get('titulo')),
           tipoCarga: MULTIPLICADORES_TIPO_CARGA.find((t) => t.id === tipoCarga)?.label ?? tipoCarga,
-          origen: RUTAS[rutaIdx].origen,
-          destino: RUTAS[rutaIdx].destino,
+          origen: origen.trim(),
+          destino: destino.trim(),
           toneladas,
           precio,
           pisoSiceTac: piso,
@@ -82,7 +108,12 @@ export default function PublicarCargaDialog({
   }
 
   function cerrar(open: boolean) {
-    if (!open) setPublicada(false);
+    if (!open) {
+      setPublicada(false);
+      setOrigen('');
+      setDestino('');
+      setRuta(null);
+    }
     onOpenChange(open);
   }
 
@@ -93,7 +124,7 @@ export default function PublicarCargaDialog({
           <div className="py-6 text-center">
             <p className="text-lg font-semibold text-white">¡Carga publicada!</p>
             <p className="mt-2 text-sm text-zinc-400">
-              Ya aparece en el marketplace, sobre el piso SICE-TAC de {formatCOP(piso)}.
+              Ya aparece en el marketplace, sobre el piso SICE-TAC de {piso != null ? formatCOP(piso) : ''}.
             </p>
             <Button className="mt-6 bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400" onClick={() => cerrar(false)}>
               Listo
@@ -114,21 +145,41 @@ export default function PublicarCargaDialog({
                 <Input id="carga-titulo" name="titulo" required placeholder="Ej. Café pergamino en sacos" className="border-zinc-700 bg-zinc-900 text-white" />
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="carga-ruta" className="text-zinc-400">Ruta</Label>
-                <Select value={String(rutaIdx)} onValueChange={(v) => setRutaIdx(Number(v))}>
-                  <SelectTrigger id="carga-ruta" className="border-zinc-700 bg-zinc-900 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
-                    {RUTAS.map((r, i) => (
-                      <SelectItem key={i} value={String(i)}>
-                        {r.origen} → {r.destino} ({r.km} km)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="carga-origen" className="text-zinc-400">Origen</Label>
+                  <Input
+                    id="carga-origen"
+                    value={origen}
+                    onChange={(e) => { setOrigen(e.target.value); setRuta(null); }}
+                    placeholder="Ej. Bogotá"
+                    required
+                    className="border-zinc-700 bg-zinc-900 text-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="carga-destino" className="text-zinc-400">Destino</Label>
+                  <Input
+                    id="carga-destino"
+                    value={destino}
+                    onChange={(e) => { setDestino(e.target.value); setRuta(null); }}
+                    placeholder="Ej. Medellín"
+                    required
+                    className="border-zinc-700 bg-zinc-900 text-white"
+                  />
+                </div>
               </div>
+
+              <Button
+                type="button"
+                onClick={calcularRuta}
+                disabled={cargandoRuta || !origen.trim() || !destino.trim()}
+                variant="outline"
+                className="h-auto w-full gap-2 whitespace-normal border-zinc-700 py-2 text-zinc-200 hover:bg-zinc-800"
+              >
+                <MapPin className="h-4 w-4 shrink-0" />
+                {cargandoRuta ? 'Calculando ruta…' : ruta ? `${ruta.km} km reales · piso ${formatCOP(ruta.tarifaPorTon)}/ton` : 'Calcular distancia real'}
+              </Button>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -195,14 +246,25 @@ export default function PublicarCargaDialog({
               <div className="space-y-1.5">
                 <div className="flex items-baseline justify-between">
                   <Label htmlFor="carga-precio" className="text-zinc-400">Flete ofrecido (COP)</Label>
-                  <span className="text-xs text-zinc-500">Piso SICE-TAC: {formatCOP(piso)}</span>
+                  {piso != null && <span className="text-xs text-zinc-500">Piso SICE-TAC: {formatCOP(piso)}</span>}
                 </div>
-                <Input id="carga-precio" name="precio" type="number" min={piso} required defaultValue={piso} className="border-zinc-700 bg-zinc-900 text-white" />
+                <Input
+                  key={piso ?? 'sin-piso'}
+                  id="carga-precio"
+                  name="precio"
+                  type="number"
+                  min={piso ?? 0}
+                  required
+                  disabled={piso == null}
+                  defaultValue={piso ?? ''}
+                  placeholder={piso == null ? 'Calcula la ruta primero' : undefined}
+                  className="border-zinc-700 bg-zinc-900 text-white disabled:opacity-50"
+                />
               </div>
 
               {error && <p className="text-sm text-red-400">{error}</p>}
 
-              <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
+              <Button type="submit" disabled={cargando || piso == null} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
                 {cargando ? 'Publicando…' : 'Publicar carga gratis'}
               </Button>
             </form>

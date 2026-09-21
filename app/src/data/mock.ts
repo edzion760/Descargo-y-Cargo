@@ -1,27 +1,10 @@
 // Datos de referencia todavía sin modelar en el backend (server/) — las
-// rutas SICE-TAC son de referencia, no datos de usuario, así que se quedan
-// aquí por ahora. Las cargas y membresías ya vienen de la API real; ver
+// cargas y membresías ya vienen de la API real; ver
 // src/sections/Marketplace.tsx y Membresias.tsx. Las noticias de vía ya son
 // reales, ver server/src/noticias.js y src/lib/use-noticias.ts.
-// Las tarifas SICE-TAC aquí son REFERENCIALES para el demo, no oficiales.
-
-export interface Ruta {
-  origen: string;
-  destino: string;
-  km: number;
-  tarifaPorTon: number; // SICE-TAC referencial COP/ton (demo)
-}
-
-export const RUTAS: Ruta[] = [
-  { origen: 'Bogotá', destino: 'Medellín', km: 415, tarifaPorTon: 185000 },
-  { origen: 'Bogotá', destino: 'Cali', km: 460, tarifaPorTon: 198000 },
-  { origen: 'Bogotá', destino: 'Barranquilla', km: 990, tarifaPorTon: 385000 },
-  { origen: 'Medellín', destino: 'Buenaventura', km: 415, tarifaPorTon: 190000 },
-  { origen: 'Manizales', destino: 'Buenaventura', km: 290, tarifaPorTon: 145000 },
-  { origen: 'Bogotá', destino: 'Cartagena', km: 1050, tarifaPorTon: 402000 },
-  { origen: 'Cali', destino: 'Pasto', km: 380, tarifaPorTon: 178000 },
-  { origen: 'Bogotá', destino: 'Tunja', km: 138, tarifaPorTon: 106000 },
-];
+// (La lista fija RUTAS de 8 pares origen/destino se eliminó: tanto la
+// Calculadora como Publicar carga calculan la ruta real para CUALQUIER
+// ciudad vía /api/geo/ruta -- ver Calculadora.tsx y PublicarCargaDialog.tsx.)
 
 // Configuración vehicular OFICIAL del RNDC (Registro Nacional de Despachos
 // de Carga, Ministerio de Transporte) -- confirmado contra el dato abierto

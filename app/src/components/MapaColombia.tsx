@@ -140,7 +140,12 @@ function CamionAnimado({ origen, destino, duracionMs, inicio }: (typeof RUTAS_CA
 
 export default function MapaColombia() {
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900/60">
+    // isolate: Leaflet pone z-index 400-700 en sus panes internos (tiles,
+    // marcadores, popups) y su .leaflet-container no abre un contexto de
+    // apilamiento propio -- sin "isolate" esos z-index compiten directo
+    // contra overlays fixed de toda la página (p. ej. z-50 de los Dialog de
+    // shadcn) y el mapa termina pintándose ENCIMA de un modal abierto.
+    <div className="relative isolate flex flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900/60">
       <div className="h-56 w-full lg:h-full lg:min-h-[220px]">
         <MapContainer
           center={[4.5, -74.5]}
