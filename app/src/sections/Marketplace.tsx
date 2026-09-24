@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Lock, LockOpen, MapPin, Weight, CalendarDays, Star, BadgeCheck, Pencil } from 'lucide-react';
+import { Lock, LockOpen, MapPin, Weight, CalendarDays, Star, BadgeCheck, Pencil, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -112,6 +112,16 @@ function TarjetaCarga({
 
   const desbloqueada = carga.desbloqueada || !!contacto;
 
+  function compartirWhatsApp() {
+    const texto =
+      `🚚 Carga disponible: ${carga.titulo}\n` +
+      `${carga.origen} → ${carga.destino}\n` +
+      `${carga.toneladas} ton · ${formatCOP(carga.precio)}\n\n` +
+      `Publicada en Descargo & Cargo (piso SICE-TAC garantizado, transportador verificado).\n` +
+      `https://descargoycargo.com/#cargas`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+  }
+
   return (
     <Card className={`relative overflow-hidden border-zinc-800 bg-zinc-900/60 transition-all hover:border-zinc-700 ${carga.destacada ? 'ring-1 ring-amber-500/40' : ''}`}>
       {carga.destacada && (
@@ -128,7 +138,17 @@ function TarjetaCarga({
             </div>
             <p className="mt-0.5 text-xs text-zinc-500">{carga.tipoCarga} · {carga.vehiculoRequerido}</p>
           </div>
-          <Badge variant="outline" className="border-zinc-700 text-zinc-400">{carga.tipoPublicacion}</Badge>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Badge variant="outline" className="border-zinc-700 text-zinc-400">{carga.tipoPublicacion}</Badge>
+            <button
+              type="button"
+              onClick={compartirWhatsApp}
+              title="Compartir por WhatsApp"
+              className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-emerald-400"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 flex items-center gap-2 text-sm text-zinc-300">
