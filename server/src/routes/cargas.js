@@ -37,7 +37,7 @@ cargasRouter.get('/', optionalAuth, async (req, res) => {
       estado: 'DISPONIBLE',
       ...(tipoPublicacion ? { tipoPublicacion: String(tipoPublicacion) } : {}),
     },
-    select: cargaPublica,
+    select: { ...cargaPublica, publicadorId: true },
     orderBy: [{ destacada: 'desc' }, { createdAt: 'desc' }],
   });
 
@@ -51,7 +51,19 @@ cargasRouter.get('/', optionalAuth, async (req, res) => {
     desbloqueadas = new Set(pagos.map((p) => p.cargaId));
   }
 
-  res.json(cargas.map((c) => ({ ...c, desbloqueada: desbloqueadas.has(c.id) })));
+  let miPublicadorId = null;
+  if (req.user?.tipo === 'PUBLICADOR') {
+    const publicador = await prisma.publicador.findUnique({ where: { usuarioId: req.user.sub } });
+    miPublicadorId = publicador.id;
+  }
+
+  res.json(
+    cargas.map(({ publicadorId, ...c }) => ({
+      ...c,
+      desbloqueada: desbloqueadas.has(c.id),
+      esMia: miPublicadorId != null && publicadorId === miPublicadorId,
+    }))
+  );
 });
 
 const cargaSchema = z.object({
@@ -80,6 +92,53 @@ cargasRouter.post('/', requireAuth, requireTipo('PUBLICADOR'), async (req, res) 
     data: { ...parsed.data, fechaCarga: new Date(parsed.data.fechaCarga), publicadorId: publicador.id },
   });
   res.status(201).json(carga);
+});
+
+const cargaEdicionSchema = z.object({
+  titulo: z.string().min(3),
+  precio: z.number().int().positive(),
+  fechaCarga: z.string().datetime().or(z.string().min(8)),
+  tipoPublicacion: z.enum(['NACIONAL', 'URBANA', 'BARBACHA']),
+  vehiculoRequerido: z.string().min(2),
+});
+
+// Solo se pueden editar los campos que NO afectan el piso legal (título,
+// fecha, tipo de publicación, vehículo, precio). Origen/destino/toneladas
+// quedan fijos -- si esos cambian hay que republicar para que el piso
+// SICE-TAC se recalcule con datos reales, no ajustarlo a mano aquí.
+cargasRouter.patch('/:id', requireAuth, requireTipo('PUBLICADOR'), async (req, res) => {
+  const id = Number(req.params.id);
+  const publicador = await prisma.publicador.findUnique({ where: { usuarioId: req.user.sub } });
+  const carga = await prisma.carga.findUnique({ where: { id } });
+  if (!carga || carga.publicadorId !== publicador.id) {
+    return res.status(404).json({ error: 'Carga no encontrada' });
+  }
+
+  const parsed = cargaEdicionSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  if (parsed.data.precio < carga.pisoSiceTac) {
+    return res.status(422).json({ error: 'El precio no puede estar por debajo del piso SICE-TAC' });
+  }
+
+  const actualizada = await prisma.carga.update({
+    where: { id },
+    data: { ...parsed.data, fechaCarga: new Date(parsed.data.fechaCarga) },
+  });
+  res.json(actualizada);
+});
+
+// Baja lógica (estado CANCELADA), no se borra la fila -- conserva el
+// historial por si algún transportador ya pagó un desbloqueo sobre ella.
+cargasRouter.delete('/:id', requireAuth, requireTipo('PUBLICADOR'), async (req, res) => {
+  const id = Number(req.params.id);
+  const publicador = await prisma.publicador.findUnique({ where: { usuarioId: req.user.sub } });
+  const carga = await prisma.carga.findUnique({ where: { id } });
+  if (!carga || carga.publicadorId !== publicador.id) {
+    return res.status(404).json({ error: 'Carga no encontrada' });
+  }
+
+  await prisma.carga.update({ where: { id }, data: { estado: 'CANCELADA' } });
+  res.status(204).end();
 });
 
 cargasRouter.get('/:id', optionalAuth, async (req, res) => {

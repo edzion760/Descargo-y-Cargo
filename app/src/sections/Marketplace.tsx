@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Lock, LockOpen, MapPin, Weight, CalendarDays, Star, BadgeCheck } from 'lucide-react';
+import { Lock, LockOpen, MapPin, Weight, CalendarDays, Star, BadgeCheck, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { formatCOP, tarifaDesbloqueo } from '@/data/mock';
 import { apiFetch, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/use-auth';
 import AuthDialog from '@/components/AuthDialog';
+import EditarCargaDialog from '@/components/EditarCargaDialog';
 
 interface Carga {
   id: number;
@@ -24,6 +25,7 @@ interface Carga {
   destacada: boolean;
   verificado: boolean;
   desbloqueada: boolean;
+  esMia: boolean;
 }
 
 interface Contacto {
@@ -35,14 +37,19 @@ function TarjetaCarga({
   carga,
   onDesbloqueada,
   onRequireAuth,
+  onEditar,
+  onCancelada,
 }: {
   carga: Carga;
   onDesbloqueada: (cargaId: number, contacto: Contacto) => void;
   onRequireAuth: () => void;
+  onEditar: (carga: Carga) => void;
+  onCancelada: (cargaId: number) => void;
 }) {
   const { autenticado, miId, tipo } = useAuth();
   const [contacto, setContacto] = useState<Contacto | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const tarifa = tarifaDesbloqueo(carga.precio);
   const sobrePiso = carga.precio - carga.pisoSiceTac;
@@ -87,6 +94,19 @@ function TarjetaCarga({
       setError(err instanceof ApiError ? err.message : 'No se pudo desbloquear el contacto');
     } finally {
       setCargando(false);
+    }
+  }
+
+  async function cancelarPublicacion() {
+    if (!confirm('¿Cancelar esta publicación? Ya no aparecerá en el marketplace.')) return;
+    setCancelando(true);
+    setError(null);
+    try {
+      await apiFetch(`/api/cargas/${carga.id}`, { method: 'DELETE' });
+      onCancelada(carga.id);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo cancelar la publicación');
+      setCancelando(false);
     }
   }
 
@@ -139,7 +159,27 @@ function TarjetaCarga({
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-3">
-          {desbloqueada ? (
+          {carga.esMia ? (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onEditar(carga)}
+                className="gap-1.5 border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Editar
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={cancelarPublicacion}
+                disabled={cancelando}
+                className="text-red-400 hover:bg-red-500/10 hover:text-red-400"
+              >
+                {cancelando ? 'Cancelando…' : 'Cancelar publicación'}
+              </Button>
+            </>
+          ) : desbloqueada ? (
             <div className="relative w-full overflow-hidden rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-2">
               {miId != null && (
                 <div className="pointer-events-none absolute inset-0 flex select-none items-center justify-center overflow-hidden opacity-10">
@@ -196,6 +236,7 @@ export default function Marketplace() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authAbierto, setAuthAbierto] = useState(false);
+  const [cargaEditando, setCargaEditando] = useState<Carga | null>(null);
   const { autenticado } = useAuth();
 
   const cargar = useCallback(async () => {
@@ -249,6 +290,10 @@ export default function Marketplace() {
     setCargas((prev) => prev.map((c) => (c.id === cargaId ? { ...c, desbloqueada: true } : c)));
   }
 
+  function marcarCancelada(cargaId: number) {
+    setCargas((prev) => prev.filter((c) => c.id !== cargaId));
+  }
+
   return (
     <section id="cargas" className="border-b border-zinc-800 bg-zinc-950 py-20">
       <div className="mx-auto max-w-7xl px-4">
@@ -285,6 +330,8 @@ export default function Marketplace() {
                 carga={carga}
                 onDesbloqueada={marcarDesbloqueada}
                 onRequireAuth={() => setAuthAbierto(true)}
+                onEditar={setCargaEditando}
+                onCancelada={marcarCancelada}
               />
             ))}
           </div>
@@ -308,6 +355,12 @@ export default function Marketplace() {
       </div>
 
       <AuthDialog open={authAbierto} onOpenChange={setAuthAbierto} />
+      <EditarCargaDialog
+        open={cargaEditando != null}
+        onOpenChange={(open) => { if (!open) setCargaEditando(null); }}
+        carga={cargaEditando}
+        onEditada={cargar}
+      />
     </section>
   );
 }
