@@ -66,10 +66,16 @@ membresiasRouter.get('/actual', requireAuth, requireTipo('TRANSPORTADOR'), async
   res.json(transportador.membresia);
 });
 
-// Simulado: cambia de plan sin pasarela de pago real todavía (ver Wompi en PLAN_INTEGRAL_V3.md §5).
+// Todavía no hay cobro de membresías por Wompi. Antes este endpoint dejaba
+// pasar a cualquier plan sin pagar -- y con ILIMITADA el desbloqueo cuesta
+// $0 (ver tarifaDesbloqueo en cargas.js), o sea que cualquiera se saltaba el
+// cobro por contacto. Hasta que exista el pago real, solo se permite GRATIS.
 membresiasRouter.post('/actual', requireAuth, requireTipo('TRANSPORTADOR'), async (req, res) => {
   const tipo = PLANES.find((p) => p.tipo === req.body?.tipo)?.tipo;
   if (!tipo) return res.status(400).json({ error: 'Plan inválido' });
+  if (tipo !== 'GRATIS') {
+    return res.status(403).json({ error: 'Los planes pagos estarán disponibles muy pronto.' });
+  }
 
   const transportador = await prisma.transportador.findUnique({ where: { usuarioId: req.user.sub } });
   const membresia = await prisma.membresia.update({
