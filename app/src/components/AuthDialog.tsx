@@ -98,28 +98,28 @@ export default function AuthDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-zinc-800 bg-zinc-950 text-zinc-100 sm:max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-white">Accede a tu cuenta</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogTitle className="text-2xl font-extrabold tracking-tight text-zinc-950">Accede a tu cuenta</DialogTitle>
+          <DialogDescription className="text-zinc-500">
             Publica carga o encuentra transporte disponible.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue={defaultTab} onValueChange={() => setError(null)}>
-          <TabsList className="w-full bg-zinc-900">
-            <TabsTrigger value="login" className="flex-1">Ingresar</TabsTrigger>
-            <TabsTrigger value="registro" className="flex-1">Crear cuenta</TabsTrigger>
+          <TabsList className="h-11 w-full rounded-xl p-1">
+            <TabsTrigger value="login" className="flex-1 rounded-lg font-semibold">Ingresar</TabsTrigger>
+            <TabsTrigger value="registro" className="flex-1 rounded-lg font-semibold">Crear cuenta</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login" className="mt-4">
             {modoOlvide ? (
               mensajeOlvide ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-zinc-300">{mensajeOlvide}</p>
+                  <p className="text-sm text-zinc-700">{mensajeOlvide}</p>
                   <Button
                     variant="ghost"
-                    className="w-full text-zinc-400"
+                    className="w-full text-zinc-600"
                     onClick={() => {
                       setModoOlvide(false);
                       setMensajeOlvide(null);
@@ -130,18 +130,18 @@ export default function AuthDialog({
                 </div>
               ) : (
                 <form onSubmit={handleOlvide} className="space-y-3">
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm text-zinc-600">
                     Escribe tu correo y te enviamos un enlace para elegir una nueva contraseña.
                   </p>
                   <div className="space-y-1.5">
-                    <Label htmlFor="olvide-email" className="text-zinc-400">Correo</Label>
-                    <Input id="olvide-email" name="email" type="email" autoComplete="email" required className="border-zinc-700 bg-zinc-900 text-white" />
+                    <Label htmlFor="olvide-email" className="text-zinc-700">Correo</Label>
+                    <Input id="olvide-email" name="email" type="email" autoComplete="email" required />
                   </div>
-                  {error && <p className="text-sm text-red-400">{error}</p>}
-                  <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
+                  {error && <p className="text-sm text-red-600">{error}</p>}
+                  <Button type="submit" disabled={cargando} className="h-12 w-full rounded-xl text-[15px] font-semibold">
                     {cargando ? 'Enviando…' : 'Enviar enlace'}
                   </Button>
-                  <Button type="button" variant="ghost" className="w-full text-zinc-400" onClick={() => setModoOlvide(false)}>
+                  <Button type="button" variant="ghost" className="w-full text-zinc-600" onClick={() => setModoOlvide(false)}>
                     Volver
                   </Button>
                 </form>
@@ -149,21 +149,21 @@ export default function AuthDialog({
             ) : (
               <form onSubmit={handleLogin} className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="login-email" className="text-zinc-400">Correo</Label>
-                  <Input id="login-email" name="email" type="email" autoComplete="email" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="login-email" className="text-zinc-700">Correo</Label>
+                  <Input id="login-email" name="email" type="email" autoComplete="email" required />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="login-password" className="text-zinc-400">Contraseña</Label>
-                  <Input id="login-password" name="password" type="password" autoComplete="current-password" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="login-password" className="text-zinc-700">Contraseña</Label>
+                  <Input id="login-password" name="password" type="password" autoComplete="current-password" required />
                 </div>
-                {error && <p className="text-sm text-red-400">{error}</p>}
-                <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
+                {error && <p className="text-sm text-red-600">{error}</p>}
+                <Button type="submit" disabled={cargando} className="h-12 w-full rounded-xl text-[15px] font-semibold">
                   {cargando ? 'Ingresando…' : 'Ingresar'}
                 </Button>
                 <button
                   type="button"
                   onClick={() => setModoOlvide(true)}
-                  className="w-full text-center text-xs text-zinc-500 hover:text-orange-400 hover:underline"
+                  className="w-full text-center text-xs font-medium text-zinc-600 hover:text-zinc-950 hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
@@ -174,12 +174,12 @@ export default function AuthDialog({
           <TabsContent value="registro" className="mt-4">
             <form onSubmit={handleRegister} className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="registro-tipo" className="text-zinc-400">Soy…</Label>
+                <Label htmlFor="registro-tipo" className="text-zinc-700">Soy…</Label>
                 <Select name="tipo" defaultValue={defaultTipo}>
-                  <SelectTrigger id="registro-tipo" className="border-zinc-700 bg-zinc-900 text-white">
+                  <SelectTrigger id="registro-tipo" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
+                  <SelectContent>
                     <SelectItem value="TRANSPORTADOR">Transportador — busco carga</SelectItem>
                     <SelectItem value="PUBLICADOR">Publicador — tengo carga</SelectItem>
                   </SelectContent>
@@ -187,56 +187,56 @@ export default function AuthDialog({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="registro-nombre" className="text-zinc-400">Nombre</Label>
-                  <Input id="registro-nombre" name="nombre" autoComplete="name" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="registro-nombre" className="text-zinc-700">Nombre</Label>
+                  <Input id="registro-nombre" name="nombre" autoComplete="name" required />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="registro-ciudad" className="text-zinc-400">Ciudad</Label>
-                  <Input id="registro-ciudad" name="ciudad" autoComplete="address-level2" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="registro-ciudad" className="text-zinc-700">Ciudad</Label>
+                  <Input id="registro-ciudad" name="ciudad" autoComplete="address-level2" required />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="registro-telefono" className="text-zinc-400">Teléfono</Label>
-                  <Input id="registro-telefono" name="telefono" autoComplete="tel" required className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="registro-telefono" className="text-zinc-700">Teléfono</Label>
+                  <Input id="registro-telefono" name="telefono" autoComplete="tel" required />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="registro-documento" className="text-zinc-400">Cédula</Label>
-                  <Input id="registro-documento" name="documento" autoComplete="off" required minLength={6} className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Label htmlFor="registro-documento" className="text-zinc-700">Cédula</Label>
+                  <Input id="registro-documento" name="documento" autoComplete="off" required minLength={6} />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="registro-email" className="text-zinc-400">Correo</Label>
-                <Input id="registro-email" name="email" type="email" autoComplete="email" required className="border-zinc-700 bg-zinc-900 text-white" />
+                <Label htmlFor="registro-email" className="text-zinc-700">Correo</Label>
+                <Input id="registro-email" name="email" type="email" autoComplete="email" required />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="registro-password" className="text-zinc-400">Contraseña</Label>
-                <Input id="registro-password" name="password" type="password" autoComplete="new-password" required minLength={8} className="border-zinc-700 bg-zinc-900 text-white" />
+                <Label htmlFor="registro-password" className="text-zinc-700">Contraseña</Label>
+                <Input id="registro-password" name="password" type="password" autoComplete="new-password" required minLength={8} />
               </div>
               <div className="flex items-start gap-2 pt-1">
                 <Checkbox
                   id="acepta-terminos"
                   checked={aceptaTerminos}
                   onCheckedChange={(v) => setAceptaTerminos(v === true)}
-                  className="mt-0.5 border-zinc-600"
+                  className="mt-0.5"
                 />
-                <Label htmlFor="acepta-terminos" className="text-xs font-normal leading-snug text-zinc-400">
+                <Label htmlFor="acepta-terminos" className="block text-xs font-normal leading-relaxed text-zinc-600">
                   Acepto los{' '}
-                  <a href="/legal/terminos.html" target="_blank" rel="noopener" className="text-orange-400 underline">
+                  <a href="/legal/terminos.html" target="_blank" rel="noopener" className="font-semibold text-zinc-950 underline">
                     Términos y Condiciones
                   </a>{' '}
                   y la{' '}
-                  <a href="/legal/politica-datos.html" target="_blank" rel="noopener" className="text-orange-400 underline">
+                  <a href="/legal/politica-datos.html" target="_blank" rel="noopener" className="font-semibold text-zinc-950 underline">
                     Política de Tratamiento de Datos
                   </a>
                   .
                 </Label>
               </div>
-              {error && <p className="text-sm text-red-400">{error}</p>}
+              {error && <p className="text-sm text-red-600">{error}</p>}
               <Button
                 type="submit"
                 disabled={cargando || !aceptaTerminos}
-                className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400"
+                className="h-12 w-full rounded-xl text-[15px] font-semibold"
               >
                 {cargando ? 'Creando cuenta…' : 'Crear cuenta'}
               </Button>

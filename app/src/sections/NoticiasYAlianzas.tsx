@@ -1,35 +1,37 @@
 import { useState } from 'react';
-import { Radio, ExternalLink, Bell, Fuel, ShieldPlus, Wrench, CreditCard } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { ArrowUpRight, Bell, BellRing, Fuel, ShieldPlus, Wrench, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { useNoticiasVia, type Noticia } from '@/lib/use-noticias';
 import { useAuth } from '@/lib/use-auth';
+import { useAcciones } from '@/lib/use-acciones';
 import { activarAlertasDeVia } from '@/lib/push';
 
-const TIPO_ESTILO: Record<Noticia['tipo'], { etiqueta: string; clase: string }> = {
-  ACCIDENTE: { etiqueta: 'Accidente', clase: 'bg-red-500/15 text-red-400 border-red-500/30' },
-  CIERRE_VIA: { etiqueta: 'Cierre de vía', clase: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
-  VIA_LIBRE: { etiqueta: 'Vía libre', clase: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
-  CONDICION_CLIMA: { etiqueta: 'Clima', clase: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
-  INFO: { etiqueta: 'Vías', clase: 'bg-zinc-700/50 text-zinc-300 border-zinc-600/40' },
+const TIPO_ESTILO: Record<Noticia['tipo'], { etiqueta: string; punto: string }> = {
+  ACCIDENTE: { etiqueta: 'Accidente', punto: 'bg-red-500' },
+  CIERRE_VIA: { etiqueta: 'Cierre de vía', punto: 'bg-amber-500' },
+  VIA_LIBRE: { etiqueta: 'Vía libre', punto: 'bg-emerald-500' },
+  CONDICION_CLIMA: { etiqueta: 'Clima', punto: 'bg-sky-500' },
+  INFO: { etiqueta: 'Vías', punto: 'bg-zinc-400' },
 };
 
+// Ninguna alianza está firmada todavía: se muestran como hoja de ruta, no
+// como beneficio vigente.
 const ALIANZAS = [
-  { icono: Fuel, nombre: 'Combustible', texto: 'Descuentos geolocalizados en estaciones aliadas por ruta.' },
+  { icono: Fuel, nombre: 'Combustible', texto: 'Descuentos en estaciones aliadas a lo largo de tu ruta.' },
   { icono: ShieldPlus, nombre: 'Seguros', texto: 'Póliza de carga por viaje, contratada en 2 clics.' },
-  { icono: CreditCard, nombre: 'Financiación', texto: 'Anticipo de fletes con aliado financiero regulado (próximamente).' },
+  { icono: CreditCard, nombre: 'Financiación', texto: 'Anticipo de fletes con aliado financiero regulado.' },
   { icono: Wrench, nombre: 'Talleres', texto: 'Red de talleres y mantenimiento con tarifa preferencial.' },
 ];
 
 export default function NoticiasYAlianzas() {
   const noticias = useNoticiasVia();
   const { autenticado, tipo } = useAuth();
+  const { ingresar } = useAcciones();
   const [estadoAlertas, setEstadoAlertas] = useState<'inactivo' | 'cargando' | 'activo' | 'error'>('inactivo');
   const [errorAlertas, setErrorAlertas] = useState<string | null>(null);
 
   async function activar() {
-    if (!autenticado) return;
+    if (!autenticado) return ingresar();
     setEstadoAlertas('cargando');
     setErrorAlertas(null);
     try {
@@ -43,105 +45,118 @@ export default function NoticiasYAlianzas() {
 
   return (
     <>
-      {/* Noticias de vía */}
-      <section id="alertas" className="border-b border-zinc-800 bg-zinc-950 py-20">
-        <div className="mx-auto max-w-7xl px-4">
+      <section id="alertas" className="bg-white py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">Alertas de carretera</p>
-            <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">Noticias de la vía en Colombia</h2>
-            <p className="mt-3 text-zinc-400">
+            <p className="text-sm font-semibold text-orange-600">Alertas de carretera</p>
+            <h2 className="mt-3 text-3xl font-extrabold text-zinc-950 sm:text-[2.5rem] sm:leading-tight">
+              Lo que pasa en la vía, en tiempo real
+            </h2>
+            <p className="mt-3 text-[15px] leading-relaxed text-zinc-600">
               Titulares reales sobre cierres, accidentes y estado de las principales vías del país,
-              actualizados automáticamente cada pocos minutos.
+              actualizados automáticamente.
             </p>
           </div>
 
-          <div className="mt-10 grid gap-5 md:grid-cols-2">
-            {noticias.length === 0 && (
-              <p className="text-sm text-zinc-500 md:col-span-2">Cargando noticias de vía…</p>
-            )}
-            {noticias.map((n) => {
+          <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
+            {noticias.length === 0 &&
+              Array.from({ length: 4 }, (_, i) => <div key={i} className="h-[116px] animate-pulse rounded-2xl bg-zinc-100" />)}
+            {noticias.slice(0, 8).map((n) => {
               const estilo = TIPO_ESTILO[n.tipo];
               return (
-                <a key={n.id} href={n.url} target="_blank" rel="noopener" className="block">
-                  <Card className="border-zinc-800 bg-zinc-900/60 transition-colors hover:border-zinc-600">
-                    <CardContent className="p-5">
-                      <div className="flex items-center justify-between gap-2">
-                        <Badge variant="outline" className={estilo.clase}>{estilo.etiqueta}</Badge>
-                        <span className="text-xs text-zinc-500">{n.hace}</span>
-                      </div>
-                      <h3 className="mt-3 font-semibold text-white">{n.titulo}</h3>
-                      <p className="mt-2 flex items-center gap-1 text-sm text-zinc-500">
-                        <ExternalLink className="h-3.5 w-3.5" /> {n.fuente}
-                      </p>
-                    </CardContent>
-                  </Card>
+                <a
+                  key={n.id}
+                  href={n.url}
+                  target="_blank"
+                  rel="noopener"
+                  className="group flex flex-col rounded-2xl border border-zinc-200 p-5 transition-all hover:border-zinc-300 hover:shadow-flotante"
+                >
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="flex items-center gap-2 font-semibold text-zinc-800">
+                      <span className={`h-2 w-2 rounded-full ${estilo.punto}`} /> {estilo.etiqueta}
+                    </span>
+                    <span className="text-zinc-500">{n.hace}</span>
+                  </div>
+                  <h3 className="mt-3 line-clamp-2 font-semibold leading-snug text-zinc-950">{n.titulo}</h3>
+                  <p className="mt-auto flex items-center gap-1 pt-3 text-sm text-zinc-500 group-hover:text-zinc-800">
+                    {n.fuente} <ArrowUpRight className="h-3.5 w-3.5" />
+                  </p>
                 </a>
               );
             })}
           </div>
 
-          <div className="mt-8 flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <Radio className="h-5 w-5 shrink-0 text-orange-400" />
-            <p className="text-sm text-zinc-400">
-              Titulares recopilados de medios colombianos por palabras clave de vías y carreteras — no
-              son reportes oficiales de INVÍAS ni de la Plataforma. Verifica siempre en la fuente citada.
-            </p>
-          </div>
+          <p className="mt-6 text-xs text-zinc-500">
+            Titulares recopilados de medios colombianos por palabras clave de vías y carreteras — no son
+            reportes oficiales de INVÍAS ni de la plataforma. Verifica siempre en la fuente citada.
+          </p>
 
           {/* Alertas push reales, geolocalizadas: ver server/src/push.js */}
-          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-orange-500/30 bg-zinc-900 p-5 text-center shadow-2xl">
-            {!tipo ? (
-              <p className="text-sm text-zinc-400">
-                <span className="font-semibold text-white">Inicia sesión</span> para activar notificaciones cuando
-                haya una alerta de vía a menos de 50 km de ti.
-              </p>
-            ) : estadoAlertas === 'activo' ? (
-              <p className="flex items-center justify-center gap-2 text-sm font-semibold text-orange-400">
-                <Bell className="h-4 w-4" /> Alertas activas — te avisamos si hay algo a menos de 50 km
-              </p>
-            ) : (
-              <>
-                <Button
-                  onClick={activar}
-                  disabled={estadoAlertas === 'cargando'}
-                  className="gap-2 bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400"
-                >
-                  <Bell className="h-4 w-4" />
-                  {estadoAlertas === 'cargando' ? 'Activando…' : 'Activar alertas de vía cerca de mí'}
-                </Button>
-                <p className="mt-3 text-xs text-zinc-500">
-                  Pide permiso de ubicación y de notificaciones del navegador. Si hay una noticia de vía a menos de
-                  50 km de ti, te llega un aviso aunque no tengas la página abierta.
+          <div className="relative mt-12 overflow-hidden rounded-[28px] bg-zinc-950 p-8 sm:p-12">
+            <div aria-hidden className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl" />
+            <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-xl">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white">
+                  <BellRing className="h-6 w-6" />
+                </span>
+                <h3 className="mt-5 text-2xl font-extrabold text-white sm:text-3xl">Te avisamos si algo pasa cerca de ti</h3>
+                <p className="mt-3 text-[15px] leading-relaxed text-zinc-400">
+                  Si hay un accidente o un cierre a menos de 50 km, te llega una notificación aunque no tengas la
+                  página abierta. Pide permiso de ubicación y de notificaciones.
                 </p>
-                {errorAlertas && <p className="mt-2 text-xs text-red-400">{errorAlertas}</p>}
-              </>
-            )}
+              </div>
+              <div className="shrink-0">
+                {tipo && estadoAlertas === 'activo' ? (
+                  <p className="flex items-center gap-2 rounded-full bg-white/10 px-5 py-3 text-sm font-semibold text-white">
+                    <Bell className="h-4 w-4" /> Alertas activas
+                  </p>
+                ) : (
+                  <Button
+                    size="lg"
+                    onClick={activar}
+                    disabled={estadoAlertas === 'cargando'}
+                    className="gap-2 bg-white text-zinc-950 hover:bg-zinc-200"
+                  >
+                    {estadoAlertas === 'cargando' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+                    {!tipo ? 'Ingresa para activar alertas' : estadoAlertas === 'cargando' ? 'Activando…' : 'Activar alertas de vía'}
+                  </Button>
+                )}
+                {errorAlertas && <p className="mt-3 max-w-xs text-xs text-red-400">{errorAlertas}</p>}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Alianzas */}
-      <section className="border-b border-zinc-800 bg-zinc-900/40 py-20">
-        <div className="mx-auto max-w-7xl px-4">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">Ecosistema</p>
-            <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">Beneficios que se pierden al salirse</h2>
-            <p className="mt-3 text-zinc-400">
-              Nuestra respuesta a la fuga por WhatsApp: quien negocia por fuera pierde descuentos,
-              seguro por viaje, historial de calificaciones y el soporte de cumplimiento RNDC.
-            </p>
+      <section className="bg-zinc-50 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold text-orange-600">Ecosistema</p>
+              <h2 className="mt-3 text-3xl font-extrabold text-zinc-950 sm:text-[2.5rem] sm:leading-tight">
+                Más que un listado de cargas
+              </h2>
+              <p className="mt-3 text-[15px] leading-relaxed text-zinc-600">
+                Estamos armando una red de aliados para que moverte por la plataforma te cueste menos que
+                negociar por fuera.
+              </p>
+            </div>
+            <span className="w-fit shrink-0 rounded-full bg-zinc-200/70 px-3.5 py-1.5 text-xs font-semibold text-zinc-700">
+              Hoja de ruta
+            </span>
           </div>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {ALIANZAS.map((a) => (
-              <Card key={a.nombre} className="border-zinc-800 bg-zinc-900/60">
-                <CardContent className="p-6">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/15 text-orange-400">
+              <div key={a.nombre} className="rounded-[28px] bg-white p-7 shadow-suave">
+                <div className="flex items-start justify-between">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
                     <a.icono className="h-5 w-5" />
-                  </div>
-                  <h3 className="mt-4 font-semibold text-white">{a.nombre}</h3>
-                  <p className="mt-2 text-sm text-zinc-400">{a.texto}</p>
-                </CardContent>
-              </Card>
+                  </span>
+                  <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold text-zinc-600">Próximamente</span>
+                </div>
+                <h3 className="mt-5 text-lg font-bold text-zinc-950">{a.nombre}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-zinc-600">{a.texto}</p>
+              </div>
             ))}
           </div>
         </div>

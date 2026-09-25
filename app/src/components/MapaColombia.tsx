@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, GeoJSON, Marker, useMap } from 'react-leaflet';
+import { MapContainer, GeoJSON, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import colombiaGeoJson from '@/data/colombia.geo.json';
@@ -16,13 +16,23 @@ import colombiaGeoJson from '@/data/colombia.geo.json';
 // estimadas) dejó camiones y ciudades "flotando" fuera de la silueta porque
 // el recuadro geográfico de la imagen era una aproximación, no un dato real.
 // En vez de eso, se dibuja el contorno real de Colombia como geometría
-// (GeoJSON, Natural Earth 1:110m, dominio público) vía <GeoJSON> de Leaflet:
+// (GeoJSON, Natural Earth 1:50m, solo el polígono continental, dominio
+// público) vía <GeoJSON> de Leaflet:
 // los marcadores usan las mismas coordenadas lat/lon reales que el contorno,
 // así que quedan alineados por construcción, sin calibrar nada a mano.
 const ESTILO_COLOMBIA: L.PathOptions = {
-  fillColor: '#27272e',
-  fillOpacity: 0.92,
-  stroke: false,
+  fillColor: '#e4e4e7',
+  fillOpacity: 1,
+  color: '#ffffff',
+  weight: 1.5,
+};
+
+const ESTILO_RUTA: L.PathOptions = {
+  color: '#a1a1aa',
+  weight: 1.5,
+  dashArray: '3 6',
+  lineCap: 'round',
+  interactive: false,
 };
 
 interface Ciudad {
@@ -67,25 +77,23 @@ const RUTAS_CAMIONES: { origen: number; destino: number; duracionMs: number; ini
   { origen: 3, destino: 14, duracionMs: 10000, inicio: 0.6 }, // Barranquilla-Maicao
 ];
 
-// Verde esmeralda: el color de marca original (antes del cambio a naranja),
-// contrasta bien contra los camiones naranjas y contra el mapa.
 const iconoEmpresa = L.divIcon({
   className: '',
-  html: `<span class="relative flex h-1.5 w-1.5">
-    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-    <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+  html: `<span class="relative flex h-2.5 w-2.5">
+    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span>
+    <span class="relative inline-flex h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 shadow"></span>
   </span>`,
-  iconSize: [6, 6],
-  iconAnchor: [3, 3],
+  iconSize: [10, 10],
+  iconAnchor: [5, 5],
 });
 
 // SVG propio (no emoji): un emoji de camión se ve distinto — o directamente
 // como una caja vacía — según la fuente de cada sistema operativo.
-// Tamaño 45% más chico que el original (24px -> 13px).
+// Negro con borde blanco, como los carros en el mapa de Uber.
 const iconoCamion = L.divIcon({
   className: '',
-  html: `<div class="flex h-[13px] w-[13px] items-center justify-center rounded-full bg-orange-500 shadow-md shadow-black/50">
-    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#09090b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  html: `<div class="flex h-[20px] w-[20px] items-center justify-center rounded-full border-2 border-white bg-zinc-950 shadow-md shadow-black/30">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M14 18V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h1"/>
       <path d="M15 18H9"/>
       <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14v10"/>
@@ -93,8 +101,8 @@ const iconoCamion = L.divIcon({
       <circle cx="7" cy="18" r="2"/>
     </svg>
   </div>`,
-  iconSize: [13, 13],
-  iconAnchor: [6.5, 6.5],
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
 });
 
 // Encuadra automáticamente todas las ciudades sin importar el tamaño real
@@ -104,7 +112,8 @@ function AjustarVista() {
   const map = useMap();
   useEffect(() => {
     const bounds = L.latLngBounds(CIUDADES.map((c) => [c.lat, c.lon]));
-    map.fitBounds(bounds, { padding: [16, 16] });
+    // Más margen arriba: ahí va la leyenda flotante.
+    map.fitBounds(bounds, { paddingTopLeft: [28, 64], paddingBottomRight: [28, 28] });
   }, [map]);
   return null;
 }
@@ -138,15 +147,17 @@ function CamionAnimado({ origen, destino, duracionMs, inicio }: (typeof RUTAS_CA
   return <Marker position={posicion} icon={iconoCamion} interactive={false} keyboard={false} />;
 }
 
-export default function MapaColombia() {
+export default function MapaColombia({ className = 'h-72' }: { className?: string }) {
   return (
     // isolate: Leaflet pone z-index 400-700 en sus panes internos (tiles,
     // marcadores, popups) y su .leaflet-container no abre un contexto de
     // apilamiento propio -- sin "isolate" esos z-index compiten directo
     // contra overlays fixed de toda la página (p. ej. z-50 de los Dialog de
     // shadcn) y el mapa termina pintándose ENCIMA de un modal abierto.
-    <div className="relative isolate flex flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900/60">
-      <div className="h-56 w-full lg:h-full lg:min-h-[220px]">
+    <div
+      className={`relative isolate overflow-hidden rounded-[28px] bg-zinc-50 [background-image:radial-gradient(#d4d4d8_1px,transparent_1px)] [background-size:18px_18px] ${className}`}
+    >
+      <div className="absolute inset-0">
         <MapContainer
           center={[4.5, -74.5]}
           zoom={5}
@@ -154,11 +165,28 @@ export default function MapaColombia() {
           dragging={false}
           zoomControl={false}
           attributionControl={false}
+          // Zoom fraccional: con el zoomSnap=1 por defecto, fitBounds solo puede
+          // usar niveles enteros y Colombia quedaba chiquita en la tarjeta grande.
+          zoomSnap={0.1}
+          doubleClickZoom={false}
+          touchZoom={false}
+          boxZoom={false}
+          keyboard={false}
           className="h-full w-full"
           style={{ background: 'transparent' }}
         >
           <AjustarVista />
           <GeoJSON data={colombiaGeoJson as GeoJSON.GeoJsonObject} style={ESTILO_COLOMBIA} interactive={false} />
+          {RUTAS_CAMIONES.map((r, i) => (
+            <Polyline
+              key={`ruta-${i}`}
+              positions={[
+                [CIUDADES[r.origen].lat, CIUDADES[r.origen].lon],
+                [CIUDADES[r.destino].lat, CIUDADES[r.destino].lon],
+              ]}
+              pathOptions={ESTILO_RUTA}
+            />
+          ))}
           {EMPRESAS_ACTIVAS.map((i) => (
             <Marker key={CIUDADES[i].nombre} position={[CIUDADES[i].lat, CIUDADES[i].lon]} icon={iconoEmpresa} interactive={false} keyboard={false} />
           ))}
@@ -167,14 +195,14 @@ export default function MapaColombia() {
           ))}
         </MapContainer>
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-800 bg-zinc-950/80 px-3 py-2 text-[10px] text-zinc-500">
-        <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" /> Empresas publicando
+      <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-full bg-white/90 px-3.5 py-2 text-[11px] font-medium text-zinc-600 shadow-suave backdrop-blur">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" /> Empresas
         </span>
-        <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-orange-500" /> Transportadores en vía
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-zinc-950" /> Transportadores
         </span>
-        <span>— actividad ilustrativa de cómo se ve la red</span>
+        <span className="text-zinc-400">· ilustrativo</span>
       </div>
     </div>
   );

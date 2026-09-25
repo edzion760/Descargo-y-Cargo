@@ -80,10 +80,10 @@ export default function EditarCargaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-zinc-800 bg-zinc-950 text-zinc-100 sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-white">Editar carga</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogTitle className="text-2xl font-extrabold tracking-tight text-zinc-950">Editar carga</DialogTitle>
+          <DialogDescription className="text-zinc-500">
             Origen, destino y toneladas no se pueden cambiar aquí -- eso determina el piso legal.
             Si necesitas cambiarlos, cancela esta publicación y crea una nueva.
           </DialogDescription>
@@ -91,24 +91,23 @@ export default function EditarCargaDialog({
 
         <form key={carga.id} onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="editar-titulo" className="text-zinc-400">Título</Label>
+            <Label htmlFor="editar-titulo" className="text-zinc-700">Título</Label>
             <Input
               id="editar-titulo"
               name="titulo"
               required
               defaultValue={carga.titulo}
-              className="border-zinc-700 bg-zinc-900 text-white"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="editar-tipo-publicacion" className="text-zinc-400">Tipo de publicación</Label>
+              <Label htmlFor="editar-tipo-publicacion" className="text-zinc-700">Tipo de publicación</Label>
               <Select name="tipoPublicacion" defaultValue={carga.tipoPublicacion}>
-                <SelectTrigger id="editar-tipo-publicacion" className="border-zinc-700 bg-zinc-900 text-white">
+                <SelectTrigger id="editar-tipo-publicacion" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
+                <SelectContent>
                   <SelectItem value="NACIONAL">Nacional</SelectItem>
                   <SelectItem value="URBANA">Urbana</SelectItem>
                   <SelectItem value="BARBACHA">Barbacha</SelectItem>
@@ -116,25 +115,24 @@ export default function EditarCargaDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="editar-fecha" className="text-zinc-400">Fecha de carga</Label>
+              <Label htmlFor="editar-fecha" className="text-zinc-700">Fecha de carga</Label>
               <Input
                 id="editar-fecha"
                 name="fechaCarga"
                 type="date"
                 required
                 defaultValue={carga.fechaCarga.slice(0, 10)}
-                className="border-zinc-700 bg-zinc-900 text-white"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="editar-vehiculo" className="text-zinc-400">Vehículo requerido</Label>
+            <Label htmlFor="editar-vehiculo" className="text-zinc-700">Vehículo requerido</Label>
             <Select name="vehiculoRequerido" defaultValue={carga.vehiculoRequerido} required>
-              <SelectTrigger id="editar-vehiculo" className="border-zinc-700 bg-zinc-900 text-white">
+              <SelectTrigger id="editar-vehiculo" className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="border-zinc-700 bg-zinc-900 text-white">
+              <SelectContent>
                 {CONFIGURACIONES_VEHICULO.map((v) => (
                   <SelectItem key={v.codigo} value={v.label}>{v.label}</SelectItem>
                 ))}
@@ -143,9 +141,9 @@ export default function EditarCargaDialog({
           </div>
 
           <div className="space-y-1.5">
-            <div className="flex items-baseline justify-between">
-              <Label htmlFor="editar-precio" className="text-zinc-400">Flete ofrecido (COP)</Label>
-              <span className="text-xs text-zinc-500">Piso SICE-TAC: {formatCOP(carga.pisoSiceTac)}</span>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+              <Label htmlFor="editar-precio" className="text-zinc-700">Flete ofrecido (COP)</Label>
+              <span className="text-xs font-medium text-zinc-500">Piso SICE-TAC: {formatCOP(carga.pisoSiceTac)}</span>
             </div>
             <Input
               id="editar-precio"
@@ -154,13 +152,12 @@ export default function EditarCargaDialog({
               min={carga.pisoSiceTac}
               required
               defaultValue={carga.precio}
-              className="border-zinc-700 bg-zinc-900 text-white"
             />
           </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <Button type="submit" disabled={cargando} className="w-full bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400">
+          <Button type="submit" disabled={cargando} className="h-12 w-full rounded-xl text-[15px] font-semibold">
             {cargando ? 'Guardando…' : 'Guardar cambios'}
           </Button>
         </form>

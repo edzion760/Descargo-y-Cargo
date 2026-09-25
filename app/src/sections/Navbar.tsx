@@ -1,20 +1,13 @@
-import { useState } from 'react';
-import { Truck, ShieldCheck, Menu, ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Menu, UserRound, LogOut, Trash2, PackagePlus, LogIn, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetClose,
-} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -26,188 +19,151 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
-import AuthDialog from '@/components/AuthDialog';
-import PublicarCargaDialog from '@/components/PublicarCargaDialog';
+import Logo from '@/components/Logo';
 import { useAuth } from '@/lib/use-auth';
+import { useAcciones } from '@/lib/use-acciones';
 
 const LINKS = [
   { href: '#cargas', label: 'Cargas' },
-  { href: '#calculadora', label: 'Calculadora' },
-  { href: '#verificacion', label: 'Verificación' },
-  { href: '#alertas', label: 'Alertas vía' },
+  { href: '#calculadora', label: 'Calcular flete' },
+  { href: '#como-funciona', label: 'Cómo funciona' },
+  { href: '#alertas', label: 'Alertas de vía' },
   { href: '#membresias', label: 'Membresías' },
 ];
 
 export default function Navbar() {
-  const [menuAbierto, setMenuAbierto] = useState(false);
-  const [authAbierto, setAuthAbierto] = useState(false);
-  const [authTab, setAuthTab] = useState<'login' | 'registro'>('login');
-  const [publicarAbierto, setPublicarAbierto] = useState(false);
   const [eliminarAbierto, setEliminarAbierto] = useState(false);
+  const [conSombra, setConSombra] = useState(false);
   const { tipo, logout, eliminarCuenta } = useAuth();
+  const { publicar, ingresar, registrarse } = useAcciones();
+
+  // Borde/sombra solo al hacer scroll, como Airbnb: arriba del todo el navbar
+  // se funde con el hero.
+  useEffect(() => {
+    const alScroll = () => setConSombra(window.scrollY > 8);
+    alScroll();
+    window.addEventListener('scroll', alScroll, { passive: true });
+    return () => window.removeEventListener('scroll', alScroll);
+  }, []);
 
   async function confirmarEliminar() {
     await eliminarCuenta();
     setEliminarAbierto(false);
-    setMenuAbierto(false);
-  }
-
-  function abrirPublicar() {
-    setMenuAbierto(false);
-    if (!tipo) {
-      setAuthTab('registro');
-      setAuthAbierto(true);
-      return;
-    }
-    if (tipo === 'TRANSPORTADOR') {
-      alert('Esta cuenta es de transportador. Inicia sesión con una cuenta de publicador para publicar carga.');
-      return;
-    }
-    setPublicarAbierto(true);
-  }
-
-  function abrirLogin() {
-    setAuthTab('login');
-    setAuthAbierto(true);
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-zinc-950">
-            <Truck className="h-5 w-5" strokeWidth={2.5} />
-          </div>
-          <div className="min-w-0 leading-tight">
-            <p className="whitespace-nowrap text-base font-bold text-white">
-              Descargo <span className="text-orange-400">&</span> Cargo
-            </p>
-            <p className="hidden whitespace-nowrap text-[10px] uppercase tracking-widest text-zinc-500 sm:block">
-              Logística legal · Colombia
-            </p>
-          </div>
-          <Badge className="ml-2 hidden gap-1 border-orange-500/30 bg-orange-500/10 text-orange-400 sm:flex" variant="outline">
-            <ShieldCheck className="h-3 w-3" /> Piso SICE-TAC garantizado
-          </Badge>
-        </div>
+    <header
+      className={`sticky top-0 z-50 bg-white/90 backdrop-blur-md transition-shadow ${
+        conSombra ? 'shadow-[0_1px_0_rgb(0_0_0/0.06),0_4px_12px_rgb(0_0_0/0.04)]' : ''
+      }`}
+    >
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a href="/" aria-label="Descargo & Cargo, inicio" className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-zinc-950">
+          <Logo />
+        </a>
 
-        <nav className="hidden items-center gap-6 text-sm text-zinc-400 lg:flex">
+        <nav aria-label="Principal" className="hidden items-center gap-1 lg:flex">
           {LINKS.map((link) => (
-            <a key={link.href} href={link.href} className="transition-colors hover:text-white">
+            <a
+              key={link.href}
+              href={link.href}
+              className="rounded-full px-4 py-2 text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
+            >
               {link.label}
             </a>
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
-          {tipo ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="hidden gap-1 text-zinc-300 sm:inline-flex">
-                  {tipo === 'PUBLICADOR' ? 'Publicador' : 'Transportador'}
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-100">
-                <DropdownMenuItem onClick={logout}>Cerrar sesión</DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
-                  onSelect={() => setEliminarAbierto(true)}
+          <Button onClick={publicar} className="hidden h-11 rounded-full px-5 font-semibold sm:inline-flex">
+            Publicar carga
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Abrir menú de cuenta"
+                className="flex h-11 items-center gap-2.5 rounded-full border border-zinc-200 bg-white pl-3.5 pr-1.5 transition-shadow hover:shadow-flotante focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950"
+              >
+                <Menu className="h-4 w-4 text-zinc-700" />
+                <span
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                    tipo ? 'bg-zinc-950 text-white' : 'bg-zinc-500 text-white'
+                  }`}
                 >
-                  Eliminar mi cuenta
+                  {tipo ? (tipo === 'PUBLICADOR' ? 'P' : 'T') : <UserRound className="h-[18px] w-[18px]" />}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={10} className="w-64 rounded-2xl p-2 shadow-elevada">
+              {tipo ? (
+                <DropdownMenuLabel className="px-3 py-2">
+                  <span className="block text-xs font-medium text-zinc-500">Sesión iniciada como</span>
+                  <span className="text-sm font-semibold text-zinc-950">
+                    {tipo === 'PUBLICADOR' ? 'Publicador de carga' : 'Transportador'}
+                  </span>
+                </DropdownMenuLabel>
+              ) : (
+                <>
+                  <DropdownMenuItem onSelect={ingresar} className="rounded-lg px-3 py-2.5 font-semibold">
+                    <LogIn /> Ingresar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={registrarse} className="rounded-lg px-3 py-2.5">
+                    <UserPlus /> Crear cuenta
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              <DropdownMenuSeparator className="my-2" />
+              <DropdownMenuItem onSelect={publicar} className="rounded-lg px-3 py-2.5 sm:hidden">
+                <PackagePlus /> Publicar carga
+              </DropdownMenuItem>
+              {LINKS.map((link) => (
+                <DropdownMenuItem key={link.href} asChild className="rounded-lg px-3 py-2.5 lg:hidden">
+                  <a href={link.href}>{link.label}</a>
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button variant="ghost" className="hidden text-zinc-300 sm:inline-flex" onClick={abrirLogin}>
-              Ingresar
-            </Button>
-          )}
-          <Button className="whitespace-nowrap bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400" onClick={abrirPublicar}>
-            <span className="sm:hidden">Publicar carga</span>
-            <span className="hidden sm:inline">Publicar carga gratis</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            aria-label="Abrir menú"
-            onClick={() => setMenuAbierto(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+              ))}
+              <DropdownMenuItem asChild className="rounded-lg px-3 py-2.5">
+                <a href="mailto:descargoycargo@gmail.com">Ayuda y PQRS</a>
+              </DropdownMenuItem>
+
+              {tipo && (
+                <>
+                  <DropdownMenuSeparator className="my-2" />
+                  <DropdownMenuItem onSelect={logout} className="rounded-lg px-3 py-2.5">
+                    <LogOut /> Cerrar sesión
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => setEliminarAbierto(true)}
+                    className="rounded-lg px-3 py-2.5 text-red-600 focus:bg-red-50 focus:text-red-600"
+                  >
+                    <Trash2 className="text-red-600" /> Eliminar mi cuenta
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      <Sheet open={menuAbierto} onOpenChange={setMenuAbierto}>
-        <SheetContent side="right" className="border-zinc-800 bg-zinc-950 text-zinc-100">
-          <SheetHeader>
-            <SheetTitle className="text-white">Menú</SheetTitle>
-            <SheetDescription className="sr-only">Navegación principal de Descargo &amp; Cargo</SheetDescription>
-          </SheetHeader>
-          <nav className="flex flex-col gap-1 px-4">
-            {LINKS.map((link) => (
-              <SheetClose asChild key={link.href}>
-                <a
-                  href={link.href}
-                  className="rounded-lg px-3 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white"
-                >
-                  {link.label}
-                </a>
-              </SheetClose>
-            ))}
-            {tipo ? (
-              <>
-                <SheetClose asChild>
-                  <Button variant="ghost" className="mt-2 justify-start text-zinc-300" onClick={logout}>
-                    {tipo === 'PUBLICADOR' ? 'Publicador' : 'Transportador'} · Cerrar sesión
-                  </Button>
-                </SheetClose>
-                <Button
-                  variant="ghost"
-                  className="justify-start text-red-400 hover:text-red-400"
-                  onClick={() => setEliminarAbierto(true)}
-                >
-                  Eliminar mi cuenta
-                </Button>
-              </>
-            ) : (
-              <SheetClose asChild>
-                <Button variant="ghost" className="mt-2 justify-start text-zinc-300" onClick={abrirLogin}>
-                  Ingresar
-                </Button>
-              </SheetClose>
-            )}
-          </nav>
-        </SheetContent>
-      </Sheet>
-
       <AlertDialog open={eliminarAbierto} onOpenChange={setEliminarAbierto}>
-        <AlertDialogContent className="border-zinc-800 bg-zinc-950 text-zinc-100">
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar tu cuenta?</AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
+            <AlertDialogDescription>
               Tu nombre, teléfono y documento se eliminan de la plataforma de inmediato y no podrás volver a
               iniciar sesión con esta cuenta. Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-900 hover:text-white">
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmarEliminar} className="bg-red-600 text-white hover:bg-red-500">
+            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarEliminar} className="rounded-xl bg-red-600 text-white hover:bg-red-500">
               Sí, eliminar mi cuenta
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <AuthDialog key={authTab} open={authAbierto} onOpenChange={setAuthAbierto} defaultTab={authTab} defaultTipo="PUBLICADOR" />
-      <PublicarCargaDialog
-        open={publicarAbierto}
-        onOpenChange={setPublicarAbierto}
-        onPublicada={() => window.dispatchEvent(new Event('cargas:publicada'))}
-      />
     </header>
   );
 }

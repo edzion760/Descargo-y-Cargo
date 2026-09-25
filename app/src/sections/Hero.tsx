@@ -1,172 +1,175 @@
-import { useState } from 'react';
-import { ArrowRight, ShieldCheck, Scale, Radio, TrendingUp } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import AuthDialog from '@/components/AuthDialog';
-import PublicarCargaDialog from '@/components/PublicarCargaDialog';
-import { useAuth } from '@/lib/use-auth';
+import MapaColombia from '@/components/MapaColombia';
+import RutaInputs from '@/components/RutaInputs';
+import { useNoticiasVia } from '@/lib/use-noticias';
+import { useAcciones } from '@/lib/use-acciones';
 
-const STATS = [
-  { valor: '400+', label: 'cargas publicadas / mes' },
-  { valor: '100%', label: 'fletes sobre el piso legal' },
-  { valor: '15 min', label: 'para crear tu cuenta' },
-  { valor: '24/7', label: 'alertas de vía en vivo' },
+type Modo = 'carga' | 'transporte';
+
+const TIPO_NOTICIA: Record<string, string> = {
+  ACCIDENTE: 'Accidente',
+  CIERRE_VIA: 'Cierre de vía',
+  VIA_LIBRE: 'Vía libre',
+  CONDICION_CLIMA: 'Clima',
+  INFO: 'Vías',
+};
+
+// Solo datos que se pueden sostener: publicar sí es gratis, el piso legal sí
+// se exige en el backend (422 si el precio queda por debajo), y las alertas
+// de vía sí son automáticas. Nada de "400+ cargas/mes" mientras no sea real.
+const DATOS = [
+  { valor: '$0', etiqueta: 'para publicar tu carga' },
+  { valor: '100%', etiqueta: 'de fletes sobre el piso legal' },
+  { valor: '5 min', etiqueta: 'para publicar tu primera carga' },
+  { valor: '24/7', etiqueta: 'alertas de vía en vivo' },
 ];
 
-export default function Hero() {
-  const { tipo } = useAuth();
-  const [authAbierto, setAuthAbierto] = useState(false);
-  const [authTab, setAuthTab] = useState<'login' | 'registro'>('registro');
-  const [authTipo, setAuthTipo] = useState<'PUBLICADOR' | 'TRANSPORTADOR'>('TRANSPORTADOR');
-  const [publicarAbierto, setPublicarAbierto] = useState(false);
+export default function Hero({
+  onCotizar,
+  onBuscar,
+}: {
+  onCotizar: (origen: string, destino: string) => void;
+  onBuscar: (origen: string, destino: string) => void;
+}) {
+  const [modo, setModo] = useState<Modo>('carga');
+  const [origen, setOrigen] = useState('');
+  const [destino, setDestino] = useState('');
+  const [indiceNoticia, setIndiceNoticia] = useState(0);
+  const noticias = useNoticiasVia();
+  const { publicar, soyTransportador } = useAcciones();
 
-  function irTransportador() {
-    if (tipo) {
-      document.querySelector('#cargas')?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-    setAuthTipo('TRANSPORTADOR');
-    setAuthTab('registro');
-    setAuthAbierto(true);
-  }
+  useEffect(() => {
+    if (noticias.length < 2) return;
+    const t = setInterval(() => setIndiceNoticia((i) => (i + 1) % noticias.length), 5000);
+    return () => clearInterval(t);
+  }, [noticias.length]);
 
-  function irPublicar() {
-    if (!tipo) {
-      setAuthTipo('PUBLICADOR');
-      setAuthTab('registro');
-      setAuthAbierto(true);
-      return;
-    }
-    if (tipo === 'TRANSPORTADOR') {
-      alert('Esta cuenta es de transportador. Inicia sesión con una cuenta de publicador para publicar carga.');
-      return;
-    }
-    setPublicarAbierto(true);
+  const noticia = noticias[indiceNoticia];
+
+  function enviar(e: FormEvent) {
+    e.preventDefault();
+    if (modo === 'carga') onCotizar(origen.trim(), destino.trim());
+    else onBuscar(origen.trim(), destino.trim());
   }
 
   return (
-    <section className="relative overflow-hidden border-b border-zinc-800 bg-zinc-950">
-      {/* Fondo decorativo */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/2 h-96 w-[60rem] -translate-x-1/2 rounded-full bg-orange-500/10 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-amber-500/5 blur-3xl" />
-      </div>
+    <section className="relative bg-white">
+      <div className="mx-auto grid grid-cols-1 max-w-7xl items-center gap-10 px-4 pb-14 pt-6 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:gap-14 lg:pb-20 lg:pt-12">
+        {/* min-w-0: sin esto, un titular largo en el chip "En vivo" (con
+            truncate/nowrap) ensancha la columna del grid y aplasta el mapa. */}
+        <div className="min-w-0 animate-aparecer">
+          {noticia && (
+            <a
+              href={noticia.url}
+              target="_blank"
+              rel="noopener"
+              key={noticia.id}
+              className="group mb-6 inline-flex max-w-full items-center gap-2.5 rounded-full bg-zinc-100 py-1.5 pl-1.5 pr-4 text-sm transition-colors hover:bg-zinc-200"
+            >
+              <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-zinc-950 shadow-xs">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+                En vivo
+              </span>
+              <span className="truncate text-zinc-700">
+                <span className="font-semibold text-zinc-950">{TIPO_NOTICIA[noticia.tipo]}:</span> {noticia.titulo}
+              </span>
+            </a>
+          )}
 
-      <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-20 lg:grid-cols-2 lg:py-28">
-        <div className="min-w-0 flex flex-col justify-center">
-          <Badge className="mb-6 w-fit max-w-full gap-2 whitespace-normal rounded-xl border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-left text-amber-400" variant="outline">
-            <Scale className="h-3.5 w-3.5 shrink-0" />
-            Nueva norma · Decreto 1017 de 2025: nosotros te dejamos legal
-          </Badge>
-
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Consigue carga.
-            <br />
-            Cobra lo <span className="text-orange-400">justo</span>.
-            <br />
-            Viaja <span className="text-orange-400">legal</span>.
+          <h1 className="text-[2.75rem] font-extrabold leading-[1.02] text-zinc-950 sm:text-6xl lg:text-[4.25rem]">
+            Mueve tu carga por Colombia
           </h1>
-
-          <p className="mt-6 max-w-xl text-lg text-zinc-400">
-            El marketplace de transporte de carga de Colombia con piso tarifario{' '}
-            <strong className="text-zinc-200">SICE-TAC garantizado</strong>, verificación de
-            transportadores, manifiesto RNDC asistido y alertas de vía en tiempo real.
+          <p className="mt-5 max-w-lg text-lg leading-relaxed text-zinc-600">
+            Publica gratis, encuentra transportador y nunca pactes un flete por debajo del
+            piso legal SICE-TAC.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button
-              size="lg"
-              className="gap-2 bg-orange-500 font-semibold text-zinc-950 hover:bg-orange-400"
-              onClick={irTransportador}
-            >
-              Soy transportador <ArrowRight className="h-4 w-4" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-zinc-700 text-zinc-200 hover:bg-zinc-800"
-              onClick={irPublicar}
-            >
-              Publicar mi carga gratis
-            </Button>
-          </div>
-
-          <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4">
-            {STATS.map((s) => (
-              <div key={s.label}>
-                <p className="text-2xl font-bold text-white">{s.valor}</p>
-                <p className="text-xs text-zinc-500">{s.label}</p>
-              </div>
+          <div role="tablist" aria-label="¿Qué necesitas?" className="mt-8 inline-flex rounded-full bg-zinc-100 p-1">
+            {(
+              [
+                ['carga', 'Tengo carga'],
+                ['transporte', 'Soy transportador'],
+              ] as const
+            ).map(([valor, etiqueta]) => (
+              <button
+                key={valor}
+                type="button"
+                role="tab"
+                aria-selected={modo === valor}
+                onClick={() => setModo(valor)}
+                className={`rounded-full px-5 py-2 text-sm font-semibold transition-all ${
+                  modo === valor ? 'bg-white text-zinc-950 shadow-suave' : 'text-zinc-600 hover:text-zinc-950'
+                }`}
+              >
+                {etiqueta}
+              </button>
             ))}
           </div>
+
+          <form onSubmit={enviar} className="mt-4 max-w-md space-y-3">
+            <RutaInputs
+              idPrefijo="hero"
+              origen={origen}
+              destino={destino}
+              onOrigen={setOrigen}
+              onDestino={setDestino}
+              requerido={modo === 'carga'}
+            />
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {/* sm:flex-1 y no flex-1: en columna (móvil), flex-1 pone la base de
+                  ALTURA en 0 y los botones salían aplastados. */}
+              <Button type="submit" size="lg" className="w-full gap-2 sm:w-auto sm:flex-1">
+                {modo === 'carga' ? 'Ver precio legal' : 'Buscar cargas'}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                onClick={modo === 'carga' ? publicar : soyTransportador}
+                className="w-full border-zinc-300 sm:w-auto sm:flex-1"
+              >
+                {modo === 'carga' ? 'Publicar gratis' : 'Crear mi cuenta'}
+              </Button>
+            </div>
+          </form>
+
+          <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-600">
+            {['Publicar es gratis', 'Piso SICE-TAC garantizado', 'Distancias reales'].map((t) => (
+              <li key={t} className="flex items-center gap-1.5">
+                <Check className="h-4 w-4 text-emerald-600" strokeWidth={2.5} /> {t}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* Panel visual derecho */}
-        <div className="relative hidden items-center justify-center lg:flex">
-          <div className="w-full max-w-md space-y-4">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-2xl backdrop-blur">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/15 text-orange-400">
-                    <ShieldCheck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">Viaje #4821 · En curso</p>
-                    <p className="text-xs text-zinc-500">Bogotá → Medellín · 28 ton</p>
-                  </div>
-                </div>
-                <Badge className="bg-orange-500/15 text-orange-400">RNDC OK</Badge>
-              </div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-800">
-                <div className="h-full w-2/3 rounded-full bg-orange-500" />
-              </div>
-              <div className="mt-2 flex justify-between text-xs text-zinc-500">
-                <span>GPS reportando tiempos · Decreto 1017</span>
-                <span className="text-orange-400">66%</span>
-              </div>
-            </div>
-
-            <div className="ml-8 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-2xl backdrop-blur">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400">
-                  <Radio className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">⚠️ Accidente Ruta 45, km 67</p>
-                  <p className="text-xs text-zinc-500">Verificado por IA · confianza 94% · a 18 km de tu ruta</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="ml-16 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-2xl backdrop-blur">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/15 text-orange-400">
-                  <TrendingUp className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">Flete pactado: $5.6M</p>
-                  <p className="text-xs text-zinc-500">
-                    Piso SICE-TAC: $5.32M · <span className="text-orange-400">+$280k sobre el mínimo legal ✓</span>
-                  </p>
-                </div>
-              </div>
-            </div>
+        <div className="relative min-w-0 animate-aparecer [animation-delay:120ms]">
+          <MapaColombia className="h-[340px] sm:h-[440px] lg:h-[560px]" />
+          <div className="absolute -bottom-5 left-4 right-4 hidden rounded-2xl bg-white p-4 shadow-elevada sm:left-6 sm:right-auto sm:block sm:w-72">
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Cobertura</p>
+            <p className="mt-1 text-sm font-semibold text-zinc-950">32 departamentos · 1.122 municipios</p>
+            <p className="mt-0.5 text-xs text-zinc-500">Calcula ruta y piso legal entre cualquier par de ciudades.</p>
           </div>
         </div>
       </div>
 
-      <AuthDialog
-        key={authTab + authTipo}
-        open={authAbierto}
-        onOpenChange={setAuthAbierto}
-        defaultTab={authTab}
-        defaultTipo={authTipo}
-      />
-      <PublicarCargaDialog
-        open={publicarAbierto}
-        onOpenChange={setPublicarAbierto}
-        onPublicada={() => window.dispatchEvent(new Event('cargas:publicada'))}
-      />
+      {/* gap-px sobre fondo gris = líneas divisorias exactas en 2 o 4 columnas. */}
+      <div className="border-y border-zinc-200">
+        <dl className="mx-auto grid max-w-7xl grid-cols-2 gap-px bg-zinc-200 lg:grid-cols-4">
+          {DATOS.map((d) => (
+            <div key={d.etiqueta} className="bg-white px-4 py-6 sm:px-6 lg:py-8">
+              <dt className="sr-only">{d.etiqueta}</dt>
+              <dd className="text-3xl font-extrabold tracking-tight text-zinc-950">{d.valor}</dd>
+              <dd className="mt-1 text-sm text-zinc-500">{d.etiqueta}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </section>
   );
 }
