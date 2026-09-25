@@ -536,7 +536,7 @@ export default function Marketplace({
         )}
 
         <p className="mt-12 text-center text-xs text-zinc-500">
-          El desbloqueo cobra el 6% del flete (mínimo $15.000 COP) vía Wompi: PSE, tarjeta o Nequi.
+          El desbloqueo cobra el 6% del flete (mínimo $15.000 y máximo $100.000 COP) vía Wompi: PSE, tarjeta o Nequi.
         </p>
 
         {/* Medidas de protección del contacto revelado (uso interno, no se le

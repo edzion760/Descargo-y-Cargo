@@ -6,13 +6,14 @@ import { urlCheckout } from '../wompi.js';
 
 export const cargasRouter = Router();
 
-// Cobro por uso sin plan: 6% del flete, mínimo $15.000 COP.
+// Cobro por uso sin plan: 6% del flete, mínimo $15.000 y máximo $100.000 COP
+// (el tope aplica desde fletes de ~$1.666.667).
 // Con membresía ILIMITADA el desbloqueo es gratis.
 // El frontend repite la fórmula solo para MOSTRAR el precio (app/src/data/mock.ts);
 // el monto que se cobra en Wompi sale siempre de aquí.
 export function tarifaDesbloqueo(precio, tipoMembresia) {
   if (tipoMembresia === 'ILIMITADA') return 0;
-  return Math.max(Math.round(precio * 0.06), 15000);
+  return Math.min(Math.max(Math.round(precio * 0.06), 15000), 100000);
 }
 
 const cargaPublica = {

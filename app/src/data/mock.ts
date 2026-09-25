@@ -54,9 +54,9 @@ export function formatCOP(valor: number): string {
   return '$' + valor.toLocaleString('es-CO');
 }
 
-// Cobro por uso sin plan: 6% del flete, mínimo $15.000 COP. Solo para
-// mostrar el precio en la tarjeta: el cobro real lo calcula el servidor
-// (server/src/routes/cargas.js) -- si cambia uno, cambiar el otro.
+// Cobro por uso sin plan: 6% del flete, mínimo $15.000 y máximo $100.000 COP.
+// Solo para mostrar el precio en la tarjeta: el cobro real lo calcula el
+// servidor (server/src/routes/cargas.js) -- si cambia uno, cambiar el otro.
 export function tarifaDesbloqueo(precioCarga: number): number {
-  return Math.max(Math.round(precioCarga * 0.06), 15000);
+  return Math.min(Math.max(Math.round(precioCarga * 0.06), 15000), 100000);
 }
