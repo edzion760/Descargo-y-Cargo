@@ -150,7 +150,7 @@ model Carga {
   @@index([estado, tipoPublicacion])
 }
 
-// Monetización core: 4% del flete (mínimo $15.000 COP) por desbloquear
+// Monetización core: 6% del flete (mínimo $15.000 COP) por desbloquear
 // el contacto de una carga, o gratis si la membresía del transportador
 // todavía tiene cupos. Ver PLAN_INTEGRAL_V3.md §5 (PagoDesbloqueo).
 model PagoDesbloqueo {

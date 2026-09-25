@@ -43,7 +43,7 @@ Cuentas de prueba tras `npm run seed`:
 | GET | `/api/cargas` | opcional | Lista cargas disponibles; si el transportador está autenticado marca `desbloqueada` |
 | POST | `/api/cargas` | PUBLICADOR | Publica carga — rechaza precio bajo el piso SICE-TAC (422) |
 | GET | `/api/cargas/:id` | opcional | Detalle; revela `contacto` solo si está desbloqueada |
-| POST | `/api/cargas/:id/desbloqueo` | TRANSPORTADOR | Gratis con membresía ILIMITADA (revela el contacto directo); si no, cobra 4% del flete (mín. $15.000) vía Wompi y devuelve `checkoutUrl` |
+| POST | `/api/cargas/:id/desbloqueo` | TRANSPORTADOR | Gratis con membresía ILIMITADA (revela el contacto directo); si no, cobra 6% del flete (mín. $15.000) vía Wompi y devuelve `checkoutUrl` |
 | POST | `/api/webhooks/wompi` | — (firma) | Wompi confirma aquí el pago; recién ahí el `PagoDesbloqueo` pasa a `VERIFICADO` |
 | GET | `/api/membresias/planes` | — | Los 4 planes (mismo contenido que hoy en el frontend) |
 | GET/POST | `/api/membresias/actual` | TRANSPORTADOR | Consulta / cambia de plan (simulado, sin pasarela real) |

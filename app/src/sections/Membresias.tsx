@@ -67,7 +67,7 @@ export default function Membresias() {
             Paga menos por desbloquear más
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-zinc-600">
-            Sin plan, cada desbloqueo cuesta el 4% del flete (mínimo $15.000). Con Ilimitada, desbloquear es gratis.
+            Sin plan, cada desbloqueo cuesta el 6% del flete (mínimo $15.000). Con Ilimitada, desbloquear es gratis.
           </p>
         </div>
 
