@@ -222,13 +222,22 @@ authRouter.delete('/me', requireAuth, async (req, res) => {
       email,
       passwordHash,
       eliminadoEn: new Date(),
+      // Sus cargas publicadas se cancelan: sin esto seguirían en el listado y
+      // un transportador podría pagar por un contacto que ya no existe.
       publicador:
         usuario.tipo === 'PUBLICADOR'
-          ? { update: { nombre: 'Usuario eliminado', telefono: '', documento: marca } }
+          ? {
+              update: {
+                nombre: 'Usuario eliminado',
+                telefono: '',
+                documento: marca,
+                cargas: { updateMany: { where: { estado: 'DISPONIBLE' }, data: { estado: 'CANCELADA' } } },
+              },
+            }
           : undefined,
       transportador:
         usuario.tipo === 'TRANSPORTADOR'
-          ? { update: { nombre: 'Usuario eliminado', telefono: '', documento: marca } }
+          ? { update: { nombre: 'Usuario eliminado', telefono: '', documento: marca, placa: null } }
           : undefined,
     },
   });
