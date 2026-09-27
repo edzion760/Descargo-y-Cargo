@@ -144,6 +144,21 @@ function Cifra({ valor, etiqueta }: { valor: number | string; etiqueta: string }
   );
 }
 
+// Mensaje de presentación que se abre ya escrito en el WhatsApp de quien
+// administra; se puede editar antes de enviarlo.
+function mensajeWhatsApp(lead: Lead) {
+  const contacto = lead.notas?.match(/^Contacto: ([^(·]+)/)?.[1].trim();
+  const evento = lead.fuente.split(' · ')[0];
+  return (
+    `Hola${contacto ? ` ${contacto}` : ''}, le escribo de Descargo & Cargo. Nos conocimos en ${evento}` +
+    `${lead.nombre ? ` (stand de ${lead.nombre})` : ''}. Le comparto nuestra plataforma para publicar su carga gratis ` +
+    `y encontrar transportador sin pactar fletes por debajo del piso SICE-TAC: https://descargoycargo.com
+
+` +
+    `Está recién lanzada y sus comentarios nos ayudan mucho. Si prefiere que no le escribamos más, me dice y listo.`
+  );
+}
+
 function LeadCard({ lead }: { lead: Lead }) {
   const [cartaEn, setCartaEn] = useState(lead.contactadoEn);
   const [enviando, setEnviando] = useState(false);
@@ -179,7 +194,7 @@ function LeadCard({ lead }: { lead: Lead }) {
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         {telefono && (
           <a
-            href={`https://wa.me/57${telefono}`}
+            href={`https://wa.me/57${telefono}?text=${encodeURIComponent(mensajeWhatsApp(lead))}`}
             target="_blank"
             rel="noopener"
             className="inline-flex items-center gap-1.5 font-semibold text-emerald-700"

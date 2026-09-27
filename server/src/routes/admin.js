@@ -50,6 +50,7 @@ const leadQrSchema = z
     ciudad: z.string().trim().max(80).optional().default(''),
     notas: z.string().trim().max(1000).optional().default(''),
     evento: z.string().trim().max(60).optional().default('Effix 2026'),
+    enviarCarta: z.boolean().optional().default(false),
   })
   .refine((d) => d.telefono || d.email, { message: 'Hace falta al menos un teléfono o un correo' });
 
@@ -75,8 +76,18 @@ adminRouter.post('/leads', async (req, res) => {
       notas,
     },
   });
-  res.status(201).json({ id: prospecto.id });
+  // "Guardar y enviar" en un solo paso desde el escáner. Si el correo falla,
+  // el contacto igual queda guardado y la carta se puede reenviar después.
+  const cartaEnviada = d.enviarCarta && d.email ? await enviarCarta(prospecto, d.contacto) : false;
+  res.status(201).json({ id: prospecto.id, cartaEnviada });
 });
+
+async function enviarCarta(p, contacto) {
+  const evento = p.fuente.split(' · ')[0];
+  const enviado = await enviarCartaExpositor(p.email, { empresa: p.nombre ?? 'su empresa', contacto, evento, id: p.id });
+  if (enviado) await prisma.prospecto.update({ where: { id: p.id }, data: { contactadoEn: new Date() } });
+  return enviado;
+}
 
 // Carta de invitación individual: una sola por contacto (contactadoEn) y
 // nunca a quien pidió no ser contactado. Se marca solo si Resend la aceptó.
@@ -87,13 +98,9 @@ adminRouter.post('/leads/:id/carta', async (req, res) => {
   if (p.noContactar) return res.status(409).json({ error: 'Pidió no ser contactado' });
   if (p.contactadoEn) return res.status(409).json({ error: 'Ya se le envió la carta' });
 
-  const evento = p.fuente.split(' · ')[0];
   const contacto = p.notas?.match(/^Contacto: ([^(·]+)/)?.[1].trim() ?? '';
-  const enviado = await enviarCartaExpositor(p.email, { empresa: p.nombre ?? 'su empresa', contacto, evento, id: p.id });
-  if (!enviado) return res.status(502).json({ error: 'No se pudo enviar el correo. Intenta más tarde.' });
-
-  const actualizado = await prisma.prospecto.update({ where: { id: p.id }, data: { contactadoEn: new Date() } });
-  res.json({ contactadoEn: actualizado.contactadoEn });
+  if (!(await enviarCarta(p, contacto))) return res.status(502).json({ error: 'No se pudo enviar el correo. Intenta más tarde.' });
+  res.json({ contactadoEn: new Date() });
 });
 
 adminRouter.get('/leads', async (_req, res) => {

@@ -121,8 +121,15 @@ function Formulario({ datos, onGuardado, onOtro }: { datos: ContactoQR; onGuarda
     setGuardando(true);
     const form = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
     try {
-      await apiFetch('/api/admin/leads', { method: 'POST', body: form });
-      toast.success('Contacto guardado', { description: form.empresa });
+      const r = await apiFetch<{ cartaEnviada: boolean }>('/api/admin/leads', {
+        method: 'POST',
+        body: { ...form, enviarCarta: form.enviarCarta === 'on' },
+      });
+      if (form.enviarCarta === 'on' && form.email && !r.cartaEnviada) {
+        toast.warning('Contacto guardado, pero la carta no salió', { description: 'Puedes reenviarla desde el panel.' });
+      } else {
+        toast.success(r.cartaEnviada ? 'Contacto guardado y carta enviada' : 'Contacto guardado', { description: form.empresa });
+      }
       onGuardado();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo guardar');
@@ -160,10 +167,13 @@ function Formulario({ datos, onGuardado, onOtro }: { datos: ContactoQR; onGuarda
           rows={3}
         />
       </div>
-      <p className="text-xs text-zinc-500">
-        Para seguimiento directo: llamada, WhatsApp o una carta de invitación individual desde el panel. No entra a
-        campañas masivas de correo.
-      </p>
+      <label className="flex items-start gap-2 text-sm text-zinc-700">
+        <input type="checkbox" name="enviarCarta" defaultChecked className="mt-0.5 h-4 w-4 accent-zinc-950" />
+        <span>
+          Enviar la carta de invitación por correo al guardar
+          <span className="block text-xs text-zinc-500">Una sola carta, con enlace para darse de baja. No entra a campañas masivas.</span>
+        </span>
+      </label>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex flex-wrap justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onOtro}>
