@@ -202,6 +202,13 @@ model Prospecto {
   // Derecho de oposición a mercadeo directo (Ley 1581 de 2012, art. 8):
   // clic en el enlace de baja del correo, sin necesidad de cuenta.
   noContactar   Boolean              @default(false)
+  // Autorización expresa de tratamiento de datos (Ley 1581): solo la tienen
+  // los prospectos que dejaron sus datos ellos mismos (p. ej. formulario
+  // /effix en ferias). Los de la base 2023 no la tienen -- por eso quedan null.
+  consentimientoEn DateTime?
+  // Contexto libre de la conversación: persona de contacto, cargo, qué
+  // despachan y con qué frecuencia.
+  notas         String?
   createdAt     DateTime             @default(now())
 
   @@index([tipoInteres])

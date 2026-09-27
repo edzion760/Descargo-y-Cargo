@@ -59,7 +59,19 @@ const limiteAuth = rateLimit({
   message: { error: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.' },
 });
 
+// Formulario público de contactos (ferias). Más holgado que limiteAuth: en
+// una feria se llenan muchos formularios desde un mismo celular o wifi.
+const limiteLeads = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  keyGenerator: ipReal,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados registros seguidos. Espera unos minutos.' },
+});
+
 app.use('/api', limiteGeneral);
+app.use('/api/prospectos/lead', limiteLeads);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/auth/login', limiteAuth);
@@ -99,7 +111,7 @@ if (fs.existsSync(distDir)) {
   // Solo estas rutas existen en react-router (App.tsx) -- cualquier otra
   // ruta debe devolver 404 real en vez de servir index.html con 200
   // (soft-404: confunde a Google y a herramientas de enlaces rotos).
-  const RUTAS_SPA = new Set(['/', '/restablecer']);
+  const RUTAS_SPA = new Set(['/', '/restablecer', '/effix']);
   app.use((req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     if (!RUTAS_SPA.has(req.path)) return next();
