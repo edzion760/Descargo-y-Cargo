@@ -8,14 +8,17 @@ export const prospectosRouter = Router();
 // datos ella misma y autoriza el tratamiento, así que queda como Publicador
 // con consentimientoEn. Si el teléfono ya existía, se actualiza en vez de
 // duplicar.
+// Compartido con el registro manual/QR del panel admin (routes/admin.js).
+export const telefonoSchema = z
+  .string()
+  .transform((t) => t.replace(/\D/g, '').replace(/^57(?=\d{10}$)/, ''))
+  .pipe(z.string().regex(/^\d{7,10}$/, 'Teléfono inválido'));
+
 export const leadSchema = z.object({
   empresa: z.string().trim().min(2).max(120),
   contacto: z.string().trim().min(2).max(80),
   cargo: z.string().trim().max(80).optional().default(''),
-  telefono: z
-    .string()
-    .transform((t) => t.replace(/\D/g, '').replace(/^57(?=\d{10}$)/, ''))
-    .pipe(z.string().regex(/^\d{7,10}$/, 'Teléfono inválido')),
+  telefono: telefonoSchema,
   email: z.string().trim().email().max(120).optional().or(z.literal('')),
   ciudad: z.string().trim().max(80).optional().default(''),
   despacha: z.string().trim().max(200).optional().default(''),

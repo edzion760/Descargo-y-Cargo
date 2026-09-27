@@ -8,6 +8,7 @@
 //   node scripts/enviar-campana-prospectos.js                        (todos los pendientes)
 import { PrismaClient } from '@prisma/client';
 import { enviarInvitacionProspecto } from '../src/email.js';
+import { FUENTE_QR } from '../src/routes/admin.js';
 
 const prisma = new PrismaClient();
 const args = process.argv.slice(2);
@@ -25,7 +26,14 @@ async function main() {
   const limite = limitArg !== -1 ? Number(args[limitArg + 1]) : undefined;
 
   const pendientes = await prisma.prospecto.findMany({
-    where: { tipoInteres: 'PUBLICADOR', email: { not: null }, noContactar: false, contactadoEn: null },
+    // Los escaneados del QR de un stand no autorizaron campañas: solo seguimiento directo.
+    where: {
+      tipoInteres: 'PUBLICADOR',
+      email: { not: null },
+      noContactar: false,
+      contactadoEn: null,
+      NOT: { fuente: { endsWith: FUENTE_QR } },
+    },
     take: limite,
     orderBy: { id: 'asc' },
   });

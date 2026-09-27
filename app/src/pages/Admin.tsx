@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { Download, Loader2, MessageCircle, Mail, MapPin } from 'lucide-react';
+import { Download, Loader2, MessageCircle, Mail, MapPin, ScanLine } from 'lucide-react';
 import AccionesProvider from '@/components/AccionesProvider';
+import EscanearExpositorDialog from '@/components/EscanearExpositorDialog';
 import Logo from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { API_URL, ApiError, apiFetch } from '@/lib/api';
@@ -16,7 +17,8 @@ interface Lead {
   ciudad: string | null;
   fuente: string;
   notas: string | null;
-  consentimientoEn: string;
+  fecha: string;
+  autorizoCampanas: boolean;
 }
 
 // Panel interno. El acceso real lo decide el servidor (requireAdmin); aquí
@@ -58,17 +60,19 @@ function Centro({ children }: { children: ReactNode }) {
 function Panel() {
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [escaneando, setEscaneando] = useState(false);
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     apiFetch<Lead[]>('/api/admin/leads')
       .then(setLeads)
       .catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los contactos'));
-  }, []);
+  }, [version]);
 
   const hoy = useMemo(() => {
     const dia = (iso: string) => new Date(iso).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
     const hoyStr = dia(new Date().toISOString());
-    return leads?.filter((l) => dia(l.consentimientoEn) === hoyStr).length ?? 0;
+    return leads?.filter((l) => dia(l.fecha) === hoyStr).length ?? 0;
   }, [leads]);
 
   return (
@@ -84,14 +88,22 @@ function Panel() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950">Contactos de ferias y formularios</h1>
-            <p className="mt-1 text-sm text-zinc-600">Personas que dejaron sus datos y autorizaron que las contactemos.</p>
+            <p className="mt-1 text-sm text-zinc-600">
+              Los que llenaron el formulario del QR y los que escaneaste en los stands.
+            </p>
           </div>
-          <Button asChild variant="outline" className="gap-2 border-zinc-300">
-            <a href={`${API_URL}/api/admin/leads.csv`}>
-              <Download className="h-4 w-4" /> Descargar Excel
-            </a>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setEscaneando(true)} className="gap-2">
+              <ScanLine className="h-4 w-4" /> Escanear QR de expositor
+            </Button>
+            <Button asChild variant="outline" className="gap-2 border-zinc-300">
+              <a href={`${API_URL}/api/admin/leads.csv`}>
+                <Download className="h-4 w-4" /> Descargar Excel
+              </a>
+            </Button>
+          </div>
         </div>
+        <EscanearExpositorDialog open={escaneando} onOpenChange={setEscaneando} onGuardado={() => setVersion((v) => v + 1)} />
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-sm">
           <Cifra valor={leads?.length ?? '—'} etiqueta="contactos en total" />
@@ -106,7 +118,7 @@ function Panel() {
         )}
         {leads?.length === 0 && (
           <p className="mt-8 rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-600">
-            Todavía no hay contactos. Cuando alguien llene el formulario del QR (descargoycargo.com/effix), aparece aquí.
+            Todavía no hay contactos. Aparecen aquí cuando alguien llena el formulario (descargoycargo.com/effix) o cuando escaneas el QR de un stand.
           </p>
         )}
 
@@ -131,7 +143,7 @@ function Cifra({ valor, etiqueta }: { valor: number | string; etiqueta: string }
 
 function LeadCard({ lead }: { lead: Lead }) {
   const telefono = lead.telefonos.split(',')[0].trim();
-  const fecha = new Date(lead.consentimientoEn).toLocaleString('es-CO', {
+  const fecha = new Date(lead.fecha).toLocaleString('es-CO', {
     timeZone: 'America/Bogota',
     day: 'numeric',
     month: 'short',
@@ -147,14 +159,16 @@ function LeadCard({ lead }: { lead: Lead }) {
       </div>
       {lead.notas && <p className="mt-1 text-sm text-zinc-600">{lead.notas}</p>}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-        <a
-          href={`https://wa.me/57${telefono}`}
-          target="_blank"
-          rel="noopener"
-          className="inline-flex items-center gap-1.5 font-semibold text-emerald-700"
-        >
-          <MessageCircle className="h-4 w-4" /> {telefono}
-        </a>
+        {telefono && (
+          <a
+            href={`https://wa.me/57${telefono}`}
+            target="_blank"
+            rel="noopener"
+            className="inline-flex items-center gap-1.5 font-semibold text-emerald-700"
+          >
+            <MessageCircle className="h-4 w-4" /> {telefono}
+          </a>
+        )}
         {lead.email && (
           <a href={`mailto:${lead.email}`} className="inline-flex min-w-0 items-center gap-1.5 text-zinc-700">
             <Mail className="h-4 w-4 shrink-0" /> <span className="truncate">{lead.email}</span>
@@ -166,9 +180,14 @@ function LeadCard({ lead }: { lead: Lead }) {
           </span>
         )}
       </div>
-      <span className="mt-3 inline-block rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-semibold text-orange-700">
-        {lead.fuente}
-      </span>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-semibold text-orange-700">{lead.fuente}</span>
+        {!lead.autorizoCampanas && (
+          <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600">
+            Solo seguimiento directo
+          </span>
+        )}
+      </div>
     </li>
   );
 }
