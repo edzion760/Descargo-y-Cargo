@@ -131,7 +131,7 @@ authRouter.post('/logout', (req, res) => {
 authRouter.get('/me', requireAuth, async (req, res) => {
   const usuario = await prisma.usuario.findUnique({
     where: { id: req.user.sub },
-    select: { terminosVersion: true, eliminadoEn: true, transportador: { select: { placa: true } } },
+    select: { terminosVersion: true, eliminadoEn: true, esAdmin: true, transportador: { select: { placa: true } } },
   });
   if (!usuario || usuario.eliminadoEn) return res.status(401).json({ error: 'Sesión inválida' });
   res.json({
@@ -139,6 +139,7 @@ authRouter.get('/me', requireAuth, async (req, res) => {
     tipo: req.user.tipo,
     terminosPendientes: usuario.terminosVersion !== TERMINOS_VERSION,
     placa: usuario.transportador?.placa ?? null,
+    esAdmin: usuario.esAdmin,
   });
 });
 

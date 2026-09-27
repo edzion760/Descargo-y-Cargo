@@ -16,6 +16,7 @@ import { noticiasRouter } from './routes/noticias.js';
 import { pushRouter } from './routes/push.js';
 import { rndcRouter } from './routes/rndc.js';
 import { prospectosRouter } from './routes/prospectos.js';
+import { adminRouter } from './routes/admin.js';
 
 const app = express();
 
@@ -82,6 +83,7 @@ app.use('/api/auth/olvide-password', limiteAuth);
 app.use('/api/auth/restablecer-password', limiteAuth);
 app.use('/api/auth', authRouter);
 app.use('/api/cargas', cargasRouter);
+app.use('/api/admin', adminRouter);
 app.use('/api/membresias', membresiasRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/geo', geoRouter);
@@ -113,7 +115,7 @@ if (fs.existsSync(distDir)) {
   // Solo estas rutas existen en react-router (App.tsx) -- cualquier otra
   // ruta debe devolver 404 real en vez de servir index.html con 200
   // (soft-404: confunde a Google y a herramientas de enlaces rotos).
-  const RUTAS_SPA = new Set(['/', '/restablecer', '/effix', '/constancia']);
+  const RUTAS_SPA = new Set(['/', '/restablecer', '/effix', '/constancia', '/admin']);
   app.use((req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     if (!RUTAS_SPA.has(req.path)) return next();

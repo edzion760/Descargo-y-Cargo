@@ -7,6 +7,7 @@ interface Sesion {
   tipo: Tipo;
   terminosPendientes: boolean;
   placa: string | null;
+  esAdmin: boolean;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -59,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tipo: sesion?.tipo ?? null,
         terminosPendientes: sesion?.terminosPendientes ?? false,
         placa: sesion?.placa ?? null,
+        esAdmin: sesion?.esAdmin ?? false,
         aceptarTerminos,
         guardarPlaca: (placa) => setSesion((s) => s && { ...s, placa }),
         login,

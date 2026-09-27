@@ -62,6 +62,9 @@ model Usuario {
   terminosAceptadosEn DateTime  @default(now())
   terminosIp          String?
   eliminadoEn         DateTime?
+  // Acceso al panel /admin. Solo se activa a mano en el servidor (no hay
+  // ninguna ruta que lo cambie) y se consulta en BD en cada petición.
+  esAdmin             Boolean   @default(false)
 
   // Última ubicación reportada por el navegador (con permiso del usuario),
   // para las alertas de vía geolocalizadas. Nula hasta que active la opción.

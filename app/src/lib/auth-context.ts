@@ -21,6 +21,7 @@ export interface AuthState {
   tipo: Tipo | null;
   terminosPendientes: boolean;
   placa: string | null;
+  esAdmin: boolean;
   aceptarTerminos: () => Promise<void>;
   guardarPlaca: (placa: string) => void;
   login: (email: string, password: string) => Promise<void>;

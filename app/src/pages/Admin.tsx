@@ -1,0 +1,174 @@
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Link } from 'react-router';
+import { Download, Loader2, MessageCircle, Mail, MapPin } from 'lucide-react';
+import AccionesProvider from '@/components/AccionesProvider';
+import Logo from '@/components/Logo';
+import { Button } from '@/components/ui/button';
+import { API_URL, ApiError, apiFetch } from '@/lib/api';
+import { useAcciones } from '@/lib/use-acciones';
+import { useAuth } from '@/lib/use-auth';
+
+interface Lead {
+  id: number;
+  nombre: string | null;
+  telefonos: string;
+  email: string | null;
+  ciudad: string | null;
+  fuente: string;
+  notas: string | null;
+  consentimientoEn: string;
+}
+
+// Panel interno. El acceso real lo decide el servidor (requireAdmin); aquí
+// solo se evita mostrar la página vacía a quien no es administrador.
+export default function Admin() {
+  return (
+    <AccionesProvider>
+      <Contenido />
+    </AccionesProvider>
+  );
+}
+
+function Contenido() {
+  const { autenticado, cargando, esAdmin } = useAuth();
+  const { ingresar } = useAcciones();
+
+  if (cargando) return <Centro><Loader2 className="h-5 w-5 animate-spin text-zinc-500" /></Centro>;
+  if (!autenticado)
+    return (
+      <Centro>
+        <p className="text-sm text-zinc-600">Inicia sesión con tu cuenta de administrador.</p>
+        <Button onClick={ingresar}>Ingresar</Button>
+      </Centro>
+    );
+  if (!esAdmin)
+    return (
+      <Centro>
+        <p className="text-sm text-zinc-600">Esta sección es solo para administradores.</p>
+        <Link to="/" className="text-sm font-semibold underline">Volver a Descargo &amp; Cargo</Link>
+      </Centro>
+    );
+  return <Panel />;
+}
+
+function Centro({ children }: { children: ReactNode }) {
+  return <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-50 px-4 text-center">{children}</div>;
+}
+
+function Panel() {
+  const [leads, setLeads] = useState<Lead[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiFetch<Lead[]>('/api/admin/leads')
+      .then(setLeads)
+      .catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los contactos'));
+  }, []);
+
+  const hoy = useMemo(() => {
+    const dia = (iso: string) => new Date(iso).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
+    const hoyStr = dia(new Date().toISOString());
+    return leads?.filter((l) => dia(l.consentimientoEn) === hoyStr).length ?? 0;
+  }, [leads]);
+
+  return (
+    <div className="min-h-screen bg-zinc-50">
+      <header className="border-b border-zinc-200 bg-white">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4">
+          <Link to="/"><Logo /></Link>
+          <span className="rounded-full bg-zinc-950 px-3 py-1 text-xs font-bold text-white">Administrador</span>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-4 py-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950">Contactos de ferias y formularios</h1>
+            <p className="mt-1 text-sm text-zinc-600">Personas que dejaron sus datos y autorizaron que las contactemos.</p>
+          </div>
+          <Button asChild variant="outline" className="gap-2 border-zinc-300">
+            <a href={`${API_URL}/api/admin/leads.csv`}>
+              <Download className="h-4 w-4" /> Descargar Excel
+            </a>
+          </Button>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-sm">
+          <Cifra valor={leads?.length ?? '—'} etiqueta="contactos en total" />
+          <Cifra valor={leads ? hoy : '—'} etiqueta="registrados hoy" />
+        </div>
+
+        {error && <p className="mt-8 text-sm text-red-600">{error}</p>}
+        {!leads && !error && (
+          <p className="mt-8 flex items-center gap-2 text-sm text-zinc-500">
+            <Loader2 className="h-4 w-4 animate-spin" /> Cargando…
+          </p>
+        )}
+        {leads?.length === 0 && (
+          <p className="mt-8 rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-600">
+            Todavía no hay contactos. Cuando alguien llene el formulario del QR (descargoycargo.com/effix), aparece aquí.
+          </p>
+        )}
+
+        <ul className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
+          {leads?.map((l) => (
+            <LeadCard key={l.id} lead={l} />
+          ))}
+        </ul>
+      </main>
+    </div>
+  );
+}
+
+function Cifra({ valor, etiqueta }: { valor: number | string; etiqueta: string }) {
+  return (
+    <div className="rounded-2xl bg-white p-4 shadow-suave">
+      <p className="text-2xl font-extrabold tabular-nums text-zinc-950">{valor}</p>
+      <p className="text-xs text-zinc-500">{etiqueta}</p>
+    </div>
+  );
+}
+
+function LeadCard({ lead }: { lead: Lead }) {
+  const telefono = lead.telefonos.split(',')[0].trim();
+  const fecha = new Date(lead.consentimientoEn).toLocaleString('es-CO', {
+    timeZone: 'America/Bogota',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+  return (
+    <li className="min-w-0 rounded-2xl bg-white p-4 shadow-suave">
+      <div className="flex items-start justify-between gap-3">
+        <p className="min-w-0 truncate font-semibold text-zinc-950">{lead.nombre ?? 'Sin nombre'}</p>
+        <span className="shrink-0 text-xs text-zinc-500">{fecha}</span>
+      </div>
+      {lead.notas && <p className="mt-1 text-sm text-zinc-600">{lead.notas}</p>}
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <a
+          href={`https://wa.me/57${telefono}`}
+          target="_blank"
+          rel="noopener"
+          className="inline-flex items-center gap-1.5 font-semibold text-emerald-700"
+        >
+          <MessageCircle className="h-4 w-4" /> {telefono}
+        </a>
+        {lead.email && (
+          <a href={`mailto:${lead.email}`} className="inline-flex min-w-0 items-center gap-1.5 text-zinc-700">
+            <Mail className="h-4 w-4 shrink-0" /> <span className="truncate">{lead.email}</span>
+          </a>
+        )}
+        {lead.ciudad && (
+          <span className="inline-flex items-center gap-1.5 text-zinc-500">
+            <MapPin className="h-4 w-4" /> {lead.ciudad}
+          </span>
+        )}
+      </div>
+      <span className="mt-3 inline-block rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-semibold text-orange-700">
+        {lead.fuente}
+      </span>
+    </li>
+  );
+}

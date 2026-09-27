@@ -1,3 +1,4 @@
+import { prisma } from '../db.js';
 import jwt from 'jsonwebtoken';
 
 export function requireAuth(req, res, next) {
@@ -36,4 +37,12 @@ export function requireTipo(tipo) {
     }
     next();
   };
+}
+
+// Se lee esAdmin de la BD en cada petición en vez de ponerlo en el JWT: si se
+// le quita el permiso a alguien, pierde el acceso de inmediato, no en 7 días.
+export async function requireAdmin(req, res, next) {
+  const usuario = await prisma.usuario.findUnique({ where: { id: req.user.sub }, select: { esAdmin: true, eliminadoEn: true } });
+  if (!usuario?.esAdmin || usuario.eliminadoEn) return res.status(403).json({ error: 'Solo administradores' });
+  next();
 }
