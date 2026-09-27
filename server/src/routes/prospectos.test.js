@@ -10,7 +10,9 @@ test('normaliza el teléfono (espacios, +57) a 10 dígitos', () => {
 });
 
 test('sin autorización de datos no se guarda', () => {
-  assert.equal(leadSchema.safeParse({ ...base, acepta: false }).success, false);
+  const r = leadSchema.safeParse({ ...base, acepta: false });
+  assert.equal(r.success, false);
+  assert.equal(r.error.issues[0].message, 'Debes autorizar el tratamiento de datos');
   const { acepta: _, ...sinAcepta } = base;
   assert.equal(leadSchema.safeParse(sinAcepta).success, false);
 });

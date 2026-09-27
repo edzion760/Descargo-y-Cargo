@@ -21,7 +21,11 @@ export const leadSchema = z.object({
   despacha: z.string().trim().max(200).optional().default(''),
   frecuencia: z.enum(['', 'semanal', 'mensual', 'ocasional']).optional().default(''),
   fuente: z.string().trim().max(60).optional().default('Effix 2026'),
-  acepta: z.literal(true, { message: 'Debes autorizar el tratamiento de datos' }),
+  // refine en vez de z.literal(true, {message}): en zod 3 el mensaje propio
+  // no aplica a literal y el usuario veía "Invalid literal value" en inglés.
+  acepta: z.boolean({ required_error: 'Debes autorizar el tratamiento de datos' }).refine((v) => v, {
+    message: 'Debes autorizar el tratamiento de datos',
+  }),
 });
 
 prospectosRouter.post('/lead', async (req, res) => {
