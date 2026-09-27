@@ -18,4 +18,11 @@ test('plantilla de pago confirmado formatea el monto en COP', () => {
   const html = plantillaPagoConfirmado({ monto: 224000, carga: 'Café pergamino en sacos' });
   assert.match(html, /224\.000/);
   assert.match(html, /Café pergamino en sacos/);
+  assert.match(html, /\?mis_contactos/);
+  assert.match(html, /Ir a Mis contactos/);
+});
+
+test('los tips de pago con Nequi van solo en la bienvenida del transportador', () => {
+  assert.match(plantillaBienvenida({ nombre: 'Ana', tipo: 'TRANSPORTADOR' }), /Nequi/);
+  assert.doesNotMatch(plantillaBienvenida({ nombre: 'Ana', tipo: 'PUBLICADOR' }), /Nequi/);
 });

@@ -74,6 +74,28 @@ function botonCTA(url, texto) {
     </td></tr></table>`;
 }
 
+// Pasos para pagar un desbloqueo sin perderse entre Wompi y Nequi. Va en la
+// bienvenida del transportador (antes de su primer pago) y en el de pago
+// confirmado (para el siguiente). La misma guía se muestra en la página antes
+// de mandarlo a Wompi (Marketplace.tsx, ConfirmarPago).
+function tipsPago(titulo) {
+  const paso = (n, texto) => `
+    <tr><td style="width:26px;vertical-align:top;padding:0 0 10px"><span style="display:inline-block;width:20px;height:20px;line-height:20px;border-radius:10px;background:#09090b;color:#ffffff;font-size:11px;font-weight:bold;text-align:center">${n}</span></td>
+    <td style="font-size:13px;line-height:1.55;color:#3f3f46;padding:0 0 10px">${texto}</td></tr>`;
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 8px"><tr>
+      <td style="background:#fafafa;border:1px solid #e4e4e7;border-radius:8px;padding:16px 18px">
+        <p style="font-size:13px;font-weight:bold;color:#18181b;margin:0 0 12px">${titulo}</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${paso(1, 'Si vas a pagar con <strong>Nequi</strong>, ten el celular a mano con la app de Nequi abierta.')}
+          ${paso(2, 'Wompi te envía una notificación a Nequi. Ábrela (o entra a <strong>Notificaciones</strong>, la campanita de la app) y <strong>acepta el pago</strong> enseguida: la solicitud vence si esperas mucho.')}
+          ${paso(3, 'No cierres la ventana de Wompi hasta que diga <strong>“¡Pago aprobado!”</strong>.')}
+          ${paso(4, 'Tu contacto queda en <strong>Mis contactos</strong>: en descargoycargo.com, toca el menú de tu cuenta (arriba a la derecha) › Mis contactos.')}
+        </table>
+      </td>
+    </tr></table>`;
+}
+
 export function plantillaBienvenida({ nombre, tipo }) {
   const esPublicador = tipo === 'PUBLICADOR';
   const rol = esPublicador ? 'publicador de carga' : 'transportador';
@@ -88,6 +110,7 @@ export function plantillaBienvenida({ nombre, tipo }) {
         ${esPublicador ? 'publicar tu primera carga gratis y elegir transportador verificado' : 'buscar cargas disponibles cerca de ti'}.
       </p>
       ${botonCTA('https://descargoycargo.com', esPublicador ? 'Publicar mi primera carga →' : 'Buscar cargas disponibles →')}
+      ${esPublicador ? '' : tipsPago('Cuando desbloquees tu primer contacto')}
     </td></tr></table>
     ${pie()}
   </div>`;
@@ -108,7 +131,13 @@ export function plantillaPagoConfirmado({ monto, carga }) {
           <p style="font-size:18px;font-weight:800;color:#16a34a;margin:0">$${monto.toLocaleString('es-CO')} COP</p>
         </td>
       </tr></table>
-      ${botonCTA('https://descargoycargo.com/?mis_contactos', 'Ver datos de contacto →')}
+      <p style="font-size:14px;line-height:1.65;color:#3f3f46;margin:16px 0 0">
+        El nombre y el teléfono del publicador quedaron guardados en <strong>Mis contactos</strong>.
+        Tócalo abajo o, en descargoycargo.com, abre el menú de tu cuenta (arriba a la derecha) › <strong>Mis contactos</strong>.
+        Ahí siguen aunque la carga se cierre.
+      </p>
+      ${botonCTA('https://descargoycargo.com/?mis_contactos', 'Ir a Mis contactos →')}
+      ${tipsPago('Para tu próximo desbloqueo')}
     </td></tr></table>
     ${pie()}
   </div>`;

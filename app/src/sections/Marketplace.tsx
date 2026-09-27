@@ -142,6 +142,7 @@ function TarjetaCarga({
   const [cargando, setCargando] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const [confirmarCancelar, setConfirmarCancelar] = useState(false);
+  const [confirmarPago, setConfirmarPago] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const tarifa = tarifaDesbloqueo(carga.precio);
   const sobrePiso = carga.precio - carga.pisoSiceTac;
@@ -161,12 +162,19 @@ function TarjetaCarga({
     };
   }, [carga.desbloqueada, carga.id, contacto, autenticado]);
 
-  async function desbloquear() {
+  // Antes de mandarlo a Wompi se le explican los pasos (sobre todo Nequi,
+  // donde hay que aceptar la notificación en otra app) para que no se pierda.
+  function pedirDesbloqueo() {
     if (!autenticado) return onRequireAuth();
     if (tipo !== 'TRANSPORTADOR') {
       setError('Solo los transportadores pueden desbloquear contactos.');
       return;
     }
+    setConfirmarPago(true);
+  }
+
+  async function desbloquear() {
+    setConfirmarPago(false);
     setCargando(true);
     setError(null);
     try {
@@ -301,13 +309,51 @@ function TarjetaCarga({
             )}
           </div>
         ) : (
-          <Button onClick={desbloquear} disabled={cargando} className="h-11 w-full gap-2 rounded-xl font-semibold">
+          <Button onClick={pedirDesbloqueo} disabled={cargando} className="h-11 w-full gap-2 rounded-xl font-semibold">
             {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
             {cargando ? 'Procesando…' : `Desbloquear contacto · ${formatCOP(tarifa)}`}
           </Button>
         )}
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
       </div>
+
+      <AlertDialog open={confirmarPago} onOpenChange={setConfirmarPago}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Antes de pagar {formatCOP(tarifa)}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Te llevamos a Wompi, la pasarela de pago segura. Puedes pagar con Nequi, PSE o tarjeta.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <ol className="space-y-3 text-sm text-zinc-700">
+            {[
+              <>Si pagas con <strong className="text-zinc-950">Nequi</strong>, ten el celular a mano con la app de Nequi abierta.</>,
+              <>
+                Wompi te envía una notificación a Nequi. Ábrela (o entra a <strong className="text-zinc-950">Notificaciones</strong>, la
+                campanita de la app) y <strong className="text-zinc-950">acepta el pago</strong> enseguida: la solicitud vence si esperas mucho.
+              </>,
+              <>No cierres la ventana de Wompi hasta que diga <strong className="text-zinc-950">“¡Pago aprobado!”</strong>.</>,
+              <>
+                Tu contacto queda en <strong className="text-zinc-950">Mis contactos</strong> (menú de tu cuenta, arriba a la derecha) y te
+                llega un correo de confirmación.
+              </>,
+            ].map((texto, i) => (
+              <li key={i} className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-xs font-bold text-white">
+                  {i + 1}
+                </span>
+                <span className="pt-0.5">{texto}</span>
+              </li>
+            ))}
+          </ol>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Ahora no</AlertDialogCancel>
+            <AlertDialogAction onClick={desbloquear} className="rounded-xl">
+              Entendido, ir a pagar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmarCancelar} onOpenChange={setConfirmarCancelar}>
         <AlertDialogContent className="rounded-2xl">
