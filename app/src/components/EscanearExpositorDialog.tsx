@@ -161,7 +161,8 @@ function Formulario({ datos, onGuardado, onOtro }: { datos: ContactoQR; onGuarda
         />
       </div>
       <p className="text-xs text-zinc-500">
-        Solo para seguimiento directo (llamada o WhatsApp): no entra a campañas masivas de correo.
+        Para seguimiento directo: llamada, WhatsApp o una carta de invitación individual desde el panel. No entra a
+        campañas masivas de correo.
       </p>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex flex-wrap justify-end gap-2">

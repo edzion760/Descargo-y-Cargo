@@ -3,14 +3,16 @@ import { z } from 'zod';
 import { prisma } from '../db.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { telefonoSchema } from './prospectos.js';
+import { enviarCartaExpositor } from '../email.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireAdmin);
 
 // Contactos tomados del QR del stand de un expositor. Él publicó sus datos
-// para que lo contacten, así que el seguimiento directo (llamada, WhatsApp)
-// es legítimo; pero no marcó una autorización como en /effix, así que NO
-// entran a campañas masivas (ver scripts/enviar-campana-prospectos.js).
+// para que lo contacten, así que el seguimiento directo (llamada, WhatsApp,
+// una carta individual con enlace de baja) es legítimo; pero no marcó una
+// autorización como en /effix, así que NO entran a campañas masivas (ver
+// scripts/enviar-campana-prospectos.js).
 export const FUENTE_QR = 'QR expositor';
 
 // Contactos de ferias: los del formulario (con consentimientoEn) y los
@@ -28,6 +30,8 @@ async function leads() {
       notas: true,
       consentimientoEn: true,
       createdAt: true,
+      contactadoEn: true,
+      noContactar: true,
     },
   });
   return filas
@@ -72,6 +76,24 @@ adminRouter.post('/leads', async (req, res) => {
     },
   });
   res.status(201).json({ id: prospecto.id });
+});
+
+// Carta de invitación individual: una sola por contacto (contactadoEn) y
+// nunca a quien pidió no ser contactado. Se marca solo si Resend la aceptó.
+adminRouter.post('/leads/:id/carta', async (req, res) => {
+  const p = await prisma.prospecto.findUnique({ where: { id: Number(req.params.id) || 0 } });
+  if (!p) return res.status(404).json({ error: 'Contacto no encontrado' });
+  if (!p.email) return res.status(400).json({ error: 'Este contacto no tiene correo' });
+  if (p.noContactar) return res.status(409).json({ error: 'Pidió no ser contactado' });
+  if (p.contactadoEn) return res.status(409).json({ error: 'Ya se le envió la carta' });
+
+  const evento = p.fuente.split(' · ')[0];
+  const contacto = p.notas?.match(/^Contacto: ([^(·]+)/)?.[1].trim() ?? '';
+  const enviado = await enviarCartaExpositor(p.email, { empresa: p.nombre ?? 'su empresa', contacto, evento, id: p.id });
+  if (!enviado) return res.status(502).json({ error: 'No se pudo enviar el correo. Intenta más tarde.' });
+
+  const actualizado = await prisma.prospecto.update({ where: { id: p.id }, data: { contactadoEn: new Date() } });
+  res.json({ contactadoEn: actualizado.contactadoEn });
 });
 
 adminRouter.get('/leads', async (_req, res) => {

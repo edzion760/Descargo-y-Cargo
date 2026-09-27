@@ -12,7 +12,7 @@ const REMITENTE = 'Descargo & Cargo <notificaciones@descargoycargo.com>';
 // transaccionales (registro, pago) ignoran el valor a propósito -- un correo
 // caído nunca debe bloquear esos flujos. La campaña de prospectos sí lo usa:
 // necesita saber qué marcar como contactado de verdad.
-async function enviarCorreo({ para, asunto, html }) {
+async function enviarCorreo({ para, asunto, html, responderA }) {
   if (!process.env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY no configurada -- correo no enviado:', asunto);
     return false;
@@ -28,6 +28,9 @@ async function enviarCorreo({ para, asunto, html }) {
         from: REMITENTE,
         to: para,
         subject: asunto,
+        // notificaciones@ no tiene buzón: si el correo invita a responder,
+        // la respuesta debe llegar al correo de la empresa.
+        ...(responderA ? { reply_to: responderA } : {}),
         // Sin el <meta charset> algunos clientes (Gmail app) asumen Latin-1
         // y las tildes/ñ llegan como "�". El fragmento de cada plantilla
         // solo trae el <div>; aquí se envuelve en un documento completo.
@@ -282,10 +285,65 @@ export function plantillaInvitacionProspecto({ nombre, id }) {
   </div>`;
 }
 
+// Carta individual a un expositor cuyo QR/tarjeta escaneamos en una feria.
+// Se envía una sola vez, a mano desde el panel admin, con enlace de baja.
+// Sin cifras ni promesas que no podamos sostener: la plataforma está arrancando.
+export function plantillaCartaExpositor({ empresa, contacto, evento, id }) {
+  const bajaUrl = `https://descargoycargo.com/api/prospectos/baja?id=${id}`;
+  const visitaUrl = `https://descargoycargo.com/api/prospectos/visita?id=${id}`;
+  const saludo = contacto ? `Hola ${contacto}` : `Hola, equipo de ${empresa}`;
+  const paso = (n, titulo, texto) => `
+    <tr><td style="width:30px;vertical-align:top;padding:0 0 14px"><span style="display:inline-block;width:22px;height:22px;line-height:22px;border-radius:11px;background:#f97316;color:#09090b;font-size:12px;font-weight:bold;text-align:center">${n}</span></td>
+    <td style="font-size:14px;line-height:1.55;color:#3f3f46;padding:0 0 14px"><strong style="color:#18181b">${titulo}</strong><br>${texto}</td></tr>`;
+  return `
+  <div style="max-width:520px;margin:0 auto;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif">
+    ${cabecera()}
+    <table role="presentation" width="100%" style="background:#ffffff" cellpadding="0" cellspacing="0"><tr><td style="padding:30px 28px 8px">
+      <p style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#ea580c;margin:0 0 10px">${evento}</p>
+      <h1 style="font-size:20px;font-weight:800;color:#18181b;margin:0 0 14px;line-height:1.3">${saludo}, gracias por compartirnos su contacto</h1>
+      <p style="font-size:14px;line-height:1.65;color:#3f3f46;margin:0 0 14px">
+        Pasamos por el stand de <strong>${empresa}</strong> en ${evento} y quisimos contarles, en pocas líneas,
+        qué es Descargo &amp; Cargo: una plataforma colombiana para que las empresas que despachan mercancía
+        publiquen su carga y encuentren transportador, sin pactar nunca un flete por debajo del piso legal SICE-TAC.
+      </p>
+      <p style="font-size:14px;line-height:1.65;color:#3f3f46;margin:0 0 20px">
+        Les somos sinceros: la plataforma está recién lanzada y buscamos a las primeras empresas que la usen.
+        Por eso publicar es gratis, y sus comentarios nos ayudan a mejorarla.
+      </p>
+
+      <p style="font-size:14px;font-weight:bold;color:#18181b;margin:0 0 12px">Cómo funciona</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        ${paso(1, 'Publican su carga gratis', 'Origen, destino, peso y fecha. La plataforma calcula la distancia real y no deja publicar por debajo del piso SICE-TAC.')}
+        ${paso(2, 'Los transportadores la ven', 'Cada transportador se registra con su cédula y la placa de su vehículo. El que se interesa paga por ver su contacto; a ustedes no se les cobra nada.')}
+        ${paso(3, 'Reciben un aviso para verificarlo', 'Les llega un correo con su nombre, teléfono y placa, un enlace para consultarla en el RUNT y una constancia de entrega lista para firmar.')}
+      </table>
+
+      ${botonCTA(visitaUrl, 'Publicar mi primera carga →')}
+      <p style="font-size:13px;line-height:1.6;color:#71717a;margin:10px 0 0;text-align:center">
+        ¿Preguntas? Respondan este correo y les escribimos de vuelta.
+      </p>
+    </td></tr></table>
+
+    <table role="presentation" width="100%" style="background:#ffffff;border-top:1px solid #e4e4e7" cellpadding="0" cellspacing="0"><tr><td style="padding:20px 28px 30px">
+      <p style="font-size:11px;color:#a1a1aa;margin:0 0 6px"><strong>Descargo &amp; Cargo SAS</strong> · NIT 901.563.460-9 · San Gil, Santander</p>
+      <p style="font-size:11px;color:#a1a1aa;margin:0">Les escribimos una sola vez porque compartieron su contacto con nosotros en ${evento}. Si no quieren recibir más correos nuestros, <a href="${bajaUrl}" style="color:#71717a">hagan clic aquí</a> y no les volvemos a escribir.</p>
+    </td></tr></table>
+  </div>`;
+}
+
+export function enviarCartaExpositor(para, datos) {
+  return enviarCorreo({
+    para,
+    asunto: `${datos.empresa}: así funciona Descargo & Cargo (nos vimos en ${datos.evento})`,
+    html: plantillaCartaExpositor(datos),
+    responderA: 'descargoycargo@gmail.com',
+  });
+}
+
 export function enviarInvitacionProspecto(para, datos) {
   return enviarCorreo({
     para,
-    asunto: `${datos.nombre}, publiquen su carga gratis y elijan transportador verificado`,
+    asunto: `${datos.nombre}, publiquen su carga gratis y sepan con quién la mueven`,
     html: plantillaInvitacionProspecto(datos),
   });
 }

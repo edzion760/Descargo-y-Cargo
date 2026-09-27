@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { plantillaBienvenida, plantillaPagoConfirmado, plantillaAvisoPublicador, plantillaInvitacionProspecto } from './email.js';
+import { plantillaBienvenida, plantillaPagoConfirmado, plantillaAvisoPublicador, plantillaInvitacionProspecto, plantillaCartaExpositor } from './email.js';
 
 test('plantilla de bienvenida menciona el nombre y el rol correcto', () => {
   const html = plantillaBienvenida({ nombre: 'Ana', tipo: 'PUBLICADOR' });
@@ -46,4 +46,13 @@ test('la campaña no promete cifras ni verificaciones que aún no existen', () =
   const html = plantillaInvitacionProspecto({ nombre: 'Lácteos del Valle', id: 1 });
   assert.doesNotMatch(html, /400\+|está verificado|transportador verificado/);
   assert.match(html, /recién lanzada/);
+});
+
+test('carta a expositor: personalizada, con baja y sin promesas falsas', () => {
+  const html = plantillaCartaExpositor({ empresa: 'Café Santander', contacto: 'Luisa', evento: 'Effix 2026', id: 42 });
+  assert.match(html, /Hola Luisa/);
+  assert.match(html, /prospectos\/baja\?id=42/);
+  assert.match(html, /recién lanzada/);
+  assert.doesNotMatch(html, /400\+|está verificado|transportador verificado/);
+  assert.match(plantillaCartaExpositor({ empresa: 'Café Santander', contacto: '', evento: 'Effix 2026', id: 1 }), /Hola, equipo de Café Santander/);
 });

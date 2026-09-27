@@ -105,6 +105,14 @@ if (fs.existsSync(distDir)) {
   app.use(
     express.static(distDir, {
       setHeaders: (res, filePath) => {
+        // Imágenes de los correos (/email): los clientes de correo las cargan
+        // desde otro origen, y el CORP same-origin de helmet las bloquearía.
+        // Tampoco llevan hash en el nombre, así que caché corto.
+        if (filePath.includes(`${path.sep}email${path.sep}`)) {
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+          return;
+        }
         res.setHeader(
           'Cache-Control',
           filePath.endsWith('index.html') ? 'no-cache' : 'public, max-age=31536000, immutable'

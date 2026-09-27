@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { Download, Loader2, MessageCircle, Mail, MapPin, ScanLine } from 'lucide-react';
+import { Download, Loader2, MessageCircle, Mail, MapPin, ScanLine, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import AccionesProvider from '@/components/AccionesProvider';
 import EscanearExpositorDialog from '@/components/EscanearExpositorDialog';
 import Logo from '@/components/Logo';
@@ -19,6 +20,8 @@ interface Lead {
   notas: string | null;
   fecha: string;
   autorizoCampanas: boolean;
+  contactadoEn: string | null;
+  noContactar: boolean;
 }
 
 // Panel interno. El acceso real lo decide el servidor (requireAdmin); aquí
@@ -142,7 +145,22 @@ function Cifra({ valor, etiqueta }: { valor: number | string; etiqueta: string }
 }
 
 function LeadCard({ lead }: { lead: Lead }) {
+  const [cartaEn, setCartaEn] = useState(lead.contactadoEn);
+  const [enviando, setEnviando] = useState(false);
   const telefono = lead.telefonos.split(',')[0].trim();
+  async function enviarCarta() {
+    setEnviando(true);
+    try {
+      const r = await apiFetch<{ contactadoEn: string }>(`/api/admin/leads/${lead.id}/carta`, { method: 'POST' });
+      setCartaEn(r.contactadoEn);
+      toast.success('Carta enviada', { description: lead.email ?? undefined });
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'No se pudo enviar la carta');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   const fecha = new Date(lead.fecha).toLocaleString('es-CO', {
     timeZone: 'America/Bogota',
     day: 'numeric',
@@ -188,6 +206,23 @@ function LeadCard({ lead }: { lead: Lead }) {
           </span>
         )}
       </div>
+      {lead.email && (
+        <div className="mt-3 border-t border-zinc-100 pt-3">
+          {lead.noContactar ? (
+            <p className="text-xs font-medium text-red-600">Pidió no recibir más correos</p>
+          ) : cartaEn ? (
+            <p className="text-xs text-zinc-500">
+              Carta de invitación enviada el{' '}
+              {new Date(cartaEn).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' })}
+            </p>
+          ) : (
+            <Button size="sm" variant="outline" onClick={enviarCarta} disabled={enviando} className="gap-1.5 border-zinc-300">
+              {enviando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+              Enviar carta de invitación
+            </Button>
+          )}
+        </div>
+      )}
     </li>
   );
 }
