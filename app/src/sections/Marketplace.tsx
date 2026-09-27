@@ -322,7 +322,8 @@ function TarjetaCarga({
           <AlertDialogHeader>
             <AlertDialogTitle>Antes de pagar {formatCOP(tarifa)}</AlertDialogTitle>
             <AlertDialogDescription>
-              Te llevamos a Wompi, la pasarela de pago segura. Puedes pagar con Nequi, PSE o tarjeta.
+              Te llevamos a Wompi, la pasarela de pago segura. Puedes pagar con Nequi, PSE o tarjeta. Al confirmarse
+              el pago, el publicador recibe tu nombre, ciudad y teléfono para que también pueda llamarte.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <ol className="space-y-3 text-sm text-zinc-700">

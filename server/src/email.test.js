@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { plantillaBienvenida, plantillaPagoConfirmado } from './email.js';
+import { plantillaBienvenida, plantillaPagoConfirmado, plantillaAvisoPublicador } from './email.js';
 
 test('plantilla de bienvenida menciona el nombre y el rol correcto', () => {
   const html = plantillaBienvenida({ nombre: 'Ana', tipo: 'PUBLICADOR' });
@@ -25,4 +25,15 @@ test('plantilla de pago confirmado formatea el monto en COP', () => {
 test('los tips de pago con Nequi van solo en la bienvenida del transportador', () => {
   assert.match(plantillaBienvenida({ nombre: 'Ana', tipo: 'TRANSPORTADOR' }), /Nequi/);
   assert.doesNotMatch(plantillaBienvenida({ nombre: 'Ana', tipo: 'PUBLICADOR' }), /Nequi/);
+});
+
+test('aviso al publicador muestra nombre, ciudad y teléfono del transportador, no el documento', () => {
+  const html = plantillaAvisoPublicador({
+    carga: 'Arena de peña',
+    transportador: { nombre: 'Alberto Pérez', ciudad: 'San Gil', telefono: '3165533911', documento: '123456' },
+  });
+  assert.match(html, /Alberto Pérez desbloqueó tu carga/);
+  assert.match(html, /San Gil/);
+  assert.match(html, /tel:3165533911/);
+  assert.doesNotMatch(html, /123456/);
 });

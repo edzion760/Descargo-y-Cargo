@@ -143,6 +143,35 @@ export function plantillaPagoConfirmado({ monto, carga }) {
   </div>`;
 }
 
+// Aviso al publicador cuando un transportador paga el desbloqueo de su carga.
+// Solo nombre, ciudad y teléfono (nunca el documento). El transportador ve
+// antes de pagar que estos datos se le comparten (Marketplace.tsx).
+export function plantillaAvisoPublicador({ carga, transportador }) {
+  return `
+  <div style="max-width:520px;margin:0 auto;font-family:Arial,Helvetica,sans-serif">
+    ${cabecera()}
+    <table role="presentation" width="100%" style="background:#ffffff" cellpadding="0" cellspacing="0"><tr><td style="padding:30px 28px 8px">
+      <p style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#ea580c;margin:0 0 10px">Transportador interesado</p>
+      <h1 style="font-size:20px;font-weight:800;color:#18181b;margin:0 0 14px;line-height:1.3">${transportador.nombre} desbloqueó tu carga</h1>
+      <p style="font-size:14px;line-height:1.65;color:#3f3f46;margin:0 0 16px">
+        Pagó por tu contacto para la carga <strong>${carga}</strong>, así que probablemente te llame pronto. También puedes llamarlo tú.
+      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px"><tr>
+        <td style="background:#fafafa;border:1px solid #e4e4e7;border-radius:8px;padding:16px 18px">
+          <p style="font-size:12px;color:#71717a;margin:0 0 4px">Transportador</p>
+          <p style="font-size:15px;font-weight:bold;color:#18181b;margin:0 0 10px">${transportador.nombre} · ${transportador.ciudad}</p>
+          <p style="font-size:12px;color:#71717a;margin:0 0 4px">Teléfono</p>
+          <p style="font-size:18px;font-weight:800;margin:0"><a href="tel:${transportador.telefono}" style="color:#ea580c;text-decoration:none">${transportador.telefono}</a></p>
+        </td>
+      </tr></table>
+      <p style="font-size:12px;line-height:1.6;color:#71717a;margin:16px 0 0">
+        Antes de entregar la carga, pídele y revisa su licencia de conducción, SOAT, revisión técnico-mecánica y la tarjeta de propiedad del vehículo.
+      </p>
+    </td></tr></table>
+    ${pie()}
+  </div>`;
+}
+
 export function plantillaRecuperarPassword({ url }) {
   return `
   <div style="max-width:520px;margin:0 auto;font-family:Arial,Helvetica,sans-serif">
@@ -242,6 +271,14 @@ export function enviarBienvenida(para, datos) {
 
 export function enviarPagoConfirmado(para, datos) {
   return enviarCorreo({ para, asunto: 'Pago confirmado — Descargo & Cargo', html: plantillaPagoConfirmado(datos) });
+}
+
+export function enviarAvisoPublicador(para, datos) {
+  return enviarCorreo({
+    para,
+    asunto: `${datos.transportador.nombre} desbloqueó tu carga — Descargo & Cargo`,
+    html: plantillaAvisoPublicador(datos),
+  });
 }
 
 export function enviarRecuperarPassword(para, datos) {

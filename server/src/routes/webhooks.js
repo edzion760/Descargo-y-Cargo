@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { checksumValido } from '../wompi.js';
-import { enviarPagoConfirmado } from '../email.js';
+import { enviarAvisoPublicador, enviarPagoConfirmado } from '../email.js';
 
 export const webhooksRouter = Router();
 
@@ -47,7 +47,10 @@ webhooksRouter.post('/wompi', async (req, res) => {
 
   const pago = await prisma.pagoDesbloqueo.findUnique({
     where: { referencia: transaccion.reference },
-    include: { carga: true, transportador: { include: { usuario: true } } },
+    include: {
+      carga: { include: { publicador: { include: { usuario: true } } } },
+      transportador: { include: { usuario: true } },
+    },
   });
   if (!pago) return res.status(200).json({ ok: true });
 
@@ -60,6 +63,13 @@ webhooksRouter.post('/wompi', async (req, res) => {
       monto: pago.monto,
       carga: pago.carga.titulo,
     });
+    // Cuenta del publicador dada de baja (anonimizada): no hay a quién avisar.
+    if (!pago.carga.publicador.usuario.eliminadoEn) {
+      await enviarAvisoPublicador(pago.carga.publicador.usuario.email, {
+        carga: pago.carga.titulo,
+        transportador: pago.transportador,
+      });
+    }
   }
 
   res.status(200).json({ ok: true });
