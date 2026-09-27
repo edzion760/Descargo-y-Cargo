@@ -49,6 +49,7 @@ interface Carga {
   vehiculoRequerido: string;
   destacada: boolean;
   verificado: boolean;
+  ejemplo: boolean;
   desbloqueada: boolean;
   esMia: boolean;
 }
@@ -230,10 +231,16 @@ function TarjetaCarga({
     <article className="group animate-aparecer">
       <div className="relative">
         <PortadaRuta carga={carga} />
-        {carga.destacada && (
-          <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-zinc-950 shadow-suave">
-            <Star className="h-3.5 w-3.5 fill-orange-500 text-orange-500" /> Destacada
+        {carga.ejemplo ? (
+          <span className="absolute left-3 top-3 rounded-full bg-zinc-950 px-3 py-1.5 text-xs font-bold text-white shadow-suave">
+            Ejemplo
           </span>
+        ) : (
+          carga.destacada && (
+            <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-zinc-950 shadow-suave">
+              <Star className="h-3.5 w-3.5 fill-orange-500 text-orange-500" /> Destacada
+            </span>
+          )
         )}
         <button
           type="button"
@@ -251,7 +258,7 @@ function TarjetaCarga({
       <div className="mt-3.5 space-y-0.5">
         <div className="flex items-start justify-between gap-3">
           <h3 className="line-clamp-1 font-semibold text-zinc-950">{carga.titulo}</h3>
-          {carga.verificado && (
+          {carga.verificado && !carga.ejemplo && (
             <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-zinc-700">
               <BadgeCheck className="h-4 w-4 text-orange-500" /> Verificada
             </span>
@@ -312,6 +319,10 @@ function TarjetaCarga({
               <p className="relative mt-1 text-sm text-zinc-600">Cargando contacto…</p>
             )}
           </div>
+        ) : carga.ejemplo ? (
+          <p className="rounded-xl bg-zinc-100 px-3 py-3 text-center text-xs font-medium text-zinc-600">
+            Carga de ejemplo para mostrar cómo funciona. No tiene un contacto real.
+          </p>
         ) : (
           <Button onClick={pedirDesbloqueo} disabled={cargando} className="h-11 w-full gap-2 rounded-xl font-semibold">
             {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
@@ -514,6 +525,12 @@ export default function Marketplace({
               Publicar y ver el listado es gratis. Solo pagas cuando desbloqueas el contacto de la carga
               que te interesa.
             </p>
+            {cargas.some((c) => c.ejemplo) && (
+              <p className="mt-3 rounded-xl bg-orange-50 px-4 py-3 text-sm text-zinc-800">
+                <strong>Estamos arrancando.</strong> Las cargas marcadas como <strong>Ejemplo</strong> muestran cómo
+                funciona la plataforma y no se pueden desbloquear. Las demás son publicaciones reales.
+              </p>
+            )}
           </div>
           {!cargando && !error && (
             <p className="shrink-0 text-sm font-medium text-zinc-500">

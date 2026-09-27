@@ -31,6 +31,7 @@ const cargaPublica = {
   vehiculoRequerido: true,
   verificado: true,
   destacada: true,
+  ejemplo: true,
   estado: true,
 };
 
@@ -42,7 +43,7 @@ cargasRouter.get('/', optionalAuth, async (req, res) => {
       ...(tipoPublicacion ? { tipoPublicacion: String(tipoPublicacion) } : {}),
     },
     select: { ...cargaPublica, publicadorId: true },
-    orderBy: [{ destacada: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ ejemplo: 'asc' }, { destacada: 'desc' }, { createdAt: 'desc' }],
   });
 
   let desbloqueadas = new Set();
@@ -241,6 +242,7 @@ cargasRouter.post('/:id/desbloqueo', requireAuth, requireTipo('TRANSPORTADOR'), 
   const cargaId = Number(req.params.id);
   const carga = await prisma.carga.findUnique({ where: { id: cargaId } });
   if (!carga) return res.status(404).json({ error: 'Carga no encontrada' });
+  if (carga.ejemplo) return res.status(409).json({ error: 'Es una carga de ejemplo: no tiene un contacto real para desbloquear' });
 
   let transportador = await prisma.transportador.findUnique({
     where: { usuarioId: req.user.sub },

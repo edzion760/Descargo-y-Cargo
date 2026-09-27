@@ -230,25 +230,30 @@ export function plantillaInvitacionProspecto({ nombre, id }) {
     <table role="presentation" width="100%" style="background:#ffffff" cellpadding="0" cellspacing="0"><tr><td style="padding:30px 28px 8px">
       <p style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#ea580c;margin:0 0 10px">Para empresas que despachan carga</p>
       <h1 style="font-size:19px;font-weight:800;color:#18181b;margin:0 0 14px;line-height:1.3">
-        Hola ${nombre}, publiquen su carga gratis y elijan transportador verificado
+        Hola ${nombre}, publiquen su carga gratis y sepan con quién la mueven
       </h1>
-      <p style="font-size:14px;line-height:1.65;color:#3f3f46;margin:0 0 22px">
+      <p style="font-size:14px;line-height:1.65;color:#3f3f46;margin:0 0 14px">
         Publicar en un grupo de WhatsApp significa recibir mensajes de cualquiera, sin saber si el
-        vehículo o el conductor son reales. En <strong>Descargo &amp; Cargo</strong> cada transportador
-        está verificado y tu carga nunca sale por debajo del piso legal SICE-TAC.
+        vehículo o el conductor son reales. En <strong>Descargo &amp; Cargo</strong> cada transportador se
+        registra con su cédula y la placa de su vehículo, que ustedes pueden consultar en el RUNT antes de
+        entregarle la carga, y ningún flete se publica por debajo del piso legal SICE-TAC.
+      </p>
+      <p style="font-size:14px;line-height:1.65;color:#3f3f46;margin:0 0 22px">
+        Les somos sinceros: la plataforma está recién lanzada y estamos buscando las primeras empresas que
+        publiquen su carga. Por eso publicar es gratis, y cualquier comentario suyo nos ayuda a mejorarla.
       </p>
 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px"><tr>
         <td width="33%" style="background:#fafafa;border:1px solid #e4e4e7;text-align:center;padding:14px 6px">
-          <div style="font-size:17px;font-weight:800;color:#18181b">400+</div>
-          <div style="font-size:10px;color:#71717a;margin-top:2px">cargas / mes</div>
+          <div style="font-size:17px;font-weight:800;color:#18181b">$0</div>
+          <div style="font-size:10px;color:#71717a;margin-top:2px">publicar su carga</div>
         </td>
         <td width="34%" style="background:#fafafa;border:1px solid #e4e4e7;border-left:none;text-align:center;padding:14px 6px">
           <div style="font-size:17px;font-weight:800;color:#18181b">100%</div>
           <div style="font-size:10px;color:#71717a;margin-top:2px">sobre piso SICE-TAC</div>
         </td>
         <td width="33%" style="background:#fafafa;border:1px solid #e4e4e7;border-left:none;text-align:center;padding:14px 6px">
-          <div style="font-size:17px;font-weight:800;color:#18181b">15 min</div>
+          <div style="font-size:17px;font-weight:800;color:#18181b">5 min</div>
           <div style="font-size:10px;color:#71717a;margin-top:2px">crear tu cuenta</div>
         </td>
       </tr></table>

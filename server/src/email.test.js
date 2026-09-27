@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { plantillaBienvenida, plantillaPagoConfirmado, plantillaAvisoPublicador } from './email.js';
+import { plantillaBienvenida, plantillaPagoConfirmado, plantillaAvisoPublicador, plantillaInvitacionProspecto } from './email.js';
 
 test('plantilla de bienvenida menciona el nombre y el rol correcto', () => {
   const html = plantillaBienvenida({ nombre: 'Ana', tipo: 'PUBLICADOR' });
@@ -40,4 +40,10 @@ test('aviso al publicador muestra nombre, ciudad y teléfono del transportador, 
   assert.match(html, /constancia\?pago=7/);
   assert.match(html, /rndc\.mintransporte\.gov\.co/);
   assert.doesNotMatch(html, /123456/);
+});
+
+test('la campaña no promete cifras ni verificaciones que aún no existen', () => {
+  const html = plantillaInvitacionProspecto({ nombre: 'Lácteos del Valle', id: 1 });
+  assert.doesNotMatch(html, /400\+|está verificado|transportador verificado/);
+  assert.match(html, /recién lanzada/);
 });

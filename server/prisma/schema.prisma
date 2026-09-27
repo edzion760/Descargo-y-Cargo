@@ -144,6 +144,9 @@ model Carga {
   vehiculoRequerido String
   verificado        Boolean         @default(false)
   destacada         Boolean         @default(false)
+  // Carga de demostración (lanzamiento): se muestra marcada como Ejemplo y
+  // no se puede desbloquear -- nadie debe pagar por un contacto que no existe.
+  ejemplo           Boolean         @default(false)
   estado            EstadoCarga     @default(DISPONIBLE)
   createdAt         DateTime        @default(now())
 
