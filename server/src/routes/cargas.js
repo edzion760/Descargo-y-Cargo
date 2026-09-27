@@ -153,6 +153,7 @@ cargasRouter.get('/mis-contactos', requireAuth, requireTipo('TRANSPORTADOR'), as
   const pagos = await prisma.pagoDesbloqueo.findMany({
     where: { transportadorId: transportador.id, estado: 'VERIFICADO' },
     select: {
+      id: true,
       monto: true,
       carga: {
         select: {
@@ -168,7 +169,51 @@ cargasRouter.get('/mis-contactos', requireAuth, requireTipo('TRANSPORTADOR'), as
     },
     orderBy: { createdAt: 'desc' },
   });
-  res.json(pagos.map(({ monto, carga: { publicador, ...carga } }) => ({ ...carga, monto, contacto: publicador })));
+  res.json(
+    pagos.map(({ id, monto, carga: { publicador, ...carga } }) => ({ ...carga, pagoId: id, monto, contacto: publicador }))
+  );
+});
+
+// Datos para la "Constancia de entrega de carga" imprimible (/constancia).
+// Solo las dos partes de un desbloqueo pagado pueden verla: trae teléfonos y
+// placa. La cédula no se guarda aquí -- se escribe a mano en el papel.
+cargasRouter.get('/constancia/:pagoId', requireAuth, async (req, res) => {
+  const pago = await prisma.pagoDesbloqueo.findUnique({
+    where: { id: Number(req.params.pagoId) || 0 },
+    select: {
+      id: true,
+      estado: true,
+      createdAt: true,
+      carga: {
+        select: {
+          id: true,
+          titulo: true,
+          tipoCarga: true,
+          origen: true,
+          destino: true,
+          toneladas: true,
+          precio: true,
+          fechaCarga: true,
+          vehiculoRequerido: true,
+          publicador: { select: { usuarioId: true, nombre: true, ciudad: true, telefono: true } },
+        },
+      },
+      transportador: { select: { usuarioId: true, nombre: true, ciudad: true, telefono: true, placa: true } },
+    },
+  });
+  const esParte =
+    pago && [pago.carga.publicador.usuarioId, pago.transportador.usuarioId].includes(req.user.sub);
+  if (!esParte || pago.estado !== 'VERIFICADO') return res.status(404).json({ error: 'Constancia no encontrada' });
+
+  const sinId = ({ usuarioId: _, ...datos }) => datos;
+  const { publicador, ...carga } = pago.carga;
+  res.json({
+    numero: `DYC-${pago.id}`,
+    fechaDesbloqueo: pago.createdAt,
+    carga,
+    publicador: sinId(publicador),
+    transportador: sinId(pago.transportador),
+  });
 });
 
 cargasRouter.get('/:id', optionalAuth, async (req, res) => {

@@ -6,7 +6,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { authRouter } from './routes/auth.js';
 import { cargasRouter } from './routes/cargas.js';
 import { membresiasRouter } from './routes/membresias.js';
@@ -40,7 +40,9 @@ app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf.toString(
 
 // Cloudflare ya entrega la IP real del cliente en este header (más
 // confiable detrás del túnel que fiarse solo de X-Forwarded-For).
-const ipReal = (req) => req.headers['cf-connecting-ip'] || req.ip;
+// ipKeyGenerator agrupa IPv6 por subred /56: cada cliente IPv6 tiene miles de
+// direcciones, y contarlas una por una permitiría saltarse el límite rotándolas.
+const ipReal = (req) => ipKeyGenerator(req.headers['cf-connecting-ip'] || req.ip);
 
 const limiteGeneral = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -111,7 +113,7 @@ if (fs.existsSync(distDir)) {
   // Solo estas rutas existen en react-router (App.tsx) -- cualquier otra
   // ruta debe devolver 404 real en vez de servir index.html con 200
   // (soft-404: confunde a Google y a herramientas de enlaces rotos).
-  const RUTAS_SPA = new Set(['/', '/restablecer', '/effix']);
+  const RUTAS_SPA = new Set(['/', '/restablecer', '/effix', '/constancia']);
   app.use((req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     if (!RUTAS_SPA.has(req.path)) return next();

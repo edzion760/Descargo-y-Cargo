@@ -11,6 +11,7 @@ interface ContactoPagado {
   destino: string;
   fechaCarga: string;
   estado: string;
+  pagoId: number;
   monto: number;
   contacto: { nombre: string; telefono: string };
 }
@@ -74,7 +75,12 @@ function Lista() {
               <Phone className="h-3.5 w-3.5" /> {c.contacto.telefono}
             </a>
           </div>
-          <p className="mt-2 text-xs text-zinc-500">Pagaste {formatCOP(c.monto)}</p>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="text-zinc-500">Pagaste {formatCOP(c.monto)}</span>
+            <a href={`/constancia?pago=${c.pagoId}`} className="font-semibold text-zinc-950 underline">
+              Constancia de entrega
+            </a>
+          </div>
         </li>
       ))}
     </ul>

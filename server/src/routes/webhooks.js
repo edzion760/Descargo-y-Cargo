@@ -68,6 +68,7 @@ webhooksRouter.post('/wompi', async (req, res) => {
       await enviarAvisoPublicador(pago.carga.publicador.usuario.email, {
         carga: pago.carga.titulo,
         transportador: pago.transportador,
+        pagoId: pago.id,
       });
     }
   }

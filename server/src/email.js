@@ -50,13 +50,13 @@ async function enviarCorreo({ para, asunto, html }) {
 // línea a propósito, ver comentario más abajo), para que un correo de
 // registro/pago/recuperación se vea con el mismo nivel que el de campaña,
 // no como un aviso de texto plano.
+// Logo blanco sobre negro como imagen (app/public/email/logo.png, 500x96 = 2x para pantallas
+// retina): un emoji o una fuente web se ven distinto en cada cliente de correo,
+// la imagen se ve igual en todos. Si el cliente bloquea imágenes queda el alt.
 function cabecera() {
   return `
-    <table role="presentation" width="100%" style="background:#09090b;padding:24px 28px" cellpadding="0" cellspacing="0"><tr><td>
-      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-        <td style="width:34px;height:34px;background:#f97316;border-radius:8px;text-align:center;vertical-align:middle;font-size:16px" title="Descargo &amp; Cargo">🚚</td>
-        <td style="padding-left:10px;font-size:17px;font-weight:bold;color:#ffffff">Descargo &amp; Cargo</td>
-      </tr></table>
+    <table role="presentation" width="100%" style="background:#09090b" cellpadding="0" cellspacing="0"><tr><td style="padding:22px 28px">
+      <img src="https://descargoycargo.com/email/logo.png" width="198" height="38" alt="Descargo &amp; Cargo" style="display:block;border:0;outline:none;text-decoration:none;font-size:18px;font-weight:bold;color:#ffffff">
     </td></tr></table>`;
 }
 
@@ -100,7 +100,7 @@ export function plantillaBienvenida({ nombre, tipo }) {
   const esPublicador = tipo === 'PUBLICADOR';
   const rol = esPublicador ? 'publicador de carga' : 'transportador';
   return `
-  <div style="max-width:520px;margin:0 auto;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:520px;margin:0 auto;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif">
     ${cabecera()}
     <table role="presentation" width="100%" style="background:#ffffff" cellpadding="0" cellspacing="0"><tr><td style="padding:30px 28px 8px">
       <p style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#ea580c;margin:0 0 10px">Cuenta creada</p>
@@ -118,7 +118,7 @@ export function plantillaBienvenida({ nombre, tipo }) {
 
 export function plantillaPagoConfirmado({ monto, carga }) {
   return `
-  <div style="max-width:520px;margin:0 auto;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:520px;margin:0 auto;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif">
     ${cabecera()}
     <table role="presentation" width="100%" style="background:#ffffff" cellpadding="0" cellspacing="0"><tr><td style="padding:30px 28px 8px">
       <p style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#16a34a;margin:0 0 10px">Pago confirmado ✓</p>
@@ -146,9 +146,9 @@ export function plantillaPagoConfirmado({ monto, carga }) {
 // Aviso al publicador cuando un transportador paga el desbloqueo de su carga.
 // Solo nombre, ciudad y teléfono (nunca el documento). El transportador ve
 // antes de pagar que estos datos se le comparten (Marketplace.tsx).
-export function plantillaAvisoPublicador({ carga, transportador }) {
+export function plantillaAvisoPublicador({ carga, transportador, pagoId }) {
   return `
-  <div style="max-width:520px;margin:0 auto;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:520px;margin:0 auto;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif">
     ${cabecera()}
     <table role="presentation" width="100%" style="background:#ffffff" cellpadding="0" cellspacing="0"><tr><td style="padding:30px 28px 8px">
       <p style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#ea580c;margin:0 0 10px">Transportador interesado</p>
@@ -174,6 +174,13 @@ export function plantillaAvisoPublicador({ carga, transportador }) {
       </p>
       ${botonCTA('https://www.runt.gov.co/consultaCiudadana/', 'Consultar placa en el RUNT →')}
 
+      <p style="font-size:14px;font-weight:bold;color:#18181b;margin:22px 0 8px">Constancia de entrega</p>
+      <p style="font-size:13px;line-height:1.6;color:#3f3f46;margin:0 0 4px">
+        Descarga una constancia con los datos de la carga y del transportador, lista para imprimir y que ambos la
+        firmen al cargar. Es un respaldo privado entre ustedes: no reemplaza el manifiesto.
+      </p>
+      ${botonCTA(`https://descargoycargo.com/constancia?pago=${pagoId}`, 'Descargar constancia de entrega →')}
+
       <p style="font-size:14px;font-weight:bold;color:#18181b;margin:22px 0 8px">Manifiesto de carga (RNDC)</p>
       <p style="font-size:13px;line-height:1.6;color:#3f3f46;margin:0 0 4px">
         Todo despacho de carga por carretera debe quedar registrado en el RNDC del Ministerio de Transporte con su
@@ -192,7 +199,7 @@ export function plantillaAvisoPublicador({ carga, transportador }) {
 
 export function plantillaRecuperarPassword({ url }) {
   return `
-  <div style="max-width:520px;margin:0 auto;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:520px;margin:0 auto;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif">
     ${cabecera()}
     <table role="presentation" width="100%" style="background:#ffffff" cellpadding="0" cellspacing="0"><tr><td style="padding:30px 28px 8px">
       <p style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#ea580c;margin:0 0 10px">Recuperar contraseña</p>
@@ -217,13 +224,8 @@ export function plantillaInvitacionProspecto({ nombre, id }) {
   const bajaUrl = `https://descargoycargo.com/api/prospectos/baja?id=${id}`;
   const visitaUrl = `https://descargoycargo.com/api/prospectos/visita?id=${id}`;
   return `
-  <div style="max-width:520px;margin:0 auto;font-family:Arial,Helvetica,sans-serif">
-    <table role="presentation" width="100%" style="background:#09090b;padding:24px 28px" cellpadding="0" cellspacing="0"><tr><td>
-      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-        <td style="width:34px;height:34px;background:#f97316;border-radius:8px;text-align:center;vertical-align:middle;font-size:16px" title="Descargo &amp; Cargo">🚚</td>
-        <td style="padding-left:10px;font-size:17px;font-weight:bold;color:#ffffff">Descargo &amp; Cargo</td>
-      </tr></table>
-    </td></tr></table>
+  <div style="max-width:520px;margin:0 auto;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif">
+    ${cabecera()}
 
     <table role="presentation" width="100%" style="background:#ffffff" cellpadding="0" cellspacing="0"><tr><td style="padding:30px 28px 8px">
       <p style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#ea580c;margin:0 0 10px">Para empresas que despachan carga</p>

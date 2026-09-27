@@ -30,12 +30,14 @@ test('los tips de pago con Nequi van solo en la bienvenida del transportador', (
 test('aviso al publicador muestra nombre, ciudad y teléfono del transportador, no el documento', () => {
   const html = plantillaAvisoPublicador({
     carga: 'Arena de peña',
+    pagoId: 7,
     transportador: { nombre: 'Alberto Pérez', ciudad: 'San Gil', telefono: '3165533911', documento: '123456', placa: 'SXT482' },
   });
   assert.match(html, /Alberto Pérez desbloqueó tu carga/);
   assert.match(html, /San Gil/);
   assert.match(html, /tel:3165533911/);
   assert.match(html, /SXT482/);
+  assert.match(html, /constancia\?pago=7/);
   assert.match(html, /rndc\.mintransporte\.gov\.co/);
   assert.doesNotMatch(html, /123456/);
 });
