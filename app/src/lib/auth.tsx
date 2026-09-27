@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         autenticado: !cargando && sesion !== null,
+        cargando,
         miId: sesion?.id ?? null,
         tipo: sesion?.tipo ?? null,
         login,

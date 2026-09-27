@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu, UserRound, LogOut, Trash2, PackagePlus, LogIn, UserPlus } from 'lucide-react';
+import { Menu, UserRound, LogOut, Trash2, PackagePlus, LogIn, UserPlus, Contact } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -35,7 +35,7 @@ export default function Navbar() {
   const [eliminarAbierto, setEliminarAbierto] = useState(false);
   const [conSombra, setConSombra] = useState(false);
   const { tipo, logout, eliminarCuenta } = useAuth();
-  const { publicar, ingresar, registrarse } = useAcciones();
+  const { publicar, ingresar, registrarse, misContactos } = useAcciones();
 
   // Borde/sombra solo al hacer scroll, como Airbnb: arriba del todo el navbar
   // se funde con el hero.
@@ -116,6 +116,11 @@ export default function Navbar() {
               )}
 
               <DropdownMenuSeparator className="my-2" />
+              {tipo === 'TRANSPORTADOR' && (
+                <DropdownMenuItem onSelect={misContactos} className="rounded-lg px-3 py-2.5 font-semibold">
+                  <Contact /> Mis contactos
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onSelect={publicar} className="rounded-lg px-3 py-2.5 sm:hidden">
                 <PackagePlus /> Publicar carga
               </DropdownMenuItem>

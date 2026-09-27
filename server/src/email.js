@@ -108,7 +108,7 @@ export function plantillaPagoConfirmado({ monto, carga }) {
           <p style="font-size:18px;font-weight:800;color:#16a34a;margin:0">$${monto.toLocaleString('es-CO')} COP</p>
         </td>
       </tr></table>
-      ${botonCTA('https://descargoycargo.com', 'Ver datos de contacto →')}
+      ${botonCTA('https://descargoycargo.com/?mis_contactos', 'Ver datos de contacto →')}
     </td></tr></table>
     ${pie()}
   </div>`;

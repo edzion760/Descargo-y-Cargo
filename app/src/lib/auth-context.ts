@@ -15,6 +15,7 @@ export interface RegisterInput {
 
 export interface AuthState {
   autenticado: boolean;
+  cargando: boolean;
   miId: number | null;
   tipo: Tipo | null;
   login: (email: string, password: string) => Promise<void>;

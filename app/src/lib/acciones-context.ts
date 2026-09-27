@@ -9,6 +9,7 @@ export interface AccionesCarga {
   soyTransportador: () => void;
   ingresar: () => void;
   registrarse: () => void;
+  misContactos: () => void;
 }
 
 export const AccionesContext = createContext<AccionesCarga | null>(null);

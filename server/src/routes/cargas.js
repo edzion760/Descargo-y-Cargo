@@ -144,6 +144,32 @@ cargasRouter.delete('/:id', requireAuth, requireTipo('PUBLICADOR'), async (req, 
   res.status(204).end();
 });
 
+// Contactos que el transportador ya pagó, aunque la carga ya no esté
+// DISPONIBLE (cancelada o asignada): lo pagado no se pierde. Va antes de
+// /:id para que Express no lo tome como un id.
+cargasRouter.get('/mis-contactos', requireAuth, requireTipo('TRANSPORTADOR'), async (req, res) => {
+  const transportador = await prisma.transportador.findUnique({ where: { usuarioId: req.user.sub } });
+  const pagos = await prisma.pagoDesbloqueo.findMany({
+    where: { transportadorId: transportador.id, estado: 'VERIFICADO' },
+    select: {
+      monto: true,
+      carga: {
+        select: {
+          id: true,
+          titulo: true,
+          origen: true,
+          destino: true,
+          fechaCarga: true,
+          estado: true,
+          publicador: { select: { nombre: true, telefono: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(pagos.map(({ monto, carga: { publicador, ...carga } }) => ({ ...carga, monto, contacto: publicador })));
+});
+
 cargasRouter.get('/:id', optionalAuth, async (req, res) => {
   const id = Number(req.params.id);
   const carga = await prisma.carga.findUnique({

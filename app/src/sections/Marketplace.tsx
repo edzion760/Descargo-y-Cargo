@@ -355,7 +355,7 @@ export default function Marketplace({
   const [error, setError] = useState<string | null>(null);
   const [cargaEditando, setCargaEditando] = useState<Carga | null>(null);
   const { autenticado } = useAuth();
-  const { ingresar } = useAcciones();
+  const { ingresar, misContactos } = useAcciones();
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -387,21 +387,30 @@ export default function Marketplace({
   }, [cargar]);
 
   // Al volver de pagar en Wompi (?wompi_carga=<id>): el webhook puede tardar
-  // unos segundos en confirmar, así que se reintenta unas cuantas veces.
+  // unos segundos en confirmar, así que se reintenta unas cuantas veces y, al
+  // confirmarse, se abre "Mis contactos" en vez de dejarlo buscando la tarjeta.
   const [verificandoPago, setVerificandoPago] = useState(false);
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (!params.has('wompi_carga')) return;
+    const cargaId = new URLSearchParams(window.location.search).get('wompi_carga');
+    if (!cargaId) return;
     window.history.replaceState({}, '', window.location.pathname);
     setVerificandoPago(true);
 
     let intentos = 0;
     const intervalo = setInterval(async () => {
       intentos += 1;
-      await cargar();
-      if (intentos >= 5) {
+      const carga = await apiFetch<{ desbloqueada: boolean }>(`/api/cargas/${cargaId}`).catch(() => null);
+      if (carga?.desbloqueada || intentos >= 8) {
         clearInterval(intervalo);
         setVerificandoPago(false);
+        if (carga?.desbloqueada) {
+          cargar();
+          misContactos();
+        } else {
+          toast.info('Wompi aún no confirma tu pago', {
+            description: 'Te llegará un correo apenas se confirme. Tus contactos quedan en el menú › Mis contactos.',
+          });
+        }
       }
     }, 2500);
     return () => clearInterval(intervalo);
