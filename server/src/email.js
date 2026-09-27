@@ -161,11 +161,29 @@ export function plantillaAvisoPublicador({ carga, transportador }) {
           <p style="font-size:12px;color:#71717a;margin:0 0 4px">Transportador</p>
           <p style="font-size:15px;font-weight:bold;color:#18181b;margin:0 0 10px">${transportador.nombre} · ${transportador.ciudad}</p>
           <p style="font-size:12px;color:#71717a;margin:0 0 4px">Teléfono</p>
-          <p style="font-size:18px;font-weight:800;margin:0"><a href="tel:${transportador.telefono}" style="color:#ea580c;text-decoration:none">${transportador.telefono}</a></p>
+          <p style="font-size:18px;font-weight:800;margin:0 0 10px"><a href="tel:${transportador.telefono}" style="color:#ea580c;text-decoration:none">${transportador.telefono}</a></p>
+          <p style="font-size:12px;color:#71717a;margin:0 0 4px">Placa del vehículo (declarada por el transportador)</p>
+          <p style="font-size:18px;font-weight:800;color:#18181b;letter-spacing:2px;margin:0">${transportador.placa}</p>
         </td>
       </tr></table>
-      <p style="font-size:12px;line-height:1.6;color:#71717a;margin:16px 0 0">
-        Antes de entregar la carga, pídele y revisa su licencia de conducción, SOAT, revisión técnico-mecánica y la tarjeta de propiedad del vehículo.
+
+      <p style="font-size:14px;font-weight:bold;color:#18181b;margin:22px 0 8px">Antes de entregar la carga</p>
+      <p style="font-size:13px;line-height:1.6;color:#3f3f46;margin:0 0 4px">
+        Pídele y revisa su licencia de conducción, SOAT, revisión técnico-mecánica y la tarjeta de propiedad.
+        Confirma que la placa <strong>${transportador.placa}</strong> coincide con el vehículo que llega y consúltala en el RUNT.
+      </p>
+      ${botonCTA('https://www.runt.gov.co/consultaCiudadana/', 'Consultar placa en el RUNT →')}
+
+      <p style="font-size:14px;font-weight:bold;color:#18181b;margin:22px 0 8px">Manifiesto de carga (RNDC)</p>
+      <p style="font-size:13px;line-height:1.6;color:#3f3f46;margin:0 0 4px">
+        Todo despacho de carga por carretera debe quedar registrado en el RNDC del Ministerio de Transporte con su
+        manifiesto electrónico, que expide una empresa de transporte habilitada. Si el transportador trabaja con una
+        empresa, pídele el número de manifiesto antes de cargar. Si ninguno de los dos tiene empresa, busquen una
+        habilitada que expida el manifiesto: sin él, el vehículo no puede transitar legalmente con la carga.
+      </p>
+      ${botonCTA('https://rndc.mintransporte.gov.co/', 'Ir al portal RNDC →')}
+      <p style="font-size:12px;line-height:1.6;color:#71717a;margin:8px 0 0">
+        Mesa de ayuda RNDC: (601) 324 0800 opción 2 · rndc@mintransporte.gov.co
       </p>
     </td></tr></table>
     ${pie()}

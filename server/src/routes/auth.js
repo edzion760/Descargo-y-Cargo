@@ -9,7 +9,16 @@ import { enviarBienvenida, enviarRecuperarPassword } from '../email.js';
 
 export const authRouter = Router();
 
-const TERMINOS_VERSION = '1.0';
+// Al subir la versión, los usuarios con otra versión aceptada deben aceptar
+// de nuevo al entrar (GET /me -> terminosPendientes, POST /terminos).
+export const TERMINOS_VERSION = '1.1';
+
+// Placas colombianas: ABC123 (carros/camiones) o ABC12D (motos). Se aceptan
+// espacios, guiones y minúsculas y se guardan normalizadas.
+export const placaSchema = z
+  .string()
+  .transform((p) => p.toUpperCase().replace(/[^A-Z0-9]/g, ''))
+  .pipe(z.string().regex(/^[A-Z]{3}\d{2}[A-Z0-9]$/, 'Placa inválida (ej. ABC123)'));
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -20,7 +29,8 @@ const registerSchema = z.object({
   telefono: z.string().min(7),
   documento: z.string().min(6, 'Documento de identidad inválido'),
   aceptaTerminos: z.literal(true, { message: 'Debes aceptar los Términos y la Política de Datos' }),
-});
+  placa: placaSchema.optional(),
+}).refine((d) => d.tipo !== 'TRANSPORTADOR' || d.placa, { message: 'La placa del vehículo es obligatoria', path: ['placa'] });
 
 // Extraído para poder probarlo sin levantar la base de datos: el valor debe
 // ser único (choca con el @unique de documento/email si dos bajas coinciden).
@@ -54,7 +64,7 @@ authRouter.post('/register', async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.issues[0].message });
   }
-  const { email, password, tipo, nombre, ciudad, telefono, documento } = parsed.data;
+  const { email, password, tipo, nombre, ciudad, telefono, documento, placa } = parsed.data;
   const passwordHash = await bcrypt.hash(password, 10);
   // Cloudflare Tunnel hace de proxy: la IP real del cliente llega en este
   // header, no en req.socket (ver server/.cloudflared/config.yml).
@@ -74,7 +84,7 @@ authRouter.post('/register', async (req, res) => {
           ? { publicador: { create: { nombre, ciudad, telefono, documento } } }
           : {
               transportador: {
-                create: { nombre, ciudad, telefono, documento, membresia: { create: { tipo: 'GRATIS' } } },
+                create: { nombre, ciudad, telefono, documento, placa, membresia: { create: { tipo: 'GRATIS' } } },
               },
             }),
       },
@@ -118,8 +128,33 @@ authRouter.post('/logout', (req, res) => {
 
 // El frontend ya no puede leer el JWT (vive en cookie httpOnly) -- esta es
 // la forma de saber, al cargar la página, si hay sesión y quién es.
-authRouter.get('/me', requireAuth, (req, res) => {
-  res.json({ id: req.user.sub, tipo: req.user.tipo });
+authRouter.get('/me', requireAuth, async (req, res) => {
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: req.user.sub },
+    select: { terminosVersion: true, eliminadoEn: true, transportador: { select: { placa: true } } },
+  });
+  if (!usuario || usuario.eliminadoEn) return res.status(401).json({ error: 'Sesión inválida' });
+  res.json({
+    id: req.user.sub,
+    tipo: req.user.tipo,
+    terminosPendientes: usuario.terminosVersion !== TERMINOS_VERSION,
+    placa: usuario.transportador?.placa ?? null,
+  });
+});
+
+// Re-aceptación de Términos/Política cuando cambia la versión: mismo
+// registro que en el alta (versión, fecha, IP).
+authRouter.post('/terminos', requireAuth, async (req, res) => {
+  if (req.body?.acepta !== true) return res.status(400).json({ error: 'Debes aceptar para continuar' });
+  await prisma.usuario.update({
+    where: { id: req.user.sub },
+    data: {
+      terminosVersion: TERMINOS_VERSION,
+      terminosAceptadosEn: new Date(),
+      terminosIp: req.headers['cf-connecting-ip'] || req.ip,
+    },
+  });
+  res.json({ ok: true });
 });
 
 const RESET_VIGENCIA_MS = 60 * 60 * 1000; // 1 hora

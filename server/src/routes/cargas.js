@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db.js';
 import { requireAuth, requireTipo, optionalAuth } from '../middleware/auth.js';
 import { urlCheckout } from '../wompi.js';
+import { placaSchema } from './auth.js';
 
 export const cargasRouter = Router();
 
@@ -196,10 +197,23 @@ cargasRouter.post('/:id/desbloqueo', requireAuth, requireTipo('TRANSPORTADOR'), 
   const carga = await prisma.carga.findUnique({ where: { id: cargaId } });
   if (!carga) return res.status(404).json({ error: 'Carga no encontrada' });
 
-  const transportador = await prisma.transportador.findUnique({
+  let transportador = await prisma.transportador.findUnique({
     where: { usuarioId: req.user.sub },
     include: { membresia: true },
   });
+
+  // La placa va en el aviso al publicador. Las cuentas creadas antes de
+  // pedirla en el registro la envían aquí, en su primer desbloqueo.
+  if (req.body?.placa) {
+    const placa = placaSchema.safeParse(req.body.placa);
+    if (!placa.success) return res.status(400).json({ error: placa.error.issues[0].message });
+    transportador = await prisma.transportador.update({
+      where: { id: transportador.id },
+      data: { placa: placa.data },
+      include: { membresia: true },
+    });
+  }
+  if (!transportador.placa) return res.status(400).json({ error: 'Registra la placa de tu vehículo' });
 
   const monto = tarifaDesbloqueo(carga.precio, transportador.membresia?.tipo);
 

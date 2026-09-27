@@ -5,6 +5,8 @@ import { AuthContext, type RegisterInput, type Tipo } from './auth-context';
 interface Sesion {
   id: number;
   tipo: Tipo;
+  terminosPendientes: boolean;
+  placa: string | null;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -20,12 +22,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setCargando(false));
   }, []);
 
+  // login/register solo ponen la cookie; /me trae el estado completo
+  // (términos pendientes, placa) en un solo lugar.
   async function login(email: string, password: string) {
-    setSesion(await apiFetch<Sesion>('/api/auth/login', { method: 'POST', body: { email, password } }));
+    await apiFetch('/api/auth/login', { method: 'POST', body: { email, password } });
+    setSesion(await apiFetch<Sesion>('/api/auth/me'));
   }
 
   async function register(input: RegisterInput) {
-    setSesion(await apiFetch<Sesion>('/api/auth/register', { method: 'POST', body: input }));
+    await apiFetch('/api/auth/register', { method: 'POST', body: input });
+    setSesion(await apiFetch<Sesion>('/api/auth/me'));
+  }
+
+  async function aceptarTerminos() {
+    await apiFetch('/api/auth/terminos', { method: 'POST', body: { acepta: true } });
+    setSesion((s) => s && { ...s, terminosPendientes: false });
   }
 
   async function logout() {
@@ -46,6 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         cargando,
         miId: sesion?.id ?? null,
         tipo: sesion?.tipo ?? null,
+        terminosPendientes: sesion?.terminosPendientes ?? false,
+        placa: sesion?.placa ?? null,
+        aceptarTerminos,
+        guardarPlaca: (placa) => setSesion((s) => s && { ...s, placa }),
         login,
         register,
         logout,

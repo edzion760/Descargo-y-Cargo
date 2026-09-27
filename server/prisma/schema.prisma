@@ -111,6 +111,9 @@ model Transportador {
   ciudad    String
   telefono  String
   documento String @unique // KYC nivel 1: cédula autodeclarada. Nivel 2 (RNEC/RUNT) pendiente de integración externa.
+  // Placa autodeclarada del vehículo; se le envía al publicador al desbloquear.
+  // Opcional en BD solo por las cuentas anteriores: se pide antes del primer desbloqueo.
+  placa     String?
 
   usuario         Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   membresia       Membresia?

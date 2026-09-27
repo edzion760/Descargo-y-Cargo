@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import AuthDialog from '@/components/AuthDialog';
 import MisContactosDialog from '@/components/MisContactosDialog';
 import PublicarCargaDialog from '@/components/PublicarCargaDialog';
+import TerminosDialog from '@/components/TerminosDialog';
 import { AccionesContext } from '@/lib/acciones-context';
 import type { Tipo } from '@/lib/auth-context';
 import { useAuth } from '@/lib/use-auth';
@@ -97,6 +98,7 @@ export default function AccionesProvider({ children }: { children: ReactNode }) 
         onOpenChange={setPublicarAbierto}
         onPublicada={() => window.dispatchEvent(new Event('cargas:publicada'))}
       />
+      <TerminosDialog />
       <MisContactosDialog
         open={verContactos}
         onOpenChange={(abierto) => {

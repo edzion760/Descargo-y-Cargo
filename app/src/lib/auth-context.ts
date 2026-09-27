@@ -10,6 +10,7 @@ export interface RegisterInput {
   ciudad: string;
   telefono: string;
   documento: string;
+  placa?: string;
   aceptaTerminos: boolean;
 }
 
@@ -18,6 +19,10 @@ export interface AuthState {
   cargando: boolean;
   miId: number | null;
   tipo: Tipo | null;
+  terminosPendientes: boolean;
+  placa: string | null;
+  aceptarTerminos: () => Promise<void>;
+  guardarPlaca: (placa: string) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => void;

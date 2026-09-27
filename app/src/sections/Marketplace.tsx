@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -137,7 +139,8 @@ function TarjetaCarga({
   onEditar: (carga: Carga) => void;
   onCancelada: (cargaId: number) => void;
 }) {
-  const { autenticado, miId, tipo } = useAuth();
+  const { autenticado, miId, tipo, placa, guardarPlaca } = useAuth();
+  const [placaNueva, setPlacaNueva] = useState('');
   const [contacto, setContacto] = useState<Contacto | null>(null);
   const [cargando, setCargando] = useState(false);
   const [cancelando, setCancelando] = useState(false);
@@ -180,8 +183,9 @@ function TarjetaCarga({
     try {
       const data = await apiFetch<{ monto: number; contacto?: Contacto; checkoutUrl?: string }>(
         `/api/cargas/${carga.id}/desbloqueo`,
-        { method: 'POST' }
+        { method: 'POST', body: placa ? {} : { placa: placaNueva } }
       );
+      if (!placa) guardarPlaca(placaNueva.toUpperCase().replace(/[^A-Z0-9]/g, ''));
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl; // paga en Wompi, vuelve a esta página
         return;
@@ -323,9 +327,24 @@ function TarjetaCarga({
             <AlertDialogTitle>Antes de pagar {formatCOP(tarifa)}</AlertDialogTitle>
             <AlertDialogDescription>
               Te llevamos a Wompi, la pasarela de pago segura. Puedes pagar con Nequi, PSE o tarjeta. Al confirmarse
-              el pago, el publicador recibe tu nombre, ciudad y teléfono para que también pueda llamarte.
+              el pago, el publicador recibe tu nombre, ciudad, teléfono y placa para que también pueda llamarte.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {!placa && (
+            <div className="space-y-1.5 rounded-xl bg-orange-50 p-3">
+              <Label htmlFor={`placa-${carga.id}`} className="text-zinc-800">
+                Placa de tu vehículo (se pide una sola vez)
+              </Label>
+              <Input
+                id={`placa-${carga.id}`}
+                value={placaNueva}
+                onChange={(e) => setPlacaNueva(e.target.value)}
+                placeholder="ABC123"
+                autoComplete="off"
+                className="uppercase"
+              />
+            </div>
+          )}
           <ol className="space-y-3 text-sm text-zinc-700">
             {[
               <>Si pagas con <strong className="text-zinc-950">Nequi</strong>, ten el celular a mano con la app de Nequi abierta.</>,
@@ -349,7 +368,11 @@ function TarjetaCarga({
           </ol>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl">Ahora no</AlertDialogCancel>
-            <AlertDialogAction onClick={desbloquear} className="rounded-xl">
+            <AlertDialogAction
+              onClick={desbloquear}
+              disabled={!placa && !/^[A-Z]{3}\d{2}[A-Z0-9]$/.test(placaNueva.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+              className="rounded-xl"
+            >
               Entendido, ir a pagar
             </AlertDialogAction>
           </AlertDialogFooter>

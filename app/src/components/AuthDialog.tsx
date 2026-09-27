@@ -36,6 +36,7 @@ export default function AuthDialog({
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [tipoRegistro, setTipoRegistro] = useState(defaultTipo);
   const [modoOlvide, setModoOlvide] = useState(false);
   const [mensajeOlvide, setMensajeOlvide] = useState<string | null>(null);
 
@@ -86,6 +87,7 @@ export default function AuthDialog({
         ciudad: String(form.get('ciudad')),
         telefono: String(form.get('telefono')),
         documento: String(form.get('documento')),
+        placa: form.get('placa') ? String(form.get('placa')) : undefined,
         aceptaTerminos,
       });
       onOpenChange(false);
@@ -175,7 +177,7 @@ export default function AuthDialog({
             <form onSubmit={handleRegister} className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="registro-tipo" className="text-zinc-700">Soy…</Label>
-                <Select name="tipo" defaultValue={defaultTipo}>
+                <Select name="tipo" defaultValue={defaultTipo} onValueChange={(v) => setTipoRegistro(v as typeof defaultTipo)}>
                   <SelectTrigger id="registro-tipo" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -205,6 +207,12 @@ export default function AuthDialog({
                   <Input id="registro-documento" name="documento" autoComplete="off" required minLength={6} />
                 </div>
               </div>
+              {tipoRegistro === 'TRANSPORTADOR' && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="registro-placa" className="text-zinc-700">Placa del vehículo</Label>
+                  <Input id="registro-placa" name="placa" placeholder="ABC123" autoComplete="off" required className="uppercase" />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="registro-email" className="text-zinc-700">Correo</Label>
                 <Input id="registro-email" name="email" type="email" autoComplete="email" required />
