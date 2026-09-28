@@ -4,3 +4,9 @@ PLAN_INTEGRAL_V2.md
 PLAN_INTEGRAL_V3.md
 PLAN_DE_MODERNIZACION.md
 ANEXO_LEGAL_DOFA_COMPETENCIA.md
+
+# Memorias y conversaciones con asistentes de IA: nunca al repositorio.
+.claude/
+CLAUDE.md
+*.jsonl
+memory/
