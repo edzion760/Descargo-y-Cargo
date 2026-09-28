@@ -133,11 +133,11 @@ export default function AuthDialog({
               ) : (
                 <form onSubmit={handleOlvide} className="space-y-3">
                   <p className="text-sm text-zinc-600">
-                    Escribe tu correo y te enviamos un enlace para elegir una nueva contraseña.
+                    Escribe tu correo o celular y te enviamos al correo registrado un enlace para elegir una nueva contraseña.
                   </p>
                   <div className="space-y-1.5">
-                    <Label htmlFor="olvide-email" className="text-zinc-700">Correo</Label>
-                    <Input id="olvide-email" name="email" type="email" autoComplete="email" required />
+                    <Label htmlFor="olvide-email" className="text-zinc-700">Correo o celular</Label>
+                    <Input id="olvide-email" name="email" type="text" autoComplete="username" autoCapitalize="none" required />
                   </div>
                   {error && <p className="text-sm text-red-600">{error}</p>}
                   <Button type="submit" disabled={cargando} className="h-12 w-full rounded-xl text-[15px] font-semibold">
@@ -151,8 +151,8 @@ export default function AuthDialog({
             ) : (
               <form onSubmit={handleLogin} className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="login-email" className="text-zinc-700">Correo</Label>
-                  <Input id="login-email" name="email" type="email" autoComplete="email" required />
+                  <Label htmlFor="login-email" className="text-zinc-700">Correo o celular</Label>
+                  <Input id="login-email" name="email" type="text" autoComplete="username" autoCapitalize="none" required />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="login-password" className="text-zinc-700">Contraseña</Label>
@@ -199,8 +199,8 @@ export default function AuthDialog({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="registro-telefono" className="text-zinc-700">Teléfono</Label>
-                  <Input id="registro-telefono" name="telefono" autoComplete="tel" required />
+                  <Label htmlFor="registro-telefono" className="text-zinc-700">Celular</Label>
+                  <Input id="registro-telefono" name="telefono" type="tel" inputMode="tel" autoComplete="tel" required placeholder="310 000 0000" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="registro-documento" className="text-zinc-700">Cédula</Label>
@@ -216,6 +216,7 @@ export default function AuthDialog({
               <div className="space-y-1.5">
                 <Label htmlFor="registro-email" className="text-zinc-700">Correo</Label>
                 <Input id="registro-email" name="email" type="email" autoComplete="email" required />
+                <p className="text-xs text-zinc-500">Podrás ingresar con este correo o con tu celular.</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="registro-password" className="text-zinc-700">Contraseña</Label>

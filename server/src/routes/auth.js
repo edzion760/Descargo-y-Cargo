@@ -7,6 +7,7 @@ import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { enviarBienvenida, enviarRecuperarPassword } from '../email.js';
 import { borrarRecibos } from './viajes.js';
+import { telefonoSchema } from './prospectos.js';
 
 export const authRouter = Router();
 
@@ -27,7 +28,7 @@ const registerSchema = z.object({
   tipo: z.enum(['PUBLICADOR', 'TRANSPORTADOR']),
   nombre: z.string().min(2),
   ciudad: z.string().min(2),
-  telefono: z.string().min(7),
+  telefono: telefonoSchema,
   documento: z.string().min(6, 'Documento de identidad inválido'),
   aceptaTerminos: z.literal(true, { message: 'Debes aceptar los Términos y la Política de Datos' }),
   placa: placaSchema.optional(),
@@ -78,6 +79,7 @@ authRouter.post('/register', async (req, res) => {
         email,
         passwordHash,
         tipo,
+        celular: telefono,
         terminosVersion: TERMINOS_VERSION,
         terminosAceptadosEn: new Date(),
         terminosIp: ip,
@@ -92,7 +94,8 @@ authRouter.post('/register', async (req, res) => {
     });
   } catch (err) {
     if (err.code === 'P2002') {
-      const campo = err.meta?.target?.includes('documento') ? 'documento' : 'correo';
+      const target = String(err.meta?.target ?? '');
+      const campo = target.includes('documento') ? 'documento' : target.includes('celular') ? 'celular' : 'correo';
       return res.status(409).json({ error: `Ya existe una cuenta con ese ${campo}` });
     }
     throw err;
@@ -106,13 +109,28 @@ authRouter.post('/register', async (req, res) => {
   res.status(201).json({ id: usuario.id, tipo: usuario.tipo });
 });
 
-authRouter.post('/login', async (req, res) => {
-  const { email, password } = req.body ?? {};
-  if (!email || !password) return res.status(400).json({ error: 'Correo y contraseña son obligatorios' });
+// Se puede entrar con el correo o con el celular: si trae "@" es correo; si
+// no, se normaliza como teléfono (quita espacios, guiones y +57).
+export function identificadorLogin(texto) {
+  const t = String(texto ?? '').trim();
+  if (t.includes('@')) return { email: t };
+  const celular = t.replace(/\D/g, '').replace(/^57(?=\d{10}$)/, '');
+  return celular.length >= 7 ? { celular } : null;
+}
 
-  const usuario = await prisma.usuario.findUnique({ where: { email } });
+async function buscarPorIdentificador(texto) {
+  const where = identificadorLogin(texto);
+  return where ? prisma.usuario.findUnique({ where }) : null;
+}
+
+authRouter.post('/login', async (req, res) => {
+  // El campo sigue llamándose "email" por compatibilidad; acepta también celular.
+  const { email: identificador, password } = req.body ?? {};
+  if (!identificador || !password) return res.status(400).json({ error: 'Correo o celular y contraseña son obligatorios' });
+
+  const usuario = await buscarPorIdentificador(identificador);
   if (!usuario || !(await bcrypt.compare(password, usuario.passwordHash))) {
-    return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
+    return res.status(401).json({ error: 'Datos de ingreso o contraseña incorrectos' });
   }
   if (usuario.eliminadoEn) {
     return res.status(401).json({ error: 'Esta cuenta fue eliminada' });
@@ -165,10 +183,14 @@ const RESET_VIGENCIA_MS = 60 * 60 * 1000; // 1 hora
 // correos están registrados (enumeración de usuarios).
 authRouter.post('/olvide-password', async (req, res) => {
   const { email } = req.body ?? {};
-  const respuestaGenerica = { ok: true, mensaje: 'Si el correo existe, te enviamos un enlace para recuperar tu contraseña.' };
+  const respuestaGenerica = {
+    ok: true,
+    mensaje: 'Si la cuenta existe, te enviamos al correo registrado un enlace para recuperar tu contraseña.',
+  };
   if (!email) return res.json(respuestaGenerica);
 
-  const usuario = await prisma.usuario.findUnique({ where: { email } });
+  // Acepta correo o celular; el enlace siempre va al correo de la cuenta.
+  const usuario = await buscarPorIdentificador(email);
   if (usuario && !usuario.eliminadoEn) {
     const resetToken = randomBytes(32).toString('hex');
     await prisma.usuario.update({
@@ -176,7 +198,7 @@ authRouter.post('/olvide-password', async (req, res) => {
       data: { resetToken, resetTokenExpira: new Date(Date.now() + RESET_VIGENCIA_MS) },
     });
     const url = `${process.env.APP_URL}/restablecer?token=${resetToken}`;
-    enviarRecuperarPassword(email, { url });
+    enviarRecuperarPassword(usuario.email, { url });
   }
 
   res.json(respuestaGenerica);
@@ -228,6 +250,7 @@ authRouter.delete('/me', requireAuth, async (req, res) => {
     data: {
       email,
       passwordHash,
+      celular: null,
       eliminadoEn: new Date(),
       // Sus cargas publicadas se cancelan: sin esto seguirían en el listado y
       // un transportador podría pagar por un contacto que ya no existe.

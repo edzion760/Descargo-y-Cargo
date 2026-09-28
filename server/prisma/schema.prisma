@@ -50,6 +50,9 @@ enum TipoMembresia {
 model Usuario {
   id           Int         @id @default(autoincrement())
   email        String      @unique
+  // Celular normalizado (10 dígitos, sin +57) para iniciar sesión con él en
+  // vez del correo. Único; null en cuentas eliminadas o sin número válido.
+  celular      String?     @unique
   passwordHash String
   tipo         TipoUsuario
   createdAt    DateTime    @default(now())
