@@ -48,11 +48,11 @@ enum TipoMembresia {
 }
 
 model Usuario {
-  id            Int      @id @default(autoincrement())
-  email         String   @unique
-  passwordHash  String
-  tipo          TipoUsuario
-  createdAt     DateTime @default(now())
+  id           Int         @id @default(autoincrement())
+  email        String      @unique
+  passwordHash String
+  tipo         TipoUsuario
+  createdAt    DateTime    @default(now())
 
   // Ley 1581 de 2012: registro versionado de aceptación de Términos y
   // Política de datos (Habeas Data), y marca de baja para el derecho de
@@ -68,17 +68,17 @@ model Usuario {
 
   // Última ubicación reportada por el navegador (con permiso del usuario),
   // para las alertas de vía geolocalizadas. Nula hasta que active la opción.
-  ultimaLat        Float?
-  ultimaLon        Float?
+  ultimaLat         Float?
+  ultimaLon         Float?
   ultimaUbicacionEn DateTime?
 
   // Recuperar contraseña: token de un solo uso con vencimiento corto.
-  resetToken        String?   @unique
-  resetTokenExpira   DateTime?
+  resetToken       String?   @unique
+  resetTokenExpira DateTime?
 
-  publicador     Publicador?
-  transportador  Transportador?
-  suscripciones  SuscripcionPush[]
+  publicador    Publicador?
+  transportador Transportador?
+  suscripciones SuscripcionPush[]
 }
 
 // Una fila por navegador/dispositivo donde el usuario activó las
@@ -92,7 +92,7 @@ model SuscripcionPush {
   auth      String
   createdAt DateTime @default(now())
 
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 }
 
 model Publicador {
@@ -103,17 +103,17 @@ model Publicador {
   telefono  String
   documento String @unique // KYC nivel 1: cédula autodeclarada. Nivel 2 (RNEC/RUNT) pendiente de integración externa.
 
-  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  cargas    Carga[]
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  cargas  Carga[]
 }
 
 model Transportador {
-  id        Int    @id @default(autoincrement())
-  usuarioId Int    @unique
+  id        Int     @id @default(autoincrement())
+  usuarioId Int     @unique
   nombre    String
   ciudad    String
   telefono  String
-  documento String @unique // KYC nivel 1: cédula autodeclarada. Nivel 2 (RNEC/RUNT) pendiente de integración externa.
+  documento String  @unique // KYC nivel 1: cédula autodeclarada. Nivel 2 (RNEC/RUNT) pendiente de integración externa.
   // Placa autodeclarada del vehículo; se le envía al publicador al desbloquear.
   // Opcional en BD solo por las cuentas anteriores: se pide antes del primer desbloqueo.
   placa     String?
@@ -121,6 +121,7 @@ model Transportador {
   usuario         Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   membresia       Membresia?
   pagosDesbloqueo PagoDesbloqueo[]
+  viajes          Viaje[]
 }
 
 model Membresia {
@@ -129,7 +130,7 @@ model Membresia {
   tipo            TipoMembresia @default(GRATIS)
   createdAt       DateTime      @default(now())
 
-  transportador   Transportador @relation(fields: [transportadorId], references: [id], onDelete: Cascade)
+  transportador Transportador @relation(fields: [transportadorId], references: [id], onDelete: Cascade)
 }
 
 model Carga {
@@ -153,8 +154,10 @@ model Carga {
   estado            EstadoCarga     @default(DISPONIBLE)
   createdAt         DateTime        @default(now())
 
-  publicador        Publicador       @relation(fields: [publicadorId], references: [id], onDelete: Cascade)
-  pagosDesbloqueo    PagoDesbloqueo[]
+  publicador      Publicador       @relation(fields: [publicadorId], references: [id], onDelete: Cascade)
+  pagosDesbloqueo PagoDesbloqueo[]
+
+  viajes Viaje[]
 
   @@index([estado, tipoPublicacion])
 }
@@ -171,8 +174,8 @@ model PagoDesbloqueo {
   estado          EstadoPago @default(PENDIENTE)
   createdAt       DateTime   @default(now())
 
-  carga           Carga         @relation(fields: [cargaId], references: [id], onDelete: Cascade)
-  transportador   Transportador @relation(fields: [transportadorId], references: [id], onDelete: Cascade)
+  carga         Carga         @relation(fields: [cargaId], references: [id], onDelete: Cascade)
+  transportador Transportador @relation(fields: [transportadorId], references: [id], onDelete: Cascade)
 
   @@unique([cargaId, transportadorId])
 }
@@ -189,36 +192,70 @@ enum TipoInteresProspecto {
 // Importado una vez con server/scripts/importar-prospectos.js — ver
 // server/scripts/normalizar_prospectos.py para cómo se limpió el origen.
 model Prospecto {
-  id            Int                  @id @default(autoincrement())
-  nombre        String?
-  tipoInteres   TipoInteresProspecto
-  fuente        String
-  telefonos     String // separados por coma, ya normalizados a 10 dígitos
-  email         String?
-  nit           String?
-  direccion     String?
-  ciudad        String?
-  departamento  String?
-  sector        String?
-  contactadoEn  DateTime?
+  id               Int                  @id @default(autoincrement())
+  nombre           String?
+  tipoInteres      TipoInteresProspecto
+  fuente           String
+  telefonos        String // separados por coma, ya normalizados a 10 dígitos
+  email            String?
+  nit              String?
+  direccion        String?
+  ciudad           String?
+  departamento     String?
+  sector           String?
+  contactadoEn     DateTime?
   // Primera apertura del correo de invitación, vía webhook email.opened de
   // Resend (requiere tracking activado en el dominio -- ver routes/webhooks.js).
-  abiertoEn     DateTime?
+  abiertoEn        DateTime?
   // Primer clic real al botón del correo hacia la página (vía nuestro propio
   // redirect /api/prospectos/visita) -- no depende de configurar nada en
   // Resend, así que es la señal de interés real más confiable que tenemos.
-  visitadoEn    DateTime?
+  visitadoEn       DateTime?
   // Derecho de oposición a mercadeo directo (Ley 1581 de 2012, art. 8):
   // clic en el enlace de baja del correo, sin necesidad de cuenta.
-  noContactar   Boolean              @default(false)
+  noContactar      Boolean              @default(false)
   // Autorización expresa de tratamiento de datos (Ley 1581): solo la tienen
   // los prospectos que dejaron sus datos ellos mismos (p. ej. formulario
   // /effix en ferias). Los de la base 2023 no la tienen -- por eso quedan null.
   consentimientoEn DateTime?
   // Contexto libre de la conversación: persona de contacto, cargo, qué
   // despachan y con qué frecuencia.
-  notas         String?
-  createdAt     DateTime             @default(now())
+  notas            String?
+  createdAt        DateTime             @default(now())
 
   @@index([tipoInteres])
+}
+
+// Registro de gastos del transportador. Un viaje puede venir de una carga
+// desbloqueada en la plataforma (cargaId) o haberlo conseguido por fuera
+// (cargaId null). Solo lo ve el propio transportador.
+model Viaje {
+  id              Int      @id @default(autoincrement())
+  transportadorId Int
+  cargaId         Int?
+  origen          String
+  destino         String
+  descripcion     String?
+  flete           Int // flete pactado real (puede diferir del publicado)
+  fecha           DateTime
+  createdAt       DateTime @default(now())
+
+  transportador Transportador @relation(fields: [transportadorId], references: [id], onDelete: Cascade)
+  carga         Carga?        @relation(fields: [cargaId], references: [id], onDelete: SetNull)
+  gastos        Gasto[]
+
+  @@unique([transportadorId, cargaId])
+}
+
+model Gasto {
+  id        Int      @id @default(autoincrement())
+  viajeId   Int
+  tipo      String // ACPM, PEAJES, COMIDA, HOSPEDAJE, CARGUE, TALLER, OTROS (validado en routes/viajes.js)
+  valor     Int
+  fecha     DateTime
+  nota      String?
+  recibo    String? // nombre del archivo de la foto en UPLOADS_DIR/recibos
+  createdAt DateTime @default(now())
+
+  viaje Viaje @relation(fields: [viajeId], references: [id], onDelete: Cascade)
 }

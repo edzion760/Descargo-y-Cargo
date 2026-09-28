@@ -77,9 +77,14 @@ function Lista() {
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
             <span className="text-zinc-500">Pagaste {formatCOP(c.monto)}</span>
-            <a href={`/constancia?pago=${c.pagoId}`} className="font-semibold text-zinc-950 underline">
-              Constancia de entrega
-            </a>
+            <span className="flex flex-wrap gap-x-3 gap-y-1">
+              <a href={`/viajes?carga=${c.id}`} className="font-semibold text-zinc-950 underline">
+                Gastos del viaje
+              </a>
+              <a href={`/constancia?pago=${c.pagoId}`} className="font-semibold text-zinc-950 underline">
+                Constancia de entrega
+              </a>
+            </span>
           </div>
         </li>
       ))}

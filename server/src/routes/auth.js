@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { enviarBienvenida, enviarRecuperarPassword } from '../email.js';
+import { borrarRecibos } from './viajes.js';
 
 export const authRouter = Router();
 
@@ -216,6 +217,12 @@ authRouter.delete('/me', requireAuth, async (req, res) => {
   }
 
   const { marca, email, passwordHash } = datosAnonimizados(usuario.id);
+  // Sus viajes, gastos y fotos de recibos son datos personales sin deber
+  // legal de conservarlos (no son facturación nuestra): se borran del todo.
+  const recibos = await prisma.gasto.findMany({
+    where: { viaje: { transportador: { usuarioId: usuario.id } }, recibo: { not: null } },
+    select: { recibo: true },
+  });
   await prisma.usuario.update({
     where: { id: usuario.id },
     data: {
@@ -237,10 +244,13 @@ authRouter.delete('/me', requireAuth, async (req, res) => {
           : undefined,
       transportador:
         usuario.tipo === 'TRANSPORTADOR'
-          ? { update: { nombre: 'Usuario eliminado', telefono: '', documento: marca, placa: null } }
+          ? {
+              update: { nombre: 'Usuario eliminado', telefono: '', documento: marca, placa: null, viajes: { deleteMany: {} } },
+            }
           : undefined,
     },
   });
+  borrarRecibos(recibos.map((g) => g.recibo));
 
   res.json({ ok: true });
 });

@@ -4,6 +4,7 @@ import { prisma } from '../db.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { telefonoSchema } from './prospectos.js';
 import { enviarCartaExpositor } from '../email.js';
+import { csv, enviarCsv } from '../csv.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireAdmin);
@@ -107,23 +108,13 @@ adminRouter.get('/leads', async (_req, res) => {
   res.json(await leads());
 });
 
-// Excel en Colombia abre CSV con ";" como separador; el BOM hace que lea
-// UTF-8 (sin él las tildes salen dañadas). Sin librería de xlsx: no hace falta.
 export function aCsv(filas) {
-  const celda = (v) => {
-    const t = v == null ? '' : v instanceof Date ? v.toISOString().slice(0, 16).replace('T', ' ') : String(v);
-    return /[";\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
-  };
-  const columnas = ['Fecha (UTC)', 'Empresa', 'Celular', 'Correo', 'Ciudad', 'Detalle', 'Fuente', 'Autorizó campañas'];
-  const lineas = filas.map((f) =>
-    [f.fecha, f.nombre, f.telefonos, f.email, f.ciudad, f.notas, f.fuente, f.autorizoCampanas ? 'Sí' : 'No'].map(celda).join(';')
+  return csv(
+    ['Fecha (UTC)', 'Empresa', 'Celular', 'Correo', 'Ciudad', 'Detalle', 'Fuente', 'Autorizó campañas'],
+    filas.map((f) => [f.fecha, f.nombre, f.telefonos, f.email, f.ciudad, f.notas, f.fuente, f.autorizoCampanas ? 'Sí' : 'No'])
   );
-  return '﻿' + [columnas.join(';'), ...lineas].join('\r\n');
 }
 
 adminRouter.get('/leads.csv', async (_req, res) => {
-  const fecha = new Date().toISOString().slice(0, 10);
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', `attachment; filename="contactos-${fecha}.csv"`);
-  res.send(aCsv(await leads()));
+  enviarCsv(res, `contactos-${new Date().toISOString().slice(0, 10)}.csv`, aCsv(await leads()));
 });

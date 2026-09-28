@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu, UserRound, LogOut, Trash2, PackagePlus, LogIn, UserPlus, Contact, LayoutDashboard } from 'lucide-react';
+import { Menu, UserRound, LogOut, Trash2, PackagePlus, LogIn, UserPlus, Contact, LayoutDashboard, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -124,9 +124,16 @@ export default function Navbar() {
                 </DropdownMenuItem>
               )}
               {tipo === 'TRANSPORTADOR' && (
-                <DropdownMenuItem onSelect={misContactos} className="rounded-lg px-3 py-2.5 font-semibold">
-                  <Contact /> Mis contactos
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onSelect={misContactos} className="rounded-lg px-3 py-2.5 font-semibold">
+                    <Contact /> Mis contactos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="rounded-lg px-3 py-2.5 font-semibold">
+                    <a href="/viajes">
+                      <Wallet /> Mis viajes y gastos
+                    </a>
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuItem onSelect={publicar} className="rounded-lg px-3 py-2.5 sm:hidden">
                 <PackagePlus /> Publicar carga

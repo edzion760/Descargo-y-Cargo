@@ -5,3 +5,4 @@ prisma/dev.db-journal
 backups/
 *.log
 bin/
+uploads/
