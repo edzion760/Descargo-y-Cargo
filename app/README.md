@@ -1,12 +1,8 @@
 # Descargo & Cargo
 
-Prototipo visual del marketplace de transporte de carga para Colombia: piso
-tarifario SICE-TAC garantizado, verificación de transportadores, alertas de
-carretera y planes de membresía.
-
-Este `README` documenta el estado real del proyecto — ver también los planes
-de negocio (`../PLAN_INTEGRAL_V3.md`), el anexo legal/DOFA
-(`../ANEXO_LEGAL_DOFA_COMPETENCIA.md`) y los borradores legales (`../legal`).
+Frontend del marketplace de carga por carretera para Colombia. Ver el
+[README principal](../README.md) para la descripción general y los
+borradores legales en `../legal`.
 
 ## Stack
 

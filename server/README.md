@@ -1,8 +1,7 @@
 # API — Descargo & Cargo
 
 Backend real (Node + Express + Prisma) que reemplaza los datos mock de
-`../app/src/data/mock.ts`. Sigue el stack definido en
-`../PLAN_INTEGRAL_V3.md` §4-5, con un subconjunto acotado del esquema
+`../app/src/data/mock.ts`, con un subconjunto acotado del esquema
 completo — ver el comentario al inicio de `prisma/schema.prisma` para el
 detalle de qué queda fuera de este MVP (PostGIS, Oferta/Viaje, etc.) y
 cuándo se agrega.

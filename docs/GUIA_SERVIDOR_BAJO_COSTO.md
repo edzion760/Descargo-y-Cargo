@@ -82,7 +82,6 @@ FASE 3 (crecimiento): VPS más grande o servicios administrados → ~$200.000+/m
 - VPS más grande (8 GB RAM) o separar BD en instancia propia.
 - Cloudflare gratis como CDN/escudo delante.
 - Monitoreo con UptimeRobot (gratis) y Sentry (plan gratis).
-- El estimado completo está en PLAN_INTEGRAL_V3.md §16.
 
 ---
 
