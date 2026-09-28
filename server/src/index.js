@@ -115,10 +115,16 @@ if (fs.existsSync(distDir)) {
           res.setHeader('Cache-Control', 'public, max-age=86400');
           return;
         }
-        res.setHeader(
-          'Cache-Control',
-          filePath.endsWith('index.html') ? 'no-cache' : 'public, max-age=31536000, immutable'
-        );
+        // Solo /assets lleva hash en el nombre (cambia con cada build) y puede
+        // cachearse para siempre. El resto (páginas legales, íconos, sw.js)
+        // conserva su nombre al cambiar: caché corto para que las
+        // actualizaciones lleguen.
+        const cache = filePath.endsWith('index.html')
+          ? 'no-cache'
+          : filePath.includes(`${path.sep}assets${path.sep}`)
+            ? 'public, max-age=31536000, immutable'
+            : 'public, max-age=3600';
+        res.setHeader('Cache-Control', cache);
       },
     })
   );
