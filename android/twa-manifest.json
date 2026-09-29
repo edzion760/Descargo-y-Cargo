@@ -1,0 +1,60 @@
+{
+  "packageId": "com.descargoycargo.app",
+  "host": "descargoycargo.com",
+  "name": "Descargo & Cargo",
+  "launcherName": "Descargo",
+  "display": "standalone",
+  "themeColor": "#FFFFFF",
+  "themeColorDark": "#000000",
+  "navigationColor": "#FFFFFF",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#09090B",
+  "enableNotifications": true,
+  "startUrl": "/?fuente=app",
+  "iconUrl": "https://descargoycargo.com/icon-512.png",
+  "maskableIconUrl": "https://descargoycargo.com/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "upload.jks",
+    "alias": "upload"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Ver cargas",
+      "shortName": "Ver cargas",
+      "url": "https://descargoycargo.com/#cargas",
+      "chosenIconUrl": "https://descargoycargo.com/icon-192.png"
+    },
+    {
+      "name": "Mis viajes y gastos",
+      "shortName": "Mis viajes y",
+      "url": "https://descargoycargo.com/viajes",
+      "chosenIconUrl": "https://descargoycargo.com/icon-192.png"
+    }
+  ],
+  "generatorApp": "unknown",
+  "webManifestUrl": "https://descargoycargo.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://descargoycargo.com/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1.0.0"
+}

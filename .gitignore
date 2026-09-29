@@ -10,3 +10,13 @@ ANEXO_LEGAL_DOFA_COMPETENCIA.md
 CLAUDE.md
 *.jsonl
 memory/
+
+# App Android: llaves de firma y compilados nunca van al repositorio.
+*.jks
+*.keystore
+*.aab
+*.apk
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/

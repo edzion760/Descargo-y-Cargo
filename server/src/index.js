@@ -104,6 +104,14 @@ if (fs.existsSync(distDir)) {
   // navegador (o Cloudflare) puede seguir sirviendo una versión vieja del
   // sitio después de un cambio. Los archivos bajo /assets sí tienen hash en
   // el nombre, así que esos sí pueden cachearse para siempre sin riesgo.
+  // Digital Asset Links de la app Android (TWA): Android lo consulta para
+  // confirmar que la app y el dominio son del mismo dueño y abrirla sin la
+  // barra del navegador. express.static ignora las carpetas con punto, así
+  // que se sirve explícitamente.
+  app.get('/.well-known/assetlinks.json', (_req, res) => {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.type('application/json').sendFile(path.join(distDir, '.well-known', 'assetlinks.json'));
+  });
   app.use(
     express.static(distDir, {
       setHeaders: (res, filePath) => {
