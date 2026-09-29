@@ -110,7 +110,7 @@ if (fs.existsSync(distDir)) {
   // que se sirve explícitamente.
   app.get('/.well-known/assetlinks.json', (_req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=3600');
-    res.type('application/json').sendFile(path.join(distDir, '.well-known', 'assetlinks.json'));
+    res.type('application/json').sendFile(path.join(distDir, '.well-known', 'assetlinks.json'), { dotfiles: 'allow' });
   });
   app.use(
     express.static(distDir, {
