@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import ClimaRuta from '@/components/viajes/ClimaRuta';
 import { formatCOP } from '@/data/mock';
 import { ApiError, apiFetch } from '@/lib/api';
 import {
@@ -110,6 +111,8 @@ export default function DetalleViaje({
           está apretado.
         </p>
       )}
+
+      <ClimaRuta origen={viaje.origen} destino={viaje.destino} />
 
       <NuevoGasto viajeId={viaje.id} onCreado={(g) => onCambio({ ...viaje, gastos: [...viaje.gastos, g] })} />
 

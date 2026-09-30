@@ -18,6 +18,8 @@ import { rndcRouter } from './routes/rndc.js';
 import { prospectosRouter } from './routes/prospectos.js';
 import { adminRouter } from './routes/admin.js';
 import { viajesRouter } from './routes/viajes.js';
+import { climaRouter } from './routes/clima.js';
+import { revisarClimaEnRutas } from './alertasClima.js';
 
 const app = express();
 
@@ -86,6 +88,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/cargas', cargasRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/viajes', viajesRouter);
+app.use('/api/clima', climaRouter);
 app.use('/api/membresias', membresiasRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/geo', geoRouter);
@@ -158,3 +161,13 @@ app.use((err, req, res, next) => {
 
 const port = process.env.PORT ?? 4000;
 app.listen(port, () => console.log(`API de Descargo & Cargo escuchando en http://localhost:${port}`));
+
+// Clima en la ruta de los viajes de hoy y mañana, cada hora (el IDEAM publica
+// a diario y MET Norway actualiza cada hora). Solo si hay llaves push.
+// ponytail: setInterval en el mismo proceso; con varias instancias del
+// servidor habría que moverlo a un cron único.
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  const revisar = () => revisarClimaEnRutas().catch((err) => console.error('revisarClimaEnRutas:', err.message));
+  setTimeout(revisar, 60_000);
+  setInterval(revisar, 60 * 60_000);
+}

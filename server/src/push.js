@@ -64,19 +64,21 @@ export async function notificarNoticiasCercanas(noticias) {
       if (distancia > RADIO_KM) continue;
 
       for (const sub of usuario.suscripciones) {
-        await enviarPush(sub, noticia, distancia);
+        await enviarPush(sub, {
+          titulo: `${ETIQUETA_TIPO[noticia.tipo] ?? 'Alerta de vía'} a ${Math.round(distancia)} km`,
+          cuerpo: noticia.titulo,
+          url: noticia.url,
+        });
       }
       yaNotificadas.add(clave);
     }
   }
 }
 
-async function enviarPush(sub, noticia, distanciaKm) {
-  const payload = JSON.stringify({
-    titulo: `${ETIQUETA_TIPO[noticia.tipo] ?? 'Alerta de vía'} a ${Math.round(distanciaKm)} km`,
-    cuerpo: noticia.titulo,
-    url: noticia.url,
-  });
+// Envía una notificación a una suscripción; si el navegador ya la revocó
+// (404/410), la borra para no seguir intentando.
+export async function enviarPush(sub, { titulo, cuerpo, url }) {
+  const payload = JSON.stringify({ titulo, cuerpo, url });
   try {
     await webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
