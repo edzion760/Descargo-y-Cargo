@@ -49,8 +49,23 @@
     scroll-padding-top: 5rem;
     -webkit-tap-highlight-color: transparent;
   }
+  /* Abierta como app desde la pantalla de inicio (iPhone) o en la app de
+     Android, la página llega hasta el borde (viewport-fit=cover): se deja el
+     espacio de la barra de estado y del indicador de inicio. En el navegador
+     normal estos valores son 0 y no cambia nada. */
   body {
     @apply bg-background text-foreground antialiased;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* Franja fija detrás de la hora/batería: el contenido nunca pasa por debajo al hacer scroll. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: env(safe-area-inset-top);
+    background: hsl(var(--background));
+    z-index: 60;
   }
   h1, h2, h3 {
     letter-spacing: -0.025em;

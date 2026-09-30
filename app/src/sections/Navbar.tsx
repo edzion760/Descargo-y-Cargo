@@ -53,7 +53,7 @@ export default function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 bg-white/90 backdrop-blur-md transition-shadow ${
+      className={`sticky top-[env(safe-area-inset-top)] z-50 bg-white/90 backdrop-blur-md transition-shadow ${
         conSombra ? 'shadow-[0_1px_0_rgb(0_0_0/0.06),0_4px_12px_rgb(0_0_0/0.04)]' : ''
       }`}
     >
