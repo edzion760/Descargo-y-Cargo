@@ -11,6 +11,8 @@
 // Todo es REFERENCIAL: se muestra con la fuente y la hora, nunca como
 // garantía de que la vía está bien o mal.
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { geocodificar } from './geo.js';
 import { distanciaHaversineKm as distanciaKm } from './push.js';
 
@@ -119,8 +121,32 @@ async function obtener(url) {
   return res;
 }
 
+// El IDEAM rechaza conexiones desde fuera de Colombia y el servidor está en
+// Alemania: un computador en Colombia descarga el CSV a diario y lo envía a
+// POST /api/clima/ideam (ver guardarDeslizamientos). Si no hay copia (p. ej.
+// en desarrollo, desde Colombia), se intenta directo con un tiempo corto.
+const ARCHIVO_IDEAM = path.join(process.env.DATA_DIR ?? path.join(import.meta.dirname, '../data'), 'ideam-deslizamientos.csv');
+
 const deslizamientos = () =>
-  conCache('ideam', 3 * 3600_000, async () => parsearDeslizamientos(await (await obtener(URL_DESLIZAMIENTOS)).text()));
+  conCache('ideam', 3600_000, async () => {
+    if (fs.existsSync(ARCHIVO_IDEAM)) return parsearDeslizamientos(fs.readFileSync(ARCHIVO_IDEAM, 'utf8'));
+    const res = await fetch(URL_DESLIZAMIENTOS, { headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error(`IDEAM respondió ${res.status}`);
+    return parsearDeslizamientos(await res.text());
+  });
+
+// Recibe el CSV del IDEAM (completo o solo la última fecha), lo valida y lo
+// guarda. Devuelve la fecha y cuántos municipios traen alerta.
+export function guardarDeslizamientos(csv) {
+  const datos = parsearDeslizamientos(csv);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fecha) || datos.alertas.size === 0) {
+    throw new Error('El archivo no tiene el formato de alertas de deslizamiento del IDEAM');
+  }
+  fs.mkdirSync(path.dirname(ARCHIVO_IDEAM), { recursive: true });
+  fs.writeFileSync(ARCHIVO_IDEAM, csv);
+  cache.set('ideam', { valor: datos, en: Date.now() });
+  return { fecha: datos.fecha, municipios: datos.alertas.size };
+}
 
 const municipios = () =>
   conCache('divipola', 7 * 24 * 3600_000, async () =>
@@ -152,7 +178,12 @@ const pronostico = (p) =>
 export async function climaEnRuta(origen, destino, ahora = new Date()) {
   const o = await geocodificar(origen);
   const d = await geocodificar(destino); // secuencial: política de Nominatim
-  const [ruta, lista, ideam] = await Promise.all([trazado(o, d), municipios(), deslizamientos()]);
+  // Si no hay alertas del IDEAM disponibles, el pronóstico de lluvia sigue sirviendo.
+  const [ruta, lista, ideam] = await Promise.all([
+    trazado(o, d),
+    municipios(),
+    deslizamientos().catch((err) => (console.error('IDEAM no disponible:', err.message), null)),
+  ]);
 
   const enRuta = lista.filter((m) => distanciaARutaKm(m, ruta) <= RADIO_MUNICIPIO_KM);
   const municipioMasCercano = (p) => lista.reduce((a, b) => (distanciaKm(p, a) <= distanciaKm(p, b) ? a : b));
@@ -161,7 +192,7 @@ export async function climaEnRuta(origen, destino, ahora = new Date()) {
   // ALTA y MODERADA, de mayor a menor riesgo.
   const RANGO = { ALTA: 0, MODERADA: 1 };
   const alertasDeslizamiento = enRuta
-    .map((m) => ideam.alertas.get(m.codigo) && { ...ideam.alertas.get(m.codigo), codigo: m.codigo })
+    .map((m) => ideam?.alertas.get(m.codigo) && { ...ideam.alertas.get(m.codigo), codigo: m.codigo })
     .filter((a) => a && a.nivel in RANGO)
     .sort((a, b) => RANGO[a.nivel] - RANGO[b.nivel] || b.lluvia3DiasMm - a.lluvia3DiasMm);
 
@@ -188,7 +219,8 @@ export async function climaEnRuta(origen, destino, ahora = new Date()) {
 
   return {
     municipiosEnRuta: enRuta.length,
-    deslizamientos: { fecha: ideam.fecha, alertas: alertasDeslizamiento },
+    // fecha null = no hay alertas del IDEAM disponibles (la pantalla lo dice).
+    deslizamientos: { fecha: ideam?.fecha ?? null, alertas: alertasDeslizamiento },
     clima,
     fuentes: 'Alertas de deslizamiento: IDEAM. Pronóstico: datos de MET Norway (CC BY 4.0).',
   };

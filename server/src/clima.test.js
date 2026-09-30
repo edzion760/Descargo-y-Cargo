@@ -1,6 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parsearDeslizamientos, clasificarHora, distanciaATramoKm, distanciaARutaKm, muestrearRuta } from './clima.js';
+import { parsearDeslizamientos, clasificarHora, distanciaATramoKm, distanciaARutaKm, muestrearRuta, guardarDeslizamientos } from './clima.js';
+import { tokenValido } from './routes/clima.js';
+
+test('sincronización IDEAM: rechaza archivos que no son el CSV esperado y exige el token', () => {
+  assert.throws(() => guardarDeslizamientos('<html>Error</html>'), /formato de alertas/);
+  assert.throws(() => guardarDeslizamientos(''), /formato de alertas/);
+  assert.equal(tokenValido('abc', 'abc'), true);
+  assert.equal(tokenValido('abd', 'abc'), false);
+  assert.equal(tokenValido('abc', undefined), false); // sin token configurado nadie entra
+  assert.equal(tokenValido(undefined, 'abc'), false);
+});
 
 test('IDEAM: toma solo la última fecha y normaliza el código DANE', () => {
   const csv =

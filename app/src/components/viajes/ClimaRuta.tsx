@@ -7,7 +7,7 @@ import { activarAlertasDeVia } from '@/lib/push';
 
 interface Clima {
   deslizamientos: {
-    fecha: string;
+    fecha: string | null; // null: no hay alertas del IDEAM disponibles ahora
     alertas: { codigo: string; municipio: string; departamento: string; nivel: 'ALTA' | 'MODERADA'; lluvia3DiasMm: number }[];
   };
   clima: { hora: string; mm: number; tipo: 'TORMENTA' | 'LLUVIA_FUERTE' | 'NIEBLA'; lugar: string; departamento: string }[];
@@ -90,7 +90,9 @@ export default function ClimaRuta({ origen, destino }: { origen: string; destino
         <>
           {datos.deslizamientos.alertas.length === 0 && datos.clima.length === 0 && (
             <p className="mt-3 text-sm text-emerald-700">
-              Sin alertas de derrumbe ni lluvia fuerte en tu ruta para las próximas 6 horas.
+              {datos.deslizamientos.fecha
+                ? 'Sin alertas de derrumbe ni lluvia fuerte en tu ruta para las próximas 6 horas.'
+                : 'Sin lluvia fuerte, tormenta ni niebla en tu ruta para las próximas 6 horas.'}
             </p>
           )}
 
@@ -138,8 +140,11 @@ export default function ClimaRuta({ origen, destino }: { origen: string; destino
           )}
 
           <p className="mt-4 text-[11px] leading-relaxed text-zinc-500">
-            Referencial: confirma el estado de la vía con las autoridades de tránsito. Alertas del IDEAM del{' '}
-            {fechaIdeam(datos.deslizamientos.fecha)}. {datos.fuentes.replace(/^.*?Pronóstico: /, 'Pronóstico: ')}
+            Referencial: confirma el estado de la vía con las autoridades de tránsito.{' '}
+            {datos.deslizamientos.fecha
+              ? `Alertas del IDEAM del ${fechaIdeam(datos.deslizamientos.fecha)}.`
+              : 'Las alertas de derrumbe del IDEAM no están disponibles en este momento.'}{' '}
+            {datos.fuentes.replace(/^.*?Pronóstico: /, 'Pronóstico: ')}
           </p>
         </>
       )}

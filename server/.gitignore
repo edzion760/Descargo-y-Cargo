@@ -6,3 +6,4 @@ backups/
 *.log
 bin/
 uploads/
+data/
