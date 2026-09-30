@@ -58,15 +58,8 @@
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
-  /* Franja fija detrás de la hora/batería: el contenido nunca pasa por debajo al hacer scroll. */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0 0 auto 0;
-    height: env(safe-area-inset-top);
-    background: hsl(var(--background));
-    z-index: 60;
-  }
+  /* La franja fija detrás de la hora está en index.html (un div real: el
+     pseudo-elemento no tapaba en iOS en modo app). */
   h1, h2, h3 {
     letter-spacing: -0.025em;
   }

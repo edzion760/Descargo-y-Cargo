@@ -39,8 +39,16 @@
     <meta name="apple-mobile-web-app-title" content="Descargo & Cargo" />
     <!-- Instalable como app (Android/Chrome) y base de la app de Google Play (TWA). -->
     <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   </head>
   <body>
+    <!-- Franja fija detrás de la hora/batería cuando se abre como app (altura
+         0 en el navegador normal): el contenido nunca se ve debajo al hacer scroll. -->
+    <div
+      aria-hidden="true"
+      style="position: fixed; inset: 0 0 auto 0; height: env(safe-area-inset-top); background: #fff; z-index: 2147483647; pointer-events: none"
+    ></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
