@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
+import ActivarAvisosDialog, { type MotivoAvisos } from '@/components/ActivarAvisosDialog';
 import AuthDialog from '@/components/AuthDialog';
+import { estadoAvisos } from '@/lib/push';
 import MisContactosDialog from '@/components/MisContactosDialog';
 import PublicarCargaDialog from '@/components/PublicarCargaDialog';
 import TerminosDialog from '@/components/TerminosDialog';
@@ -54,6 +56,30 @@ export default function AccionesProvider({ children }: { children: ReactNode }) 
     }
   }, [contactosPendiente, tipo, cargando]);
 
+  const [avisos, setAvisos] = useState<{ abierto: boolean; motivo: MotivoAvisos }>({ abierto: false, motivo: 'manual' });
+
+  function ofrecerAvisos(motivo: 'registro' | 'viaje') {
+    if (!['disponibles', 'ios-instalar'].includes(estadoAvisos())) return;
+    const clave = `avisos:ofrecido-${motivo}`;
+    try {
+      if (localStorage.getItem(clave)) return;
+      localStorage.setItem(clave, '1');
+    } catch {
+      // Sin almacenamiento (modo privado): se ofrece igual, sin recordarlo.
+    }
+    setAvisos({ abierto: true, motivo });
+  }
+
+  // AuthDialog avisa cuando se crea una cuenta; a un transportador nuevo se le
+  // ofrecen los avisos apenas se cierra el registro.
+  useEffect(() => {
+    const alCrearCuenta = (e: Event) => {
+      if ((e as CustomEvent<Tipo>).detail === 'TRANSPORTADOR') setTimeout(() => ofrecerAvisos('registro'), 400);
+    };
+    window.addEventListener('cuenta:creada', alCrearCuenta);
+    return () => window.removeEventListener('cuenta:creada', alCrearCuenta);
+  }, []);
+
   function publicar() {
     if (!tipo) return abrirAuth('registro', 'PUBLICADOR');
     if (tipo === 'TRANSPORTADOR') {
@@ -81,6 +107,8 @@ export default function AccionesProvider({ children }: { children: ReactNode }) 
         ingresar: () => abrirAuth('login', 'TRANSPORTADOR'),
         registrarse: () => abrirAuth('registro', 'TRANSPORTADOR'),
         misContactos,
+        activarAvisos: () => setAvisos({ abierto: true, motivo: 'manual' }),
+        ofrecerAvisos,
       }}
     >
       {children}
@@ -99,6 +127,11 @@ export default function AccionesProvider({ children }: { children: ReactNode }) 
         onPublicada={() => window.dispatchEvent(new Event('cargas:publicada'))}
       />
       <TerminosDialog />
+      <ActivarAvisosDialog
+        open={avisos.abierto}
+        onOpenChange={(abierto) => setAvisos((a) => ({ ...a, abierto }))}
+        motivo={avisos.motivo}
+      />
       <MisContactosDialog
         open={verContactos}
         onOpenChange={(abierto) => {

@@ -91,6 +91,8 @@ export default function AuthDialog({
         aceptaTerminos,
       });
       onOpenChange(false);
+      // AccionesProvider escucha esto para ofrecer los avisos a un transportador nuevo.
+      window.dispatchEvent(new CustomEvent('cuenta:creada', { detail: String(form.get('tipo')) }));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo crear la cuenta');
     } finally {

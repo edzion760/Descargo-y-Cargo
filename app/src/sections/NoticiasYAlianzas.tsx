@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { ArrowUpRight, Bell, BellRing, Fuel, ShieldPlus, Wrench, CreditCard, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowUpRight, Bell, BellRing, Fuel, ShieldPlus, Wrench, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNoticiasVia, type Noticia } from '@/lib/use-noticias';
 import { useAuth } from '@/lib/use-auth';
 import { useAcciones } from '@/lib/use-acciones';
-import { activarAlertasDeVia } from '@/lib/push';
+import { estadoAvisos } from '@/lib/push';
 
 const TIPO_ESTILO: Record<Noticia['tipo'], { etiqueta: string; punto: string }> = {
   ACCIDENTE: { etiqueta: 'Accidente', punto: 'bg-red-500' },
@@ -26,21 +26,18 @@ const ALIANZAS = [
 export default function NoticiasYAlianzas() {
   const noticias = useNoticiasVia();
   const { autenticado, tipo } = useAuth();
-  const { ingresar } = useAcciones();
-  const [estadoAlertas, setEstadoAlertas] = useState<'inactivo' | 'cargando' | 'activo' | 'error'>('inactivo');
-  const [errorAlertas, setErrorAlertas] = useState<string | null>(null);
+  const { ingresar, activarAvisos } = useAcciones();
+  const [alertasActivas, setAlertasActivas] = useState(() => estadoAvisos() === 'activos');
 
-  async function activar() {
+  useEffect(() => {
+    const alActivar = () => setAlertasActivas(true);
+    window.addEventListener('avisos:activados', alActivar);
+    return () => window.removeEventListener('avisos:activados', alActivar);
+  }, []);
+
+  function activar() {
     if (!autenticado) return ingresar();
-    setEstadoAlertas('cargando');
-    setErrorAlertas(null);
-    try {
-      await activarAlertasDeVia();
-      setEstadoAlertas('activo');
-    } catch (err) {
-      setEstadoAlertas('error');
-      setErrorAlertas(err instanceof Error ? err.message : 'No se pudo activar');
-    }
+    activarAvisos();
   }
 
   return (
@@ -106,22 +103,16 @@ export default function NoticiasYAlianzas() {
                 </p>
               </div>
               <div className="shrink-0">
-                {tipo && estadoAlertas === 'activo' ? (
+                {tipo && alertasActivas ? (
                   <p className="flex items-center gap-2 rounded-full bg-white/10 px-5 py-3 text-sm font-semibold text-white">
                     <Bell className="h-4 w-4" /> Alertas activas
                   </p>
                 ) : (
-                  <Button
-                    size="lg"
-                    onClick={activar}
-                    disabled={estadoAlertas === 'cargando'}
-                    className="gap-2 bg-white text-zinc-950 hover:bg-zinc-200"
-                  >
-                    {estadoAlertas === 'cargando' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
-                    {!tipo ? 'Ingresa para activar alertas' : estadoAlertas === 'cargando' ? 'Activando…' : 'Activar alertas de vía'}
+                  <Button size="lg" onClick={activar} className="gap-2 bg-white text-zinc-950 hover:bg-zinc-200">
+                    <Bell className="h-4 w-4" />
+                    {!tipo ? 'Ingresa para activar alertas' : 'Activar alertas de vía'}
                   </Button>
                 )}
-                {errorAlertas && <p className="mt-3 max-w-xs text-xs text-red-400">{errorAlertas}</p>}
               </div>
             </div>
           </div>

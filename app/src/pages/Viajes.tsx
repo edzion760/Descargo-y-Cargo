@@ -51,6 +51,9 @@ function Centro({ children }: { children: ReactNode }) {
 
 function Panel() {
   const [params, setParams] = useSearchParams();
+  // Al crear un viaje se ofrecen los avisos de ruta (una sola vez por
+  // celular; ofrecerAvisos no molesta si ya están activos o se rechazaron).
+  const { ofrecerAvisos } = useAcciones();
   const [viajes, setViajes] = useState<Viaje[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [abiertoId, setAbiertoId] = useState<number | null>(null);
@@ -63,6 +66,7 @@ function Panel() {
         const v = await apiFetch<Viaje>('/api/viajes', { method: 'POST', body: { cargaId: Number(cargaId) } });
         setAbiertoId(v.id);
         setParams({}, { replace: true });
+        ofrecerAvisos('viaje');
       }
       setViajes(await apiFetch<Viaje[]>('/api/viajes'));
     })().catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudieron cargar tus viajes'));
@@ -190,6 +194,7 @@ function Panel() {
         onCreado={(v) => {
           setViajes((vs) => [v, ...(vs ?? [])]);
           setAbiertoId(v.id);
+          ofrecerAvisos('viaje');
         }}
       />
     </div>

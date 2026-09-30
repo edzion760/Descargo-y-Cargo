@@ -11,6 +11,22 @@ function base64UrlAUint8Array(base64Url: string): Uint8Array {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
+export type EstadoAvisos = 'activos' | 'disponibles' | 'ios-instalar' | 'bloqueados' | 'no-soportado';
+
+// En iPhone/iPad, Apple solo permite notificaciones web si el sitio está
+// agregado a la pantalla de inicio (y se abre desde ese ícono).
+export function estadoAvisos(): EstadoAvisos {
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const instalada =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  if (ios && !instalada) return 'ios-instalar';
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || typeof Notification === 'undefined') return 'no-soportado';
+  if (Notification.permission === 'denied') return 'bloqueados';
+  if (Notification.permission === 'granted') return 'activos';
+  return 'disponibles';
+}
+
 export async function activarAlertasDeVia(): Promise<void> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     throw new Error('Este navegador no soporta notificaciones push');
@@ -18,10 +34,6 @@ export async function activarAlertasDeVia(): Promise<void> {
 
   const permiso = await Notification.requestPermission();
   if (permiso !== 'granted') throw new Error('Permiso de notificaciones denegado');
-
-  const posicion = await new Promise<GeolocationPosition>((resolve, reject) =>
-    navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, timeout: 10000 })
-  );
 
   const registro = await navigator.serviceWorker.register('/sw.js');
   const { publicKey } = await apiFetch<{ publicKey: string | null }>('/api/push/clave-publica');
@@ -37,8 +49,17 @@ export async function activarAlertasDeVia(): Promise<void> {
     method: 'POST',
     body: { endpoint: json.endpoint, keys: json.keys },
   });
-  await apiFetch('/api/push/ubicacion', {
-    method: 'POST',
-    body: { lat: posicion.coords.latitude, lon: posicion.coords.longitude },
-  });
+
+  // La ubicación es opcional: sin ella igual llegan los avisos de clima en la
+  // ruta de sus viajes; solo se pierden los de accidentes cercanos.
+  const posicion = await new Promise<GeolocationPosition | null>((resolve) =>
+    navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), { enableHighAccuracy: false, timeout: 10000 })
+  );
+  if (posicion) {
+    await apiFetch('/api/push/ubicacion', {
+      method: 'POST',
+      body: { lat: posicion.coords.latitude, lon: posicion.coords.longitude },
+    });
+  }
+  window.dispatchEvent(new Event('avisos:activados'));
 }

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { BellRing, CloudFog, CloudLightning, CloudRain, Loader2, Mountain } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ApiError, apiFetch } from '@/lib/api';
-import { activarAlertasDeVia } from '@/lib/push';
+import { estadoAvisos } from '@/lib/push';
+import { useAcciones } from '@/lib/use-acciones';
 
 interface Clima {
   deslizamientos: {
@@ -36,10 +36,8 @@ const fechaIdeam = (iso: string) =>
 export default function ClimaRuta({ origen, destino }: { origen: string; destino: string }) {
   const [datos, setDatos] = useState<Clima | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activando, setActivando] = useState(false);
-  const [avisosActivos, setAvisosActivos] = useState(
-    () => typeof Notification !== 'undefined' && Notification.permission === 'granted'
-  );
+  const { activarAvisos } = useAcciones();
+  const [avisosActivos, setAvisosActivos] = useState(() => estadoAvisos() === 'activos');
 
   useEffect(() => {
     const q = new URLSearchParams({ origen, destino });
@@ -48,20 +46,12 @@ export default function ClimaRuta({ origen, destino }: { origen: string; destino
       .catch((err) => setError(err instanceof ApiError ? err.message : 'No pudimos consultar el clima de la ruta'));
   }, [origen, destino]);
 
-  async function activarAvisos() {
-    setActivando(true);
-    try {
-      await activarAlertasDeVia();
-      setAvisosActivos(true);
-      toast.success('Listo: te avisaremos en el celular', {
-        description: 'Riesgo alto de derrumbes y lluvia fuerte en la ruta de tus viajes de hoy y mañana.',
-      });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudieron activar los avisos');
-    } finally {
-      setActivando(false);
-    }
-  }
+  // La ventana de avisos (AccionesProvider) avisa cuando quedan activos.
+  useEffect(() => {
+    const alActivar = () => setAvisosActivos(true);
+    window.addEventListener('avisos:activados', alActivar);
+    return () => window.removeEventListener('avisos:activados', alActivar);
+  }, []);
 
   return (
     <section className="mt-6 rounded-2xl bg-white p-4 shadow-suave">
@@ -72,9 +62,8 @@ export default function ClimaRuta({ origen, destino }: { origen: string; destino
             <BellRing className="h-3.5 w-3.5" /> Avisos activos
           </span>
         ) : (
-          <Button size="sm" variant="outline" onClick={activarAvisos} disabled={activando} className="gap-1.5 border-zinc-300">
-            {activando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BellRing className="h-3.5 w-3.5" />}
-            Avisarme en el celular
+          <Button size="sm" variant="outline" onClick={activarAvisos} className="gap-1.5 border-zinc-300">
+            <BellRing className="h-3.5 w-3.5" /> Avisarme en el celular
           </Button>
         )}
       </div>

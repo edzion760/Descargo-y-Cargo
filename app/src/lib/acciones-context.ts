@@ -10,6 +10,11 @@ export interface AccionesCarga {
   ingresar: () => void;
   registrarse: () => void;
   misContactos: () => void;
+  // Abre la ventana de avisos al celular (desde un botón).
+  activarAvisos: () => void;
+  // La ofrece una sola vez por motivo (registro, primer viaje), y solo si el
+  // celular puede activarlos y aún no están activos.
+  ofrecerAvisos: (motivo: 'registro' | 'viaje') => void;
 }
 
 export const AccionesContext = createContext<AccionesCarga | null>(null);
