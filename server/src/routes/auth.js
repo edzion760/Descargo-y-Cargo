@@ -41,9 +41,15 @@ export function datosAnonimizados(usuarioId) {
   return { marca, email: `${marca}@descargoycargo.invalid`, passwordHash: marca };
 }
 
+// Sesión de 30 días que se renueva sola con el uso (ver GET /me): quien abre
+// la app seguido no vuelve a escribir la contraseña; tras un mes sin usarla,
+// sí. `sv` es la versión de sesión (ver sesionVigente en middleware/auth.js).
+const DURACION_SESION_MS = 30 * 24 * 60 * 60 * 1000;
+const RENOVAR_SESION_TRAS_MS = 24 * 60 * 60 * 1000;
+
 function signToken(usuario) {
-  return jwt.sign({ sub: usuario.id, tipo: usuario.tipo }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
+  return jwt.sign({ sub: usuario.id, tipo: usuario.tipo, sv: usuario.sesionVersion ?? 0 }, process.env.JWT_SECRET, {
+    expiresIn: DURACION_SESION_MS / 1000,
   });
 }
 
@@ -56,7 +62,7 @@ function ponerCookieSesion(req, res, usuario) {
     httpOnly: true,
     secure: req.secure,
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: DURACION_SESION_MS,
     path: '/',
   });
 }
@@ -153,6 +159,9 @@ authRouter.get('/me', requireAuth, async (req, res) => {
     select: { terminosVersion: true, eliminadoEn: true, esAdmin: true, transportador: { select: { placa: true } } },
   });
   if (!usuario || usuario.eliminadoEn) return res.status(401).json({ error: 'Sesión inválida' });
+  // La app llama /me cada vez que se abre: si la sesión tiene más de un día,
+  // se emite una nueva de 30 días (sesión que se renueva con el uso).
+  if (Date.now() - req.user.iat * 1000 > RENOVAR_SESION_TRAS_MS) ponerCookieSesion(req, res, req.usuarioSesion);
   res.json({
     id: req.user.sub,
     tipo: req.user.tipo,
@@ -218,7 +227,9 @@ authRouter.post('/restablecer-password', async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 10);
   await prisma.usuario.update({
     where: { id: usuario.id },
-    data: { passwordHash, resetToken: null, resetTokenExpira: null },
+    // sesionVersion + 1: cierra la sesión en todos los aparatos (si alguien
+    // más tenía acceso a la cuenta, lo pierde en ese momento).
+    data: { passwordHash, resetToken: null, resetTokenExpira: null, sesionVersion: { increment: 1 } },
   });
 
   res.json({ ok: true });
@@ -227,11 +238,9 @@ authRouter.post('/restablecer-password', async (req, res) => {
 // Derecho de supresión (Ley 1581 de 2012, art. 8): el usuario puede darse de
 // baja en cualquier momento. No se borra la fila -- hay Cargas y
 // PagoDesbloqueo ligados que deben conservarse por obligación contable/fiscal
-// (Política de Datos §11.2) -- se anonimiza y se bloquea el login.
-// ponytail: el JWT ya emitido (hasta 7 días) sigue siendo válido en otras
-// rutas tras esta baja -- no hay lista de revocación. Si esto importa antes
-// de 7 días, añadir un check de eliminadoEn en requireAuth (una consulta más
-// por request) o pasar a tokens de vida corta + refresh.
+// (Política de Datos §11.2) -- se anonimiza y se bloquea el login. Las
+// sesiones abiertas en otros aparatos dejan de valer de inmediato:
+// requireAuth revisa eliminadoEn en cada petición.
 authRouter.delete('/me', requireAuth, async (req, res) => {
   const usuario = await prisma.usuario.findUnique({ where: { id: req.user.sub } });
   if (!usuario || usuario.eliminadoEn) {

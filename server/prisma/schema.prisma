@@ -65,6 +65,9 @@ model Usuario {
   terminosAceptadosEn DateTime  @default(now())
   terminosIp          String?
   eliminadoEn         DateTime?
+  // Versión de sesión: va dentro del JWT; subirla (al restablecer la
+  // contraseña) invalida todas las sesiones abiertas de la cuenta.
+  sesionVersion       Int       @default(0)
   // Acceso al panel /admin. Solo se activa a mano en el servidor (no hay
   // ninguna ruta que lo cambie) y se consulta en BD en cada petición.
   esAdmin             Boolean   @default(false)
