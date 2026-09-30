@@ -2,7 +2,7 @@
   "packageId": "com.descargoycargo.app",
   "host": "descargoycargo.com",
   "name": "Descargo & Cargo",
-  "launcherName": "Descargo",
+  "launcherName": "Descargo & Cargo",
   "display": "standalone",
   "themeColor": "#FFFFFF",
   "themeColorDark": "#000000",

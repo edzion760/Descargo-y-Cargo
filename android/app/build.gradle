@@ -25,7 +25,7 @@ def twaManifest = [
     hostName: 'descargoycargo.com', // The domain being opened in the TWA.
     launchUrl: '/?fuente=app', // The start path for the TWA. Must be relative to the domain.
     name: 'Descargo & Cargo', // The application name.
-    launcherName: 'Descargo', // The name shown on the Android Launcher.
+    launcherName: 'Descargo & Cargo', // The name shown on the Android Launcher.
     themeColor: '#FFFFFF', // The color used for the status bar.
     themeColorDark: '#000000', // The color used for the dark status bar.
     navigationColor: '#FFFFFF', // The color used for the navigation bar.
