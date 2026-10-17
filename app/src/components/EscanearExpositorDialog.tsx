@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import '@/lib/lector-qr';
 import QrScanner from 'qr-scanner';
 import { Camera, ImageUp, Loader2, PenLine } from 'lucide-react';
 import { toast } from 'sonner';
@@ -60,6 +61,20 @@ function Escaner({ onLeido, onManual }: { onLeido: (texto: string) => void; onMa
       preferredCamera: 'environment',
       highlightScanRegion: true,
       returnDetailedScanResult: true,
+      // Por defecto reduce el recuadro a 400 px y los QR densos (vCard) se
+      // vuelven ilegibles; se lee casi todo el cuadro a resolución real.
+      calculateScanRegion: (v) => {
+        const lado = Math.round(Math.min(v.videoWidth, v.videoHeight) * 0.9);
+        const escala = Math.min(1, 1080 / lado);
+        return {
+          x: Math.round((v.videoWidth - lado) / 2),
+          y: Math.round((v.videoHeight - lado) / 2),
+          width: lado,
+          height: lado,
+          downScaledWidth: Math.round(lado * escala),
+          downScaledHeight: Math.round(lado * escala),
+        };
+      },
     });
     scanner.start().catch(() => setError('No se pudo abrir la cámara. Permite el acceso o usa "Tomar foto del QR".'));
     return () => scanner.destroy();
