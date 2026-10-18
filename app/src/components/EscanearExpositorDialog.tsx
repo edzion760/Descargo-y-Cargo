@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import '@/lib/lector-qr';
 import QrScanner from 'qr-scanner';
-import { Camera, ImageUp, Loader2, PenLine } from 'lucide-react';
+import { Camera, ImageUp, Loader2, Mic, PenLine, Sparkles, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -45,11 +45,116 @@ export default function EscanearExpositorDialog({
 
 function Flujo({ onGuardado }: { onGuardado: () => void }) {
   const [datos, setDatos] = useState<ContactoQR | null>(null);
-  if (!datos) return <Escaner onLeido={(texto) => setDatos(leerContactoQR(texto))} onManual={() => setDatos(leerContactoQR(''))} />;
-  return <Formulario datos={datos} onGuardado={onGuardado} onOtro={() => setDatos(null)} />;
+  const [dictando, setDictando] = useState(false);
+  if (datos) {
+    return <Formulario datos={datos} onGuardado={onGuardado} onOtro={() => { setDatos(null); setDictando(false); }} />;
+  }
+  // Al pasar a dictar se desmonta el escáner y se apaga la cámara.
+  if (dictando) return <Dictado onListo={setDatos} onManual={() => setDatos(leerContactoQR(''))} />;
+  return <Escaner onLeido={(texto) => setDatos(leerContactoQR(texto))} onDictar={() => setDictando(true)} />;
 }
 
-function Escaner({ onLeido, onManual }: { onLeido: (texto: string) => void; onManual: () => void }) {
+// Web Speech API: Chrome y Safari la exponen con prefijo; no está en los tipos del DOM.
+interface Reconocedor {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start(): void;
+  stop(): void;
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: ((e: { error: string }) => void) | null;
+  onend: (() => void) | null;
+}
+const w = window as unknown as Record<string, (new () => Reconocedor) | undefined>;
+const ReconocedorVoz = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+
+// Dicta los datos del contacto y la IA los reparte en el formulario. Si el
+// navegador no deja usar el reconocimiento de voz, el micrófono del teclado
+// escribe en el mismo cuadro.
+function Dictado({ onListo, onManual }: { onListo: (datos: ContactoQR) => void; onManual: () => void }) {
+  const [texto, setTexto] = useState('');
+  const [escuchando, setEscuchando] = useState(false);
+  const [organizando, setOrganizando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const rec = useRef<Reconocedor | null>(null);
+  const cuadro = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => () => rec.current?.stop(), []);
+
+  function alternar() {
+    if (escuchando) return rec.current?.stop();
+    if (!ReconocedorVoz) {
+      setError('Aquí no se puede usar el micrófono directo: toca el 🎤 del teclado y dicta en el cuadro.');
+      return cuadro.current?.focus();
+    }
+    const r = new ReconocedorVoz();
+    r.lang = 'es-CO';
+    r.continuous = true;
+    r.interimResults = true;
+    const previo = texto.trim() ? texto.trimEnd() + ' ' : '';
+    r.onresult = (e) => setTexto(previo + Array.from(e.results, (res) => res[0].transcript).join(''));
+    r.onerror = (e) =>
+      setError(e.error === 'not-allowed'
+        ? 'Permite el micrófono para este sitio, o usa el 🎤 del teclado.'
+        : 'No te escuché bien. Toca el micrófono otra vez o usa el 🎤 del teclado.');
+    r.onend = () => setEscuchando(false);
+    rec.current = r;
+    setError(null);
+    r.start();
+    setEscuchando(true);
+  }
+
+  async function organizar() {
+    rec.current?.stop();
+    setError(null);
+    setOrganizando(true);
+    try {
+      onListo(await apiFetch<ContactoQR>('/api/admin/leads/dictado', { method: 'POST', body: { texto } }));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo organizar el dictado');
+      setOrganizando(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-col items-center gap-2 py-2">
+        <button
+          type="button"
+          onClick={alternar}
+          aria-label={escuchando ? 'Dejar de escuchar' : 'Empezar a dictar'}
+          className={`flex h-20 w-20 items-center justify-center rounded-full text-white shadow-lg transition ${
+            escuchando ? 'animate-pulse bg-red-600' : 'bg-zinc-950 hover:bg-zinc-800'
+          }`}
+        >
+          {escuchando ? <Square className="h-7 w-7" /> : <Mic className="h-8 w-8" />}
+        </button>
+        <p className="text-center text-sm text-zinc-600">
+          {escuchando ? 'Te escucho… toca para terminar.' : 'Toca y di: empresa, persona, cargo, celular, correo y lo que hablaron.'}
+        </p>
+      </div>
+      <Textarea
+        ref={cuadro}
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        rows={5}
+        placeholder="Ej. Café La Mesa, hablé con Juan Pérez, gerente de logística, celular 310 555 1234, despachan 20 toneladas al mes a Buenaventura, llamarlo el lunes."
+      />
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onManual} className="gap-2 text-zinc-700">
+          <PenLine className="h-4 w-4" /> Llenar a mano
+        </Button>
+        <Button type="button" onClick={organizar} disabled={organizando || texto.trim().length < 3} className="gap-2">
+          {organizando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          {organizando ? 'Organizando…' : 'Organizar datos'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Escaner({ onLeido, onDictar }: { onLeido: (texto: string) => void; onDictar: () => void }) {
   const video = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [leyendoFoto, setLeyendoFoto] = useState(false);
@@ -118,8 +223,8 @@ function Escaner({ onLeido, onManual }: { onLeido: (texto: string) => void; onMa
             />
           </label>
         </Button>
-        <Button variant="ghost" onClick={onManual} className="gap-2 text-zinc-700">
-          <PenLine className="h-4 w-4" /> Llenar a mano
+        <Button variant="outline" onClick={onDictar} className="gap-2 border-zinc-300">
+          <Mic className="h-4 w-4" /> Dictar datos
         </Button>
       </div>
     </div>

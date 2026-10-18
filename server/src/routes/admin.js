@@ -5,6 +5,7 @@ import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { telefonoSchema } from './prospectos.js';
 import { enviarCartaExpositor } from '../email.js';
 import { csv, enviarCsv } from '../csv.js';
+import { organizarDictado } from '../dictado.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireAdmin);
@@ -54,6 +55,14 @@ const leadQrSchema = z
     enviarCarta: z.boolean().optional().default(false),
   })
   .refine((d) => d.telefono || d.email, { message: 'Hace falta al menos un teléfono o un correo' });
+
+// Dictado por voz en la feria -> campos del formulario (no guarda nada; el
+// admin revisa y guarda con POST /leads).
+adminRouter.post('/leads/dictado', async (req, res) => {
+  const parsed = z.object({ texto: z.string().trim().min(3, 'No se escuchó nada').max(4000) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  res.json(await organizarDictado(parsed.data.texto));
+});
 
 adminRouter.post('/leads', async (req, res) => {
   const parsed = leadQrSchema.safeParse(req.body);
