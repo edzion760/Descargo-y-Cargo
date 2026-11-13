@@ -10,6 +10,30 @@ import NoticiasYAlianzas from '@/sections/NoticiasYAlianzas';
 import Membresias from '@/sections/Membresias';
 import CtaFinal from '@/sections/CtaFinal';
 import Footer from '@/sections/Footer';
+import AppInicio from './AppInicio';
+
+// Abierta como app instalada (ícono en Android/iPhone): el manifiesto la abre
+// con ?fuente=app y en modo standalone. Se recuerda en la sesión porque al
+// volver de Wompi la URL ya no trae ?fuente=app.
+function esModoApp() {
+  const params = new URLSearchParams(window.location.search);
+  const standalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  if (params.get('fuente') === 'app' || standalone) {
+    try {
+      sessionStorage.setItem('modo-app', '1');
+    } catch {
+      /* sin almacenamiento: se decide solo por la URL */
+    }
+    return true;
+  }
+  try {
+    return sessionStorage.getItem('modo-app') === '1';
+  } catch {
+    return false;
+  }
+}
 
 function irA(selector: string) {
   document.querySelector(selector)?.scrollIntoView({ behavior: 'smooth' });
@@ -18,6 +42,15 @@ function irA(selector: string) {
 export default function Home() {
   const [busqueda, setBusqueda] = useState<Busqueda | null>(null);
   const [consulta, setConsulta] = useState<Consulta | null>(null);
+  const [modoApp] = useState(esModoApp);
+
+  if (modoApp) {
+    return (
+      <AccionesProvider>
+        <AppInicio />
+      </AccionesProvider>
+    );
+  }
 
   return (
     <AccionesProvider>
