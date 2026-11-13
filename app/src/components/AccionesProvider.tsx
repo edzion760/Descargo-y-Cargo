@@ -59,6 +59,17 @@ export default function AccionesProvider({ children }: { children: ReactNode }) 
       abrirAuth('registro', 'PUBLICADOR');
     }
   }, [publicarPendiente, tipo, cargando]);
+  // Enlace de invitación para transportadores (?transportador): sin sesión
+  // abre el registro de transportador; con sesión solo limpia la URL.
+  const [transportadorPendiente, setTransportadorPendiente] = useState(() =>
+    new URLSearchParams(window.location.search).has('transportador')
+  );
+  useEffect(() => {
+    if (!transportadorPendiente || cargando) return;
+    window.history.replaceState({}, '', window.location.pathname);
+    setTransportadorPendiente(false);
+    if (!tipo) abrirAuth('registro', 'TRANSPORTADOR');
+  }, [transportadorPendiente, tipo, cargando]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   function misContactos() {
