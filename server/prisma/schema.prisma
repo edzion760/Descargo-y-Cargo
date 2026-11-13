@@ -123,10 +123,14 @@ model Transportador {
   // Placa autodeclarada del vehículo; se le envía al publicador al desbloquear.
   // Opcional en BD solo por las cuentas anteriores: se pide antes del primer desbloqueo.
   placa     String?
+  // Desbloqueos de acarreo (URBANA/BARBACHA) prepagados: se compran en
+  // paquete (ver CompraPaquete) porque Wompi no cobra montos de $1.000.
+  creditosAcarreo Int @default(0)
 
   usuario         Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   membresia       Membresia?
   pagosDesbloqueo PagoDesbloqueo[]
+  comprasPaquete  CompraPaquete[]
   viajes          Viaje[]
 }
 
@@ -168,7 +172,8 @@ model Carga {
   @@index([estado, tipoPublicacion])
 }
 
-// Monetización core: 6% del flete (mínimo $15.000, máximo $100.000 COP) por desbloquear
+// Monetización core: 6% del flete (mínimo $15.000, máximo $100.000 COP; $1.000 fijo en
+// URBANA/BARBACHA, ver tarifaDesbloqueo en cargas.js) por desbloquear
 // el contacto de una carga, o gratis si la membresía del transportador
 // todavía tiene cupos. Ver PLAN_INTEGRAL_V3.md §5 (PagoDesbloqueo).
 model PagoDesbloqueo {
@@ -184,6 +189,22 @@ model PagoDesbloqueo {
   transportador Transportador @relation(fields: [transportadorId], references: [id], onDelete: Cascade)
 
   @@unique([cargaId, transportadorId])
+}
+
+// Paquete de desbloqueos de acarreo (5 por $5.000) pagado en Wompi. El
+// webhook suma los créditos; si la compra se hizo desde una carga, ese
+// contacto se desbloquea de una vez con el primer crédito.
+model CompraPaquete {
+  id              Int        @id @default(autoincrement())
+  transportadorId Int
+  cargaId         Int?
+  creditos        Int
+  monto           Int
+  referencia      String     @unique
+  estado          EstadoPago @default(PENDIENTE)
+  createdAt       DateTime   @default(now())
+
+  transportador Transportador @relation(fields: [transportadorId], references: [id], onDelete: Cascade)
 }
 
 enum TipoInteresProspecto {

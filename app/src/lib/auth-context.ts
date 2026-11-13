@@ -21,9 +21,11 @@ export interface AuthState {
   tipo: Tipo | null;
   terminosPendientes: boolean;
   placa: string | null;
+  creditosAcarreo: number;
   esAdmin: boolean;
   aceptarTerminos: () => Promise<void>;
   guardarPlaca: (placa: string) => void;
+  guardarCreditosAcarreo: (creditos: number) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => void;

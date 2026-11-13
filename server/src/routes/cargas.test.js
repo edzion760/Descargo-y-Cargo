@@ -21,4 +21,12 @@ test('mínimo 15.000 en fletes bajos', () => {
 
 test('gratis con membresía ILIMITADA', () => {
   assert.equal(tarifaDesbloqueo(5600000, 'ILIMITADA'), 0);
+  assert.equal(tarifaDesbloqueo(15000, 'ILIMITADA', 'URBANA'), 0);
+});
+
+test('acarreos URBANA y BARBACHA: fijo 1.000', () => {
+  assert.equal(tarifaDesbloqueo(15000, null, 'URBANA'), 1000);
+  assert.equal(tarifaDesbloqueo(420000, null, 'BARBACHA'), 1000);
+  assert.equal(tarifaDesbloqueo(5600000, null, 'URBANA'), 1000);
+  assert.equal(tarifaDesbloqueo(100000, null, 'NACIONAL'), 15000);
 });

@@ -156,7 +156,7 @@ authRouter.post('/logout', (req, res) => {
 authRouter.get('/me', requireAuth, async (req, res) => {
   const usuario = await prisma.usuario.findUnique({
     where: { id: req.user.sub },
-    select: { terminosVersion: true, eliminadoEn: true, esAdmin: true, transportador: { select: { placa: true } } },
+    select: { terminosVersion: true, eliminadoEn: true, esAdmin: true, transportador: { select: { placa: true, creditosAcarreo: true } } },
   });
   if (!usuario || usuario.eliminadoEn) return res.status(401).json({ error: 'Sesión inválida' });
   // La app llama /me cada vez que se abre: si la sesión tiene más de un día,
@@ -167,6 +167,7 @@ authRouter.get('/me', requireAuth, async (req, res) => {
     tipo: req.user.tipo,
     terminosPendientes: usuario.terminosVersion !== TERMINOS_VERSION,
     placa: usuario.transportador?.placa ?? null,
+    creditosAcarreo: usuario.transportador?.creditosAcarreo ?? 0,
     esAdmin: usuario.esAdmin,
   });
 });

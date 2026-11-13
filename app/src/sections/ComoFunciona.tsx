@@ -9,7 +9,7 @@ const PASOS = [
   {
     icono: LockOpen,
     titulo: 'El transportador desbloquea',
-    texto: 'Ve la carga completa menos el contacto. Paga el desbloqueo (6%, entre $15.000 y $100.000) o lo usa de su membresía. Al que publica no se le cobra nada.',
+    texto: 'Ve la carga completa menos el contacto. Paga el desbloqueo (6% en nacionales, entre $15.000 y $100.000; $1.000 en acarreos urbanos y de barbacha (paquete de 5 por $5.000)) o lo usa de su membresía. Al que publica no se le cobra nada.',
   },
   {
     icono: Truck,

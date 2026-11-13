@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { checksumValido } from '../wompi.js';
 import { enviarAvisoPublicador, enviarPagoConfirmado } from '../email.js';
+import { avisarPublicador, usarCreditoAcarreo } from './cargas.js';
 
 export const webhooksRouter = Router();
 
@@ -36,6 +37,38 @@ const ESTADO_WOMPI = {
   ERROR: 'RECHAZADO',
 };
 
+// Paquete de acarreos pagado: suma los créditos una sola vez (Wompi puede
+// reintentar el webhook) y, si se compró desde una carga, la desbloquea
+// con el primer crédito en la misma transacción.
+async function acreditarPaquete(compra, estado) {
+  if (compra.estado === 'VERIFICADO') return;
+  const pago = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.compraPaquete.updateMany({
+      where: { id: compra.id, estado: { not: 'VERIFICADO' } },
+      data: { estado },
+    });
+    if (!count || estado !== 'VERIFICADO') return null;
+    await tx.transportador.update({
+      where: { id: compra.transportadorId },
+      data: { creditosAcarreo: { increment: compra.creditos } },
+    });
+    if (!compra.cargaId) return null;
+    const carga = await tx.carga.findUnique({ where: { id: compra.cargaId } });
+    if (!carga) return null;
+    const previo = await tx.pagoDesbloqueo.findUnique({
+      where: { cargaId_transportadorId: { cargaId: compra.cargaId, transportadorId: compra.transportadorId } },
+    });
+    if (previo?.estado === 'VERIFICADO') return null;
+    return usarCreditoAcarreo(tx, compra.transportadorId, compra.cargaId);
+  });
+  if (estado !== 'VERIFICADO') return;
+  await enviarPagoConfirmado(compra.transportador.usuario.email, {
+    monto: compra.monto,
+    carga: `Paquete de ${compra.creditos} desbloqueos de acarreo`,
+  });
+  if (pago) await avisarPublicador(pago.id);
+}
+
 // Wompi llama esto cuando una transacción cambia de estado. Sin auth (lo llama
 // Wompi, no un usuario) — la firma (checksum) es lo que prueba que es legítimo.
 webhooksRouter.post('/wompi', async (req, res) => {
@@ -44,6 +77,15 @@ webhooksRouter.post('/wompi', async (req, res) => {
   const transaccion = req.body.data?.transaction;
   const estado = ESTADO_WOMPI[transaccion?.status];
   if (!estado || !transaccion?.reference) return res.status(200).json({ ok: true });
+
+  const compra = await prisma.compraPaquete.findUnique({
+    where: { referencia: transaccion.reference },
+    include: { transportador: { include: { usuario: true } } },
+  });
+  if (compra) {
+    await acreditarPaquete(compra, estado);
+    return res.status(200).json({ ok: true });
+  }
 
   const pago = await prisma.pagoDesbloqueo.findUnique({
     where: { referencia: transaccion.reference },

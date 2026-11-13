@@ -11,6 +11,7 @@ import {
   Route,
   Building2,
   Tractor,
+  Bike,
   X,
   PackageSearch,
   Loader2,
@@ -29,7 +30,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
-import { formatCOP, tarifaDesbloqueo } from '@/data/mock';
+import { esAcarreo, formatCOP, PAQUETE_ACARREO, tarifaDesbloqueo, VEHICULO_MOTOCARGUERO } from '@/data/mock';
 import { apiFetch, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/use-auth';
 import { useAcciones } from '@/lib/use-acciones';
@@ -69,6 +70,8 @@ const CATEGORIAS = [
   { valor: 'NACIONAL', etiqueta: 'Nacional', icono: Route },
   { valor: 'URBANA', etiqueta: 'Urbana', icono: Building2 },
   { valor: 'BARBACHA', etiqueta: 'Barbacha', icono: Tractor },
+  // No es un tipo de publicación: filtra por vehículo requerido.
+  { valor: 'MOTOCARGUERO', etiqueta: 'Motocargueros', icono: Bike },
 ] as const;
 
 const ETIQUETA_PUBLICACION: Record<Carga['tipoPublicacion'], string> = {
@@ -140,7 +143,7 @@ function TarjetaCarga({
   onEditar: (carga: Carga) => void;
   onCancelada: (cargaId: number) => void;
 }) {
-  const { autenticado, miId, tipo, placa, guardarPlaca } = useAuth();
+  const { autenticado, miId, tipo, placa, guardarPlaca, creditosAcarreo, guardarCreditosAcarreo } = useAuth();
   const [placaNueva, setPlacaNueva] = useState('');
   const [contacto, setContacto] = useState<Contacto | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -148,7 +151,10 @@ function TarjetaCarga({
   const [confirmarCancelar, setConfirmarCancelar] = useState(false);
   const [confirmarPago, setConfirmarPago] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const tarifa = tarifaDesbloqueo(carga.precio);
+  const tarifa = tarifaDesbloqueo(carga.precio, carga.tipoPublicacion);
+  // Acarreos: $1.000 por contacto con créditos del paquete (5 por $5.000).
+  const acarreo = esAcarreo(carga.tipoPublicacion);
+  const conCredito = acarreo && creditosAcarreo > 0;
   const sobrePiso = carga.precio - carga.pisoSiceTac;
 
   // Ya desbloqueada (p. ej. tras recargar la página): el listado no trae el
@@ -174,6 +180,8 @@ function TarjetaCarga({
       setError('Solo los transportadores pueden desbloquear contactos.');
       return;
     }
+    // Con créditos de acarreo no hay nada que pagar: se desbloquea de una.
+    if (conCredito && placa) return void desbloquear();
     setConfirmarPago(true);
   }
 
@@ -182,7 +190,7 @@ function TarjetaCarga({
     setCargando(true);
     setError(null);
     try {
-      const data = await apiFetch<{ monto: number; contacto?: Contacto; checkoutUrl?: string }>(
+      const data = await apiFetch<{ monto: number; contacto?: Contacto; checkoutUrl?: string; creditosAcarreo?: number }>(
         `/api/cargas/${carga.id}/desbloqueo`,
         { method: 'POST', body: placa ? {} : { placa: placaNueva } }
       );
@@ -191,6 +199,7 @@ function TarjetaCarga({
         window.location.href = data.checkoutUrl; // paga en Wompi, vuelve a esta página
         return;
       }
+      if (data.creditosAcarreo != null) guardarCreditosAcarreo(data.creditosAcarreo);
       if (data.contacto) {
         setContacto(data.contacto);
         onDesbloqueada(carga.id);
@@ -326,8 +335,15 @@ function TarjetaCarga({
         ) : (
           <Button onClick={pedirDesbloqueo} disabled={cargando} className="h-11 w-full gap-2 rounded-xl font-semibold">
             {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-            {cargando ? 'Procesando…' : `Desbloquear contacto · ${formatCOP(tarifa)}`}
+            {cargando ? 'Procesando…' : `Desbloquear contacto · ${conCredito ? '1 crédito' : formatCOP(tarifa)}`}
           </Button>
+        )}
+        {acarreo && !desbloqueada && !carga.esMia && !carga.ejemplo && tipo === 'TRANSPORTADOR' && (
+          <p className="mt-1.5 text-center text-xs text-zinc-500">
+            {conCredito
+              ? `Te ${creditosAcarreo === 1 ? 'queda 1 desbloqueo' : `quedan ${creditosAcarreo} desbloqueos`} de acarreo`
+              : `Se compra en paquete: ${PAQUETE_ACARREO.creditos} desbloqueos de acarreo por ${formatCOP(PAQUETE_ACARREO.precio)}`}
+          </p>
         )}
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
       </div>
@@ -335,8 +351,19 @@ function TarjetaCarga({
       <AlertDialog open={confirmarPago} onOpenChange={setConfirmarPago}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Antes de pagar {formatCOP(tarifa)}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {acarreo && !conCredito
+                ? `Paquete de ${PAQUETE_ACARREO.creditos} desbloqueos por ${formatCOP(PAQUETE_ACARREO.precio)}`
+                : `Antes de pagar ${formatCOP(tarifa)}`}
+            </AlertDialogTitle>
             <AlertDialogDescription>
+              {acarreo && !conCredito && (
+                <>
+                  Pagas {formatCOP(PAQUETE_ACARREO.precio)} una vez y quedan {PAQUETE_ACARREO.creditos} desbloqueos para acarreos
+                  urbanos y de barbacha ({formatCOP(tarifa)} cada uno). Este contacto usa el primero y te quedan{' '}
+                  {PAQUETE_ACARREO.creditos - 1} para los siguientes.{' '}
+                </>
+              )}
               Te llevamos a Wompi, la pasarela de pago segura. Puedes pagar con Nequi, PSE o tarjeta. Al confirmarse
               el pago, el publicador recibe tu nombre, ciudad, teléfono y placa para que también pueda llamarte.
             </AlertDialogDescription>
@@ -442,7 +469,12 @@ export default function Marketplace({
     setCargando(true);
     setError(null);
     try {
-      const query = filtro !== 'TODAS' ? `?tipoPublicacion=${filtro}` : '';
+      const query =
+        filtro === 'TODAS'
+          ? ''
+          : filtro === 'MOTOCARGUERO'
+            ? `?vehiculoRequerido=${encodeURIComponent(VEHICULO_MOTOCARGUERO)}`
+            : `?tipoPublicacion=${filtro}`;
       const data = await apiFetch<Carga[]>(`/api/cargas${query}`);
       setCargas(data);
     } catch {
@@ -632,7 +664,8 @@ export default function Marketplace({
         )}
 
         <p className="mt-12 text-center text-xs text-zinc-500">
-          El desbloqueo cobra el 6% del flete (mínimo $15.000 y máximo $100.000 COP) vía Wompi: PSE, tarjeta o Nequi.
+          El desbloqueo cobra el 6% del flete en cargas nacionales (mínimo $15.000 y máximo $100.000 COP) y $1.000 en
+          acarreos urbanos y de barbacha (paquete de 5 por $5.000), vía Wompi: PSE, tarjeta o Nequi.
         </p>
 
         {/* Medidas de protección del contacto revelado (uso interno, no se le

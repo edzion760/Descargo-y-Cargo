@@ -33,7 +33,12 @@ export const CONFIGURACIONES_VEHICULO = [
   { codigo: '2B1', label: 'Camión rígido 2 ejes + remolque balanceado 1 eje (2B1)' },
   { codigo: '2B2', label: 'Camión rígido 2 ejes + remolque balanceado 2 ejes (2B2)' },
   { codigo: '3B3', label: 'Camión rígido 3 ejes + remolque balanceado 3 ejes (3B3)' },
+  // No es configuración RNDC: motocarro de carga para acarreos municipales.
+  // El Marketplace tiene una pestaña que filtra por este label exacto.
+  { codigo: 'MOTO', label: 'Motocarguero' },
 ] as const;
+
+export const VEHICULO_MOTOCARGUERO = 'Motocarguero';
 
 // Categorías reales de NATURALEZACARGA del RNDC (datos.gov.co/resource/v7bz-7nq2),
 // confirmadas por conteo real de despachos, no inventadas. Los factores (%)
@@ -54,9 +59,16 @@ export function formatCOP(valor: number): string {
   return '$' + valor.toLocaleString('es-CO');
 }
 
-// Cobro por uso sin plan: 6% del flete, mínimo $15.000 y máximo $100.000 COP.
+// Cobro por uso sin plan: NACIONAL 6% del flete (mínimo $15.000, máximo
+// $100.000 COP); URBANA y BARBACHA (acarreos) $1.000 por contacto, vendidos
+// en paquete de 5 por $5.000 (créditos).
 // Solo para mostrar el precio en la tarjeta: el cobro real lo calcula el
 // servidor (server/src/routes/cargas.js) -- si cambia uno, cambiar el otro.
-export function tarifaDesbloqueo(precioCarga: number): number {
+export const PAQUETE_ACARREO = { creditos: 5, precio: 5000 };
+
+export const esAcarreo = (tipoPublicacion: string) => tipoPublicacion === 'URBANA' || tipoPublicacion === 'BARBACHA';
+
+export function tarifaDesbloqueo(precioCarga: number, tipoPublicacion: string): number {
+  if (esAcarreo(tipoPublicacion)) return PAQUETE_ACARREO.precio / PAQUETE_ACARREO.creditos;
   return Math.min(Math.max(Math.round(precioCarga * 0.06), 15000), 100000);
 }

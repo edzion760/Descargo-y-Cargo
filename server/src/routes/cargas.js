@@ -3,18 +3,61 @@ import { z } from 'zod';
 import { prisma } from '../db.js';
 import { requireAuth, requireTipo, optionalAuth } from '../middleware/auth.js';
 import { urlCheckout } from '../wompi.js';
+import { enviarAvisoPublicador } from '../email.js';
 import { placaSchema } from './auth.js';
 
 export const cargasRouter = Router();
 
-// Cobro por uso sin plan: 6% del flete, mínimo $15.000 y máximo $100.000 COP
-// (el tope aplica desde fletes de ~$1.666.667).
+// Cobro por uso sin plan:
+// - NACIONAL: 6% del flete, mínimo $15.000 y máximo $100.000 COP
+//   (el tope aplica desde fletes de ~$1.666.667).
+// - URBANA y BARBACHA (acarreos): $1.000 por contacto -- un acarreo municipal
+//   puede valer $15.000 en total, el mínimo nacional no le cabe. Wompi no
+//   cobra montos tan bajos (mínimo ~$1.500 y su comisión se comería el
+//   valor), así que se venden en paquete de 5 por $5.000 (créditos).
 // Con membresía ILIMITADA el desbloqueo es gratis.
 // El frontend repite la fórmula solo para MOSTRAR el precio (app/src/data/mock.ts);
 // el monto que se cobra en Wompi sale siempre de aquí.
-export function tarifaDesbloqueo(precio, tipoMembresia) {
+export const PAQUETE_ACARREO = { creditos: 5, precio: 5000 };
+
+export const esAcarreo = (tipoPublicacion) => tipoPublicacion === 'URBANA' || tipoPublicacion === 'BARBACHA';
+
+export function tarifaDesbloqueo(precio, tipoMembresia, tipoPublicacion) {
   if (tipoMembresia === 'ILIMITADA') return 0;
+  if (esAcarreo(tipoPublicacion)) return PAQUETE_ACARREO.precio / PAQUETE_ACARREO.creditos;
   return Math.min(Math.max(Math.round(precio * 0.06), 15000), 100000);
+}
+
+// Gasta un crédito de acarreo y deja el contacto desbloqueado, todo o nada.
+// Devuelve el pago, o null si no le quedan créditos. El decremento lleva la
+// condición "> 0" para que dos clics simultáneos no dejen el saldo negativo.
+export async function usarCreditoAcarreo(tx, transportadorId, cargaId) {
+  const { count } = await tx.transportador.updateMany({
+    where: { id: transportadorId, creditosAcarreo: { gt: 0 } },
+    data: { creditosAcarreo: { decrement: 1 } },
+  });
+  if (!count) return null;
+  const monto = tarifaDesbloqueo(0, null, 'URBANA');
+  return tx.pagoDesbloqueo.upsert({
+    where: { cargaId_transportadorId: { cargaId, transportadorId } },
+    update: { monto, estado: 'VERIFICADO' },
+    create: { cargaId, transportadorId, monto, estado: 'VERIFICADO' },
+  });
+}
+
+// Le cuenta al publicador quién desbloqueó su carga (nombre, teléfono, placa).
+export async function avisarPublicador(pagoId) {
+  const pago = await prisma.pagoDesbloqueo.findUnique({
+    where: { id: pagoId },
+    include: { carga: { include: { publicador: { include: { usuario: true } } } }, transportador: true },
+  });
+  // Cuenta del publicador dada de baja (anonimizada): no hay a quién avisar.
+  if (!pago || pago.carga.publicador.usuario.eliminadoEn) return;
+  await enviarAvisoPublicador(pago.carga.publicador.usuario.email, {
+    carga: pago.carga.titulo,
+    transportador: pago.transportador,
+    pagoId: pago.id,
+  });
 }
 
 const cargaPublica = {
@@ -36,11 +79,12 @@ const cargaPublica = {
 };
 
 cargasRouter.get('/', optionalAuth, async (req, res) => {
-  const { tipoPublicacion } = req.query;
+  const { tipoPublicacion, vehiculoRequerido } = req.query;
   const cargas = await prisma.carga.findMany({
     where: {
       estado: 'DISPONIBLE',
       ...(tipoPublicacion ? { tipoPublicacion: String(tipoPublicacion) } : {}),
+      ...(vehiculoRequerido ? { vehiculoRequerido: String(vehiculoRequerido) } : {}),
     },
     select: { ...cargaPublica, publicadorId: true },
     orderBy: [{ ejemplo: 'asc' }, { destacada: 'desc' }, { createdAt: 'desc' }],
@@ -262,7 +306,7 @@ cargasRouter.post('/:id/desbloqueo', requireAuth, requireTipo('TRANSPORTADOR'), 
   }
   if (!transportador.placa) return res.status(400).json({ error: 'Registra la placa de tu vehículo' });
 
-  const monto = tarifaDesbloqueo(carga.precio, transportador.membresia?.tipo);
+  const monto = tarifaDesbloqueo(carga.precio, transportador.membresia?.tipo, carga.tipoPublicacion);
 
   // Gratis por membresía ILIMITADA: no hay nada que cobrar, se confirma de una vez.
   if (monto === 0) {
@@ -278,6 +322,45 @@ cargasRouter.post('/:id/desbloqueo', requireAuth, requireTipo('TRANSPORTADOR'), 
     return res.status(201).json({ monto, contacto: publicador });
   }
 
+  const appUrl = process.env.APP_URL ?? 'http://localhost:4000';
+
+  // Acarreo: se paga con un crédito del paquete. Sin créditos, se compra el
+  // paquete y el webhook desbloquea esta carga con el primero.
+  if (esAcarreo(carga.tipoPublicacion)) {
+    const previo = await prisma.pagoDesbloqueo.findUnique({
+      where: { cargaId_transportadorId: { cargaId, transportadorId: transportador.id } },
+    });
+    const pago =
+      previo?.estado === 'VERIFICADO'
+        ? previo
+        : await prisma.$transaction((tx) => usarCreditoAcarreo(tx, transportador.id, cargaId));
+    if (pago) {
+      if (pago !== previo) await avisarPublicador(pago.id);
+      const [publicador, saldo] = await Promise.all([
+        prisma.publicador.findUnique({ where: { id: carga.publicadorId }, select: { nombre: true, telefono: true } }),
+        prisma.transportador.findUnique({ where: { id: transportador.id }, select: { creditosAcarreo: true } }),
+      ]);
+      return res.status(201).json({ monto: pago.monto, contacto: publicador, creditosAcarreo: saldo.creditosAcarreo });
+    }
+
+    const referencia = `paq-t${transportador.id}-c${cargaId}-${Date.now()}`;
+    await prisma.compraPaquete.create({
+      data: {
+        transportadorId: transportador.id,
+        cargaId,
+        creditos: PAQUETE_ACARREO.creditos,
+        monto: PAQUETE_ACARREO.precio,
+        referencia,
+      },
+    });
+    const checkoutUrl = urlCheckout({
+      referencia,
+      montoEnCentavos: PAQUETE_ACARREO.precio * 100,
+      redirectUrl: `${appUrl}/?wompi_carga=${cargaId}`,
+    });
+    return res.status(201).json({ monto: PAQUETE_ACARREO.precio, checkoutUrl });
+  }
+
   // Con costo: se manda a pagar a Wompi. El webhook (/api/webhooks/wompi) confirma
   // el pago y recién ahí queda VERIFICADO — ver GET /:id para el estado real.
   const referencia = `carga${cargaId}-t${transportador.id}-${Date.now()}`;
@@ -287,7 +370,6 @@ cargasRouter.post('/:id/desbloqueo', requireAuth, requireTipo('TRANSPORTADOR'), 
     create: { cargaId, transportadorId: transportador.id, monto, referencia, estado: 'PENDIENTE' },
   });
 
-  const appUrl = process.env.APP_URL ?? 'http://localhost:4000';
   const checkoutUrl = urlCheckout({
     referencia,
     montoEnCentavos: monto * 100,
