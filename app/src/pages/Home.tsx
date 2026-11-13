@@ -11,6 +11,7 @@ import Membresias from '@/sections/Membresias';
 import CtaFinal from '@/sections/CtaFinal';
 import Footer from '@/sections/Footer';
 import AppInicio from './AppInicio';
+import CargaCompartida from '@/components/CargaCompartida';
 
 // Abierta como app instalada (ícono en Android/iPhone): el manifiesto la abre
 // con ?fuente=app y en modo standalone. Se recuerda en la sesión porque al
@@ -48,6 +49,7 @@ export default function Home() {
     return (
       <AccionesProvider>
         <AppInicio />
+        <CargaCompartida />
       </AccionesProvider>
     );
   }
@@ -83,6 +85,7 @@ export default function Home() {
         </main>
         <Footer />
       </div>
+      <CargaCompartida />
     </AccionesProvider>
   );
 }

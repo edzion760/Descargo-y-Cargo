@@ -37,6 +37,7 @@ import EditarCargaDialog from '@/components/EditarCargaDialog';
 import IconoMotocarguero from '@/components/IconoMotocarguero';
 import { sinTildes } from '@/lib/utils';
 import { useVerificarPagoWompi } from '@/lib/use-verificar-pago';
+import { compartirCargaWhatsApp } from '@/lib/compartir';
 
 export interface Carga {
   id: number;
@@ -223,16 +224,6 @@ export function TarjetaCarga({
     }
   }
 
-  function compartirWhatsApp() {
-    const texto =
-      `🚚 Carga disponible: ${carga.titulo}\n` +
-      `${carga.origen} → ${carga.destino}\n` +
-      `${carga.toneladas} ton · ${formatCOP(carga.precio)}\n\n` +
-      `Publicada en Descargo & Cargo (piso SICE-TAC garantizado).\n` +
-      `https://descargoycargo.com/#cargas`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
-  }
-
   const desbloqueada = carga.desbloqueada || !!contacto;
 
   return (
@@ -252,7 +243,7 @@ export function TarjetaCarga({
         )}
         <button
           type="button"
-          onClick={compartirWhatsApp}
+          onClick={() => compartirCargaWhatsApp(carga)}
           aria-label={`Compartir "${carga.titulo}" por WhatsApp`}
           className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-suave transition hover:scale-105 hover:text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950"
         >
@@ -290,6 +281,10 @@ export function TarjetaCarga({
 
       <div className="mt-4">
         {carga.esMia ? (
+          <div className="space-y-2">
+          <Button onClick={() => compartirCargaWhatsApp(carga)} className="h-11 w-full gap-2 rounded-xl bg-emerald-600 font-semibold hover:bg-emerald-500">
+            <Share2 className="h-4 w-4" /> Enviar a mis transportadores por WhatsApp
+          </Button>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onEditar(carga)} className="flex-1 gap-1.5 border-zinc-300">
               <Pencil className="h-4 w-4" /> Editar
@@ -302,6 +297,7 @@ export function TarjetaCarga({
             >
               {cancelando ? 'Cancelando…' : 'Cancelar'}
             </Button>
+          </div>
           </div>
         ) : desbloqueada ? (
           <div className="relative overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50 p-3">

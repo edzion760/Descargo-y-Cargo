@@ -27,10 +27,39 @@ export default function AccionesProvider({ children }: { children: ReactNode }) 
   );
   const verContactos = contactosAbierto || (contactosPendiente && tipo === 'TRANSPORTADOR');
   const loginPedido = useRef(false);
+  // Enlace de invitación para publicadores (?publicar): abre el formulario;
+  // sin sesión, primero el registro de publicador.
+  const [publicarPendiente, setPublicarPendiente] = useState(() =>
+    new URLSearchParams(window.location.search).has('publicar')
+  );
+  const registroPedido = useRef(false);
+
 
   function abrirAuth(tab: 'login' | 'registro', tipoCuenta: Tipo) {
     setAuth({ abierto: true, tab, tipo: tipoCuenta });
   }
+
+  // Reacciona a la sesión restaurada o recién creada (evento externo); el ref
+  // evita reabrir el registro en bucle.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!publicarPendiente || cargando) return;
+    if (tipo === 'PUBLICADOR') {
+      window.history.replaceState({}, '', window.location.pathname);
+      setPublicarPendiente(false);
+      setPublicarAbierto(true);
+    } else if (tipo === 'TRANSPORTADOR') {
+      window.history.replaceState({}, '', window.location.pathname);
+      setPublicarPendiente(false);
+      toast.info('Tu cuenta es de transportador', {
+        description: 'Para publicar carga, ingresa con una cuenta de publicador.',
+      });
+    } else if (!registroPedido.current) {
+      registroPedido.current = true;
+      abrirAuth('registro', 'PUBLICADOR');
+    }
+  }, [publicarPendiente, tipo, cargando]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function misContactos() {
     if (tipo === 'TRANSPORTADOR') return setContactosAbierto(true);

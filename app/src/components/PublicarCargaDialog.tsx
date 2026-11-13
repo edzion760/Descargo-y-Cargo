@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { MapPin, Check, Loader2 } from 'lucide-react';
+import { MapPin, Check, Loader2, Share2 } from 'lucide-react';
 import RutaInputs from '@/components/RutaInputs';
 import {
   Dialog,
@@ -20,6 +20,9 @@ import {
 } from '@/components/ui/select';
 import { MULTIPLICADORES_TIPO_CARGA, CONFIGURACIONES_VEHICULO, formatCOP } from '@/data/mock';
 import { apiFetch, ApiError } from '@/lib/api';
+import { compartirCargaWhatsApp } from '@/lib/compartir';
+
+type CargaParaCompartir = Parameters<typeof compartirCargaWhatsApp>[0];
 import { useAuth } from '@/lib/use-auth';
 
 interface TarifaRuta {
@@ -45,7 +48,7 @@ export default function PublicarCargaDialog({
   const [toneladas, setToneladas] = useState(20);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
-  const [publicada, setPublicada] = useState(false);
+  const [publicada, setPublicada] = useState<CargaParaCompartir | null>(null);
 
   async function calcularRuta() {
     if (!origen.trim() || !destino.trim()) return;
@@ -84,7 +87,7 @@ export default function PublicarCargaDialog({
 
     setCargando(true);
     try {
-      await apiFetch('/api/cargas', {
+      const creada = await apiFetch<CargaParaCompartir>('/api/cargas', {
         method: 'POST',
         body: {
           titulo: String(form.get('titulo')),
@@ -99,7 +102,7 @@ export default function PublicarCargaDialog({
           vehiculoRequerido: String(form.get('vehiculoRequerido')),
         },
       });
-      setPublicada(true);
+      setPublicada(creada);
       onPublicada();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo publicar la carga');
@@ -110,7 +113,7 @@ export default function PublicarCargaDialog({
 
   function cerrar(open: boolean) {
     if (!open) {
-      setPublicada(false);
+      setPublicada(null);
       setOrigen('');
       setDestino('');
       setRuta(null);
@@ -127,9 +130,20 @@ export default function PublicarCargaDialog({
             <p className="mt-2 text-sm text-zinc-600">
               Ya aparece en el marketplace, sobre el piso SICE-TAC de {piso != null ? formatCOP(piso) : ''}.
             </p>
-            <Button className="mt-6 h-12 rounded-xl px-8 font-semibold" onClick={() => cerrar(false)}>
-              Listo
-            </Button>
+            <p className="mt-4 text-sm text-zinc-600">
+              ¿Tienes transportadores que ya te han cargado? Mándales el enlace de esta carga.
+            </p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <Button
+                className="h-12 gap-2 rounded-xl bg-emerald-600 px-6 font-semibold hover:bg-emerald-500"
+                onClick={() => compartirCargaWhatsApp(publicada)}
+              >
+                <Share2 className="h-4 w-4" /> Enviar por WhatsApp
+              </Button>
+              <Button variant="outline" className="h-12 rounded-xl px-8 font-semibold" onClick={() => cerrar(false)}>
+                Listo
+              </Button>
+            </div>
           </div>
         ) : (
           <>

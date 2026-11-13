@@ -265,9 +265,11 @@ cargasRouter.get('/:id', optionalAuth, async (req, res) => {
   const id = Number(req.params.id);
   const carga = await prisma.carga.findUnique({
     where: { id },
-    select: { ...cargaPublica, publicador: { select: { nombre: true, telefono: true } } },
+    select: { ...cargaPublica, publicador: { select: { nombre: true, telefono: true, usuarioId: true } } },
   });
   if (!carga) return res.status(404).json({ error: 'Carga no encontrada' });
+  // Al abrir el enlace compartido, el dueño ve sus botones (editar, reenviar).
+  const esMia = req.user?.tipo === 'PUBLICADOR' && carga.publicador.usuarioId === req.user.sub;
 
   let desbloqueada = false;
   if (req.user?.tipo === 'TRANSPORTADOR') {
@@ -278,8 +280,8 @@ cargasRouter.get('/:id', optionalAuth, async (req, res) => {
     desbloqueada = pago?.estado === 'VERIFICADO';
   }
 
-  const { publicador, ...resto } = carga;
-  res.json({ ...resto, desbloqueada, contacto: desbloqueada ? publicador : null });
+  const { publicador: { usuarioId: _usuarioId, ...publicador }, ...resto } = carga;
+  res.json({ ...resto, desbloqueada, esMia, contacto: desbloqueada ? publicador : null });
 });
 
 cargasRouter.post('/:id/desbloqueo', requireAuth, requireTipo('TRANSPORTADOR'), async (req, res) => {
