@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bike, Building2, Check, Loader2, Map, Plus, Search, Tractor, Truck, X } from 'lucide-react';
+import { Building2, Check, Loader2, Map, Plus, Search, Tractor, Truck, X } from 'lucide-react';
 import Navbar from '@/sections/Navbar';
 import { TarjetaCarga, type Carga } from '@/sections/Marketplace';
 import { sinTildes } from '@/lib/utils';
 import { useVerificarPagoWompi } from '@/lib/use-verificar-pago';
 import EditarCargaDialog from '@/components/EditarCargaDialog';
+import IconoMotocarguero from '@/components/IconoMotocarguero';
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { formatCOP, VEHICULO_MOTOCARGUERO } from '@/data/mock';
@@ -19,7 +20,7 @@ import { useAcciones } from '@/lib/use-acciones';
 const PESTANAS = [
   { valor: 'NACIONAL', etiqueta: 'Nacional', titulo: 'Ofertas a nivel nacional', icono: Map },
   { valor: 'URBANA', etiqueta: 'Urbana', titulo: 'Acarreos urbanos', icono: Building2 },
-  { valor: 'MOTOCARGUERO', etiqueta: 'Motos', titulo: 'Para motocargueros', icono: Bike },
+  { valor: 'MOTOCARGUERO', etiqueta: 'Carguero', titulo: 'Para motocargueros', icono: IconoMotocarguero },
   { valor: 'BARBACHA', etiqueta: 'Barbacha', titulo: 'Acarreos de barbacha', icono: Tractor },
 ] as const;
 

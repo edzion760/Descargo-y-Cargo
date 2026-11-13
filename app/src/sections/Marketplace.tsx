@@ -11,7 +11,6 @@ import {
   Route,
   Building2,
   Tractor,
-  Bike,
   X,
   PackageSearch,
   Loader2,
@@ -35,6 +34,7 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/use-auth';
 import { useAcciones } from '@/lib/use-acciones';
 import EditarCargaDialog from '@/components/EditarCargaDialog';
+import IconoMotocarguero from '@/components/IconoMotocarguero';
 import { sinTildes } from '@/lib/utils';
 import { useVerificarPagoWompi } from '@/lib/use-verificar-pago';
 
@@ -73,7 +73,7 @@ const CATEGORIAS = [
   { valor: 'URBANA', etiqueta: 'Urbana', icono: Building2 },
   { valor: 'BARBACHA', etiqueta: 'Barbacha', icono: Tractor },
   // No es un tipo de publicación: filtra por vehículo requerido.
-  { valor: 'MOTOCARGUERO', etiqueta: 'Motocargueros', icono: Bike },
+  { valor: 'MOTOCARGUERO', etiqueta: 'Motocargueros', icono: IconoMotocarguero },
 ] as const;
 
 const ETIQUETA_PUBLICACION: Record<Carga['tipoPublicacion'], string> = {
