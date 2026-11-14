@@ -1,6 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tarifaDesbloqueo, nombreCiudad, cargaSchema, pisoLegal } from './cargas.js';
+import { tarifaDesbloqueo, nombreCiudad, cargaSchema, pisoLegal, acarreoValido } from './cargas.js';
+
+test('acarreos (Urbana/Barbacha) hasta 60 km; nacional sin límite', () => {
+  assert.equal(acarreoValido('URBANA', 0), true); // misma ciudad
+  assert.equal(acarreoValido('BARBACHA', 45), true); // San Gil → Socorro
+  assert.equal(acarreoValido('URBANA', 60), true);
+  assert.equal(acarreoValido('URBANA', 61), false);
+  assert.equal(acarreoValido('BARBACHA', 690), false); // Cali → San Gil
+  assert.equal(acarreoValido('NACIONAL', 690), true);
+});
 
 const cargaBase = {
   titulo: 'Arroz',

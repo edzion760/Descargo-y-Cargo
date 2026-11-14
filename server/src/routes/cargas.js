@@ -165,6 +165,12 @@ export function pisoLegal(tarifaPorTon, toneladas, tipoCarga) {
   return Math.round(tarifaPorTon * toneladas * FACTOR_TIPO_CARGA[tipoCarga]);
 }
 
+// Urbana y Barbacha son acarreos cortos (p. ej. San Gil → Socorro, ~45 km):
+// más allá de 60 km por carretera es un viaje nacional y paga como tal.
+export const KM_MAX_ACARREO = 60;
+export const acarreoValido = (tipoPublicacion, km) => tipoPublicacion === 'NACIONAL' || km <= KM_MAX_ACARREO;
+const ERROR_ACARREO = `Los acarreos urbanos y de barbacha son de máximo ${KM_MAX_ACARREO} km. Para un recorrido más largo, publícala como Nacional.`;
+
 // El piso SICE-TAC no viene del navegador: si llega, zod lo descarta.
 export const cargaSchema = z.object({
   titulo: z.string().min(3),
@@ -191,6 +197,9 @@ cargasRouter.post('/', requireAuth, requireTipo('PUBLICADOR'), async (req, res) 
     return res.status(422).json({
       error: `No pudimos calcular la ruta ${d.origen} → ${d.destino}. Revisa los nombres de las ciudades e intenta de nuevo.`,
     });
+  }
+  if (!acarreoValido(d.tipoPublicacion, ruta.km)) {
+    return res.status(422).json({ error: ERROR_ACARREO });
   }
   const pisoSiceTac = pisoLegal(ruta.tarifaPorTon, d.toneladas, d.tipoCarga);
   if (d.precio < pisoSiceTac) {
@@ -228,6 +237,13 @@ cargasRouter.patch('/:id', requireAuth, requireTipo('PUBLICADOR'), async (req, r
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   if (parsed.data.precio < carga.pisoSiceTac) {
     return res.status(422).json({ error: 'El precio no puede estar por debajo del piso SICE-TAC' });
+  }
+  // Pasar a acarreo exige que la ruta guardada sea corta.
+  if (parsed.data.tipoPublicacion !== 'NACIONAL' && parsed.data.tipoPublicacion !== carga.tipoPublicacion) {
+    const km = await calcularTarifaRuta(carga.origen, carga.destino).then((r) => r.km).catch(() => null);
+    if (km == null || !acarreoValido(parsed.data.tipoPublicacion, km)) {
+      return res.status(422).json({ error: ERROR_ACARREO });
+    }
   }
 
   const actualizada = await prisma.carga.update({
