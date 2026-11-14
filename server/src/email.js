@@ -48,6 +48,11 @@ async function enviarCorreo({ para, asunto, html, responderA }) {
   }
 }
 
+// Todo dato escrito por usuarios (nombres, cargas, teléfonos...) pasa por aquí
+// antes de entrar al HTML del correo. Se aplica al inicio de cada plantilla.
+export const esc = (v) =>
+  String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
 // Cabecera y pie compartidos por todas las plantillas transaccionales --
 // mismo lenguaje visual que plantillaInvitacionProspecto (tabla+estilos en
 // línea a propósito, ver comentario más abajo), para que un correo de
@@ -99,7 +104,8 @@ function tipsPago(titulo) {
     </tr></table>`;
 }
 
-export function plantillaBienvenida({ nombre, tipo }) {
+export function plantillaBienvenida({ nombre: nombreUsuario, tipo }) {
+  const nombre = esc(nombreUsuario);
   const esPublicador = tipo === 'PUBLICADOR';
   const rol = esPublicador ? 'publicador de carga' : 'transportador';
   return `
@@ -119,7 +125,8 @@ export function plantillaBienvenida({ nombre, tipo }) {
   </div>`;
 }
 
-export function plantillaPagoConfirmado({ monto, carga }) {
+export function plantillaPagoConfirmado({ monto, carga: titulo }) {
+  const carga = esc(titulo);
   return `
   <div style="max-width:520px;margin:0 auto;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif">
     ${cabecera()}
@@ -149,7 +156,15 @@ export function plantillaPagoConfirmado({ monto, carga }) {
 // Aviso al publicador cuando un transportador paga el desbloqueo de su carga.
 // Solo nombre, ciudad y teléfono (nunca el documento). El transportador ve
 // antes de pagar que estos datos se le comparten (Marketplace.tsx).
-export function plantillaAvisoPublicador({ carga, transportador, pagoId }) {
+export function plantillaAvisoPublicador({ carga: titulo, transportador: t, pagoId: idPago }) {
+  const carga = esc(titulo);
+  const pagoId = Number(idPago);
+  const transportador = {
+    nombre: esc(t.nombre),
+    ciudad: esc(t.ciudad),
+    telefono: esc(t.telefono),
+    placa: esc(t.placa),
+  };
   return `
   <div style="max-width:520px;margin:0 auto;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif">
     ${cabecera()}
@@ -223,7 +238,9 @@ export function plantillaRecuperarPassword({ url }) {
 // motor de Word y ignora flexbox/grid, así que el layout "bonito" del
 // mockup (ver campana-email-muestra.html) se simplifica aquí para que
 // llegue igual en cualquier cliente.
-export function plantillaInvitacionProspecto({ nombre, id }) {
+export function plantillaInvitacionProspecto({ nombre: nombreEmpresa, id: idProspecto }) {
+  const nombre = esc(nombreEmpresa);
+  const id = Number(idProspecto);
   const bajaUrl = `https://descargoycargo.com/api/prospectos/baja?id=${id}`;
   const visitaUrl = `https://descargoycargo.com/api/prospectos/visita?id=${id}`;
   return `
@@ -288,7 +305,11 @@ export function plantillaInvitacionProspecto({ nombre, id }) {
 // Carta individual a un expositor cuyo QR/tarjeta escaneamos en una feria.
 // Se envía una sola vez, a mano desde el panel admin, con enlace de baja.
 // Sin cifras ni promesas que no podamos sostener: la plataforma está arrancando.
-export function plantillaCartaExpositor({ empresa, contacto, evento, id }) {
+export function plantillaCartaExpositor(datos) {
+  const empresa = esc(datos.empresa);
+  const contacto = datos.contacto ? esc(datos.contacto) : '';
+  const evento = esc(datos.evento);
+  const id = Number(datos.id);
   const bajaUrl = `https://descargoycargo.com/api/prospectos/baja?id=${id}`;
   const visitaUrl = `https://descargoycargo.com/api/prospectos/visita?id=${id}`;
   const saludo = contacto ? `Hola ${contacto}` : `Hola, equipo de ${empresa}`;

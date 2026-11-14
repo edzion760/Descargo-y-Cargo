@@ -56,3 +56,22 @@ test('carta a expositor: personalizada, con baja y sin promesas falsas', () => {
   assert.doesNotMatch(html, /400\+|está verificado|transportador verificado/);
   assert.match(plantillaCartaExpositor({ empresa: 'Café Santander', contacto: '', evento: 'Effix 2026', id: 1 }), /Hola, equipo de Café Santander/);
 });
+
+test('los datos de usuarios se escapan en el HTML del correo', () => {
+  const malicioso = '<a href="x">hola</a>';
+  const aviso = plantillaAvisoPublicador({
+    carga: malicioso,
+    transportador: { nombre: malicioso, ciudad: 'Cali', telefono: '3001234567"><b', placa: 'ABC123' },
+    pagoId: 7,
+  });
+  assert.match(aviso, /&lt;a href=&quot;x&quot;&gt;hola&lt;\/a&gt;/);
+  assert.doesNotMatch(aviso, /<a href="x">/);
+  assert.doesNotMatch(aviso, /"><b/);
+  assert.doesNotMatch(plantillaBienvenida({ nombre: malicioso, tipo: 'PUBLICADOR' }), /<a href="x">/);
+  assert.doesNotMatch(
+    plantillaCartaExpositor({ empresa: malicioso, contacto: malicioso, evento: malicioso, id: 1 }),
+    /<a href="x">/
+  );
+  assert.doesNotMatch(plantillaInvitacionProspecto({ nombre: malicioso, id: 1 }), /<a href="x">/);
+  assert.doesNotMatch(plantillaPagoConfirmado({ monto: 5000, carga: malicioso }), /<a href="x">/);
+});
