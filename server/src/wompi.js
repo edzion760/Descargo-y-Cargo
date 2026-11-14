@@ -28,14 +28,21 @@ export function urlCheckout({ referencia, montoEnCentavos, redirectUrl }) {
 
 // Valida el checksum que Wompi manda en cada webhook (evento "transaction.updated").
 export function checksumValido(body) {
-  const { signature, timestamp, data } = body;
-  if (!signature?.checksum || !signature?.properties) return false;
+  const secreto = process.env.WOMPI_EVENTS_SECRET;
+  const { signature, timestamp, data } = body ?? {};
+  if (!secreto || typeof signature?.checksum !== 'string') return false;
+  const { properties } = signature;
+  if (!Array.isArray(properties) || !properties.every((p) => typeof p === 'string')) return false;
 
-  const valores = signature.properties.map((ruta) => {
-    // ruta tipo "transaction.id" -> data.transaction.id
-    return ruta.split('.').reduce((obj, key) => obj?.[key], data);
-  });
+  // ruta tipo "transaction.id" -> data.transaction.id
+  const valores = properties.map((ruta) => ruta.split('.').reduce((obj, key) => obj?.[key], data));
 
-  const esperado = sha256(`${valores.join('')}${timestamp}${process.env.WOMPI_EVENTS_SECRET}`);
-  return esperado === signature.checksum;
+  const esperado = Buffer.from(sha256(`${valores.join('')}${timestamp}${secreto}`));
+  const recibido = Buffer.from(signature.checksum);
+  return esperado.length === recibido.length && crypto.timingSafeEqual(esperado, recibido);
+}
+
+// Antes de dar un pago por bueno: Wompi cobró exactamente lo que pedimos, en pesos.
+export function montoCoincide(transaccion, montoPesos) {
+  return transaccion?.amount_in_cents === montoPesos * 100 && transaccion?.currency === 'COP';
 }

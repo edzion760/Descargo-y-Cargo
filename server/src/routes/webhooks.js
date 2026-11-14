@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { Router } from 'express';
 import { prisma } from '../db.js';
-import { checksumValido } from '../wompi.js';
+import { checksumValido, montoCoincide } from '../wompi.js';
 import { enviarAvisoPublicador, enviarPagoConfirmado } from '../email.js';
 import { avisarPublicador, usarCreditoAcarreo } from './cargas.js';
 
@@ -83,6 +83,10 @@ webhooksRouter.post('/wompi', async (req, res) => {
     include: { transportador: { include: { usuario: true } } },
   });
   if (compra) {
+    if (estado === 'VERIFICADO' && !montoCoincide(transaccion, compra.monto)) {
+      console.error('Wompi: monto o moneda no coinciden con el paquete', compra.referencia);
+      return res.status(200).json({ ok: true });
+    }
     await acreditarPaquete(compra, estado);
     return res.status(200).json({ ok: true });
   }
@@ -96,11 +100,19 @@ webhooksRouter.post('/wompi', async (req, res) => {
   });
   if (!pago) return res.status(200).json({ ok: true });
 
-  const yaEstabaVerificado = pago.estado === 'VERIFICADO';
-  await prisma.pagoDesbloqueo.update({ where: { id: pago.id }, data: { estado } });
+  if (estado === 'VERIFICADO' && !montoCoincide(transaccion, pago.monto)) {
+    console.error('Wompi: monto o moneda no coinciden con el desbloqueo', pago.referencia);
+    return res.status(200).json({ ok: true });
+  }
 
-  // Wompi puede reintentar el mismo webhook -- solo se envía una vez por pago.
-  if (estado === 'VERIFICADO' && !yaEstabaVerificado) {
+  // Un pago ya verificado no vuelve atrás (un DECLINED tardío no lo degrada),
+  // y Wompi puede reintentar el mismo webhook: los correos salen una sola vez.
+  const { count } = await prisma.pagoDesbloqueo.updateMany({
+    where: { id: pago.id, estado: { not: 'VERIFICADO' } },
+    data: { estado },
+  });
+
+  if (count === 1 && estado === 'VERIFICADO') {
     await enviarPagoConfirmado(pago.transportador.usuario.email, {
       monto: pago.monto,
       carga: pago.carga.titulo,

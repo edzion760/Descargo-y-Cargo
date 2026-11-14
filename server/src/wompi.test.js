@@ -6,7 +6,7 @@ process.env.WOMPI_INTEGRITY_SECRET = 'test_integrity_secret';
 process.env.WOMPI_EVENTS_SECRET = 'test_events_secret';
 process.env.WOMPI_PUBLIC_KEY = 'pub_test_123';
 
-const { firmarTransaccion, checksumValido, urlCheckout } = await import('./wompi.js');
+const { firmarTransaccion, checksumValido, urlCheckout, montoCoincide } = await import('./wompi.js');
 
 test('firma de integridad sigue la fórmula de Wompi: referencia+monto+moneda+secreto', () => {
   const esperado = crypto
@@ -45,4 +45,23 @@ test('checksumValido rechaza un checksum manipulado', () => {
     signature: { properties: ['transaction.id', 'transaction.status'], checksum: 'no-coincide' },
   };
   assert.equal(checksumValido(body), false);
+});
+
+test('checksumValido no revienta con properties raras ni sin secreto', () => {
+  const base = { timestamp: 1, data: { transaction: { id: 'tx-1' } } };
+  assert.equal(checksumValido({ ...base, signature: { properties: 'transaction.id', checksum: 'x' } }), false);
+  assert.equal(checksumValido({ ...base, signature: { properties: [1, 2], checksum: 'x' } }), false);
+  assert.equal(checksumValido(undefined), false);
+  const secreto = process.env.WOMPI_EVENTS_SECRET;
+  delete process.env.WOMPI_EVENTS_SECRET;
+  const checksum = crypto.createHash('sha256').update('tx-11undefined').digest('hex');
+  assert.equal(checksumValido({ ...base, signature: { properties: ['transaction.id'], checksum } }), false);
+  process.env.WOMPI_EVENTS_SECRET = secreto;
+});
+
+test('un pago solo se verifica si el monto y la moneda coinciden', () => {
+  assert.equal(montoCoincide({ amount_in_cents: 1500000, currency: 'COP' }, 15000), true);
+  assert.equal(montoCoincide({ amount_in_cents: 150000, currency: 'COP' }, 15000), false);
+  assert.equal(montoCoincide({ amount_in_cents: 1500000, currency: 'USD' }, 15000), false);
+  assert.equal(montoCoincide(undefined, 15000), false);
 });
