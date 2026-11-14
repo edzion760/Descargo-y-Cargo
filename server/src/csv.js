@@ -3,7 +3,10 @@
 // salen dañadas). Sin librería de xlsx: no hace falta.
 export function csv(columnas, filas) {
   const celda = (v) => {
-    const t = v == null ? '' : v instanceof Date ? v.toISOString().slice(0, 16).replace('T', ' ') : String(v);
+    let t = v == null ? '' : v instanceof Date ? v.toISOString().slice(0, 16).replace('T', ' ') : String(v);
+    // Un texto que empieza por = + - @ Excel lo ejecuta como fórmula: se
+    // antepone ' para que quede como texto. Los números no se tocan.
+    if (typeof v === 'string' && /^[=+\-@\t\r]/.test(t)) t = `'${t}`;
     return /[";\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
   };
   return '﻿' + [columnas, ...filas].map((fila) => fila.map(celda).join(';')).join('\r\n');
