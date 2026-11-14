@@ -1,4 +1,5 @@
 import MapaColombia from '@/components/MapaColombia';
+import NoticiaEnVivo from '@/components/NoticiaEnVivo';
 import PanelCargas from '@/components/PanelCargas';
 
 // Primera pantalla de la web: las ofertas (igual que en la app) a la izquierda,
@@ -13,6 +14,9 @@ export default function PortadaCargas() {
         </div>
         <div className="relative z-10 hidden min-w-0 animate-aparecer [animation-delay:120ms] lg:block">
           <MapaColombia className="h-[560px]" />
+          <div className="absolute inset-x-4 top-14 z-10">
+            <NoticiaEnVivo className="shadow-suave" />
+          </div>
           <div className="absolute -bottom-5 left-6 z-10 w-72 rounded-2xl bg-white p-4 shadow-elevada">
             <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Cobertura</p>
             <p className="mt-1 text-sm font-semibold text-zinc-950">32 departamentos · 1.122 municipios</p>

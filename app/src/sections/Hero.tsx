@@ -1,19 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import NoticiaEnVivo from '@/components/NoticiaEnVivo';
 import RutaInputs from '@/components/RutaInputs';
-import { useNoticiasVia } from '@/lib/use-noticias';
 import { useAcciones } from '@/lib/use-acciones';
 
 type Modo = 'carga' | 'transporte';
-
-const TIPO_NOTICIA: Record<string, string> = {
-  ACCIDENTE: 'Accidente',
-  CIERRE_VIA: 'Cierre de vía',
-  VIA_LIBRE: 'Vía libre',
-  CONDICION_CLIMA: 'Clima',
-  INFO: 'Vías',
-};
 
 // Solo datos que se pueden sostener: publicar sí es gratis, el piso legal sí
 // se exige en el backend (422 si el precio queda por debajo), y las alertas
@@ -35,17 +27,7 @@ export default function Hero({
   const [modo, setModo] = useState<Modo>('carga');
   const [origen, setOrigen] = useState('');
   const [destino, setDestino] = useState('');
-  const [indiceNoticia, setIndiceNoticia] = useState(0);
-  const noticias = useNoticiasVia();
   const { publicar, soyTransportador } = useAcciones();
-
-  useEffect(() => {
-    if (noticias.length < 2) return;
-    const t = setInterval(() => setIndiceNoticia((i) => (i + 1) % noticias.length), 5000);
-    return () => clearInterval(t);
-  }, [noticias.length]);
-
-  const noticia = noticias[indiceNoticia];
 
   function enviar(e: FormEvent) {
     e.preventDefault();
@@ -59,26 +41,8 @@ export default function Hero({
         {/* min-w-0: sin esto, un titular largo en el chip "En vivo" (con
             truncate/nowrap) ensancha la columna del grid y aplasta el mapa. */}
         <div className="min-w-0 animate-aparecer">
-          {noticia && (
-            <a
-              href={noticia.url}
-              target="_blank"
-              rel="noopener"
-              key={noticia.id}
-              className="group mb-6 inline-flex max-w-full items-center gap-2.5 rounded-full bg-zinc-100 py-1.5 pl-1.5 pr-4 text-sm transition-colors hover:bg-zinc-200"
-            >
-              <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-zinc-950 shadow-xs">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-60" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-                </span>
-                En vivo
-              </span>
-              <span className="truncate text-zinc-700">
-                <span className="font-semibold text-zinc-950">{TIPO_NOTICIA[noticia.tipo]}:</span> {noticia.titulo}
-              </span>
-            </a>
-          )}
+          {/* En computador la noticia va dentro del mapa (PortadaCargas). */}
+          <NoticiaEnVivo className="mb-6 lg:hidden" />
 
           <h1 className="text-[2.75rem] font-extrabold leading-[1.02] text-zinc-950 sm:text-6xl lg:text-[4.25rem]">
             Mueve tu carga por Colombia
