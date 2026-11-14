@@ -6,13 +6,15 @@
 // ponytail: si un correo falla, se registra y se sigue -- nunca debe
 // bloquear un registro o un pago porque el envío de correo falló.
 
+import { urlBaja, urlVisita } from './enlacesProspecto.js';
+
 const REMITENTE = 'Descargo & Cargo <notificaciones@descargoycargo.com>';
 
 // Devuelve si el envío realmente se entregó a Resend (2xx). Los llamadores
 // transaccionales (registro, pago) ignoran el valor a propósito -- un correo
 // caído nunca debe bloquear esos flujos. La campaña de prospectos sí lo usa:
 // necesita saber qué marcar como contactado de verdad.
-async function enviarCorreo({ para, asunto, html, responderA }) {
+async function enviarCorreo({ para, asunto, html, responderA, encabezados }) {
   if (!process.env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY no configurada -- correo no enviado:', asunto);
     return false;
@@ -31,6 +33,7 @@ async function enviarCorreo({ para, asunto, html, responderA }) {
         // notificaciones@ no tiene buzón: si el correo invita a responder,
         // la respuesta debe llegar al correo de la empresa.
         ...(responderA ? { reply_to: responderA } : {}),
+        ...(encabezados ? { headers: encabezados } : {}),
         // Sin el <meta charset> algunos clientes (Gmail app) asumen Latin-1
         // y las tildes/ñ llegan como "�". El fragmento de cada plantilla
         // solo trae el <div>; aquí se envuelve en un documento completo.
@@ -241,8 +244,8 @@ export function plantillaRecuperarPassword({ url }) {
 export function plantillaInvitacionProspecto({ nombre: nombreEmpresa, id: idProspecto }) {
   const nombre = esc(nombreEmpresa);
   const id = Number(idProspecto);
-  const bajaUrl = `https://descargoycargo.com/api/prospectos/baja?id=${id}`;
-  const visitaUrl = `https://descargoycargo.com/api/prospectos/visita?id=${id}`;
+  const bajaUrl = urlBaja(id);
+  const visitaUrl = urlVisita(id);
   return `
   <div style="max-width:520px;margin:0 auto;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif">
     ${cabecera()}
@@ -310,8 +313,8 @@ export function plantillaCartaExpositor(datos) {
   const contacto = datos.contacto ? esc(datos.contacto) : '';
   const evento = esc(datos.evento);
   const id = Number(datos.id);
-  const bajaUrl = `https://descargoycargo.com/api/prospectos/baja?id=${id}`;
-  const visitaUrl = `https://descargoycargo.com/api/prospectos/visita?id=${id}`;
+  const bajaUrl = urlBaja(id);
+  const visitaUrl = urlVisita(id);
   const saludo = contacto ? `Hola ${contacto}` : `Hola, equipo de ${empresa}`;
   const paso = (n, titulo, texto) => `
     <tr><td style="width:30px;vertical-align:top;padding:0 0 14px"><span style="display:inline-block;width:22px;height:22px;line-height:22px;border-radius:11px;background:#f97316;color:#09090b;font-size:12px;font-weight:bold;text-align:center">${n}</span></td>
@@ -352,12 +355,19 @@ export function plantillaCartaExpositor(datos) {
   </div>`;
 }
 
+// Botón "Cancelar suscripción" de Gmail/Outlook: hace POST a la misma URL de baja.
+const bajaEnUnClic = (id) => ({
+  'List-Unsubscribe': `<${urlBaja(Number(id))}>`,
+  'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+});
+
 export function enviarCartaExpositor(para, datos) {
   return enviarCorreo({
     para,
     asunto: `${datos.empresa}: así funciona Descargo & Cargo (nos vimos en ${datos.evento})`,
     html: plantillaCartaExpositor(datos),
     responderA: 'descargoycargo@gmail.com',
+    encabezados: bajaEnUnClic(datos.id),
   });
 }
 
@@ -366,6 +376,7 @@ export function enviarInvitacionProspecto(para, datos) {
     para,
     asunto: `${datos.nombre}, publiquen su carga gratis y sepan con quién la mueven`,
     html: plantillaInvitacionProspecto(datos),
+    encabezados: bajaEnUnClic(datos.id),
   });
 }
 
