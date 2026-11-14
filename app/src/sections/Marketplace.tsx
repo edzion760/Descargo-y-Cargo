@@ -495,7 +495,8 @@ export default function Marketplace({
     return () => window.removeEventListener('cargas:publicada', cargar);
   }, [cargar]);
 
-  const verificandoPago = useVerificarPagoWompi(cargar);
+  // Por evento y no cargar(): así también se refresca el panel de la portada.
+  const verificandoPago = useVerificarPagoWompi(() => window.dispatchEvent(new Event('cargas:publicada')));
 
   const visibles = useMemo(() => {
     if (!busqueda) return cargas;

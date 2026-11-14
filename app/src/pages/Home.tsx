@@ -2,6 +2,7 @@ import { useState } from 'react';
 import AccionesProvider from '@/components/AccionesProvider';
 import Navbar from '@/sections/Navbar';
 import Hero from '@/sections/Hero';
+import PortadaCargas from '@/sections/PortadaCargas';
 import Marketplace, { type Busqueda } from '@/sections/Marketplace';
 import ParaQuien from '@/sections/ParaQuien';
 import Calculadora, { type Consulta } from '@/sections/Calculadora';
@@ -65,6 +66,7 @@ export default function Home() {
         </a>
         <Navbar />
         <main>
+          <PortadaCargas />
           <Hero
             onCotizar={(origen, destino) => {
               setConsulta({ origen, destino, n: Date.now() });

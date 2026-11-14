@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import MapaColombia from '@/components/MapaColombia';
 import RutaInputs from '@/components/RutaInputs';
 import { useNoticiasVia } from '@/lib/use-noticias';
 import { useAcciones } from '@/lib/use-acciones';
@@ -56,7 +55,7 @@ export default function Hero({
 
   return (
     <section className="relative bg-white">
-      <div className="mx-auto grid grid-cols-1 max-w-7xl items-center gap-10 px-4 pb-14 pt-6 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:gap-14 lg:pb-20 lg:pt-12">
+      <div className="mx-auto max-w-7xl px-4 pb-14 pt-10 sm:px-6 lg:pb-20 lg:pt-16">
         {/* min-w-0: sin esto, un titular largo en el chip "En vivo" (con
             truncate/nowrap) ensancha la columna del grid y aplasta el mapa. */}
         <div className="min-w-0 animate-aparecer">
@@ -148,14 +147,6 @@ export default function Hero({
           </ul>
         </div>
 
-        <div className="relative min-w-0 animate-aparecer [animation-delay:120ms]">
-          <MapaColombia className="h-[340px] sm:h-[440px] lg:h-[560px]" />
-          <div className="absolute -bottom-5 left-4 right-4 hidden rounded-2xl bg-white p-4 shadow-elevada sm:left-6 sm:right-auto sm:block sm:w-72">
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Cobertura</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-950">32 departamentos · 1.122 municipios</p>
-            <p className="mt-0.5 text-xs text-zinc-500">Calcula ruta y piso legal entre cualquier par de ciudades.</p>
-          </div>
-        </div>
       </div>
 
       {/* gap-px sobre fondo gris = líneas divisorias exactas en 2 o 4 columnas. */}
