@@ -96,7 +96,7 @@ export default function PublicarCargaDialog({
           destino: destino.trim(),
           toneladas,
           precio,
-          pisoSiceTac: piso,
+          // El piso lo calcula el servidor; aquí solo se muestra como referencia.
           fechaCarga: String(form.get('fechaCarga')),
           tipoPublicacion: String(form.get('tipoPublicacion')),
           vehiculoRequerido: String(form.get('vehiculoRequerido')),

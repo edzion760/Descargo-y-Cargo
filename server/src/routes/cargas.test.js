@@ -1,6 +1,35 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tarifaDesbloqueo, nombreCiudad } from './cargas.js';
+import { tarifaDesbloqueo, nombreCiudad, cargaSchema, pisoLegal } from './cargas.js';
+
+const cargaBase = {
+  titulo: 'Arroz',
+  tipoCarga: 'Carga Normal',
+  origen: 'Cali',
+  destino: 'San Gil',
+  toneladas: 10,
+  precio: 1000,
+  fechaCarga: '2026-12-01',
+  tipoPublicacion: 'NACIONAL',
+  vehiculoRequerido: 'Tractomula',
+};
+
+test('el piso SICE-TAC enviado por el navegador se descarta', () => {
+  const d = cargaSchema.parse({ ...cargaBase, pisoSiceTac: 1 });
+  assert.equal('pisoSiceTac' in d, false);
+});
+
+test('piso legal: tarifa x toneladas x recargo, redondeado como el formulario', () => {
+  assert.equal(pisoLegal(145000, 10, 'Carga Normal'), 1450000);
+  assert.equal(pisoLegal(145000, 10, 'Refrigerada'), 1595000);
+  assert.equal(pisoLegal(106000, 2.5, 'Carga Peligrosa'), 318000);
+  // un precio de 1.000 queda muy por debajo: el POST responde 422
+  assert.ok(cargaBase.precio < pisoLegal(145000, cargaBase.toneladas, cargaBase.tipoCarga));
+});
+
+test('tipo de carga desconocido no pasa (sin recargo no hay piso)', () => {
+  assert.equal(cargaSchema.safeParse({ ...cargaBase, tipoCarga: 'Inventado' }).success, false);
+});
 
 test('nombre de ciudad con mayúsculas uniformes', () => {
   assert.equal(nombreCiudad('San gil'), 'San Gil');

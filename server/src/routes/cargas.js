@@ -6,6 +6,7 @@ import { urlCheckout } from '../wompi.js';
 import { enviarAvisoPublicador } from '../email.js';
 import { placaSchema } from './auth.js';
 import { ubicarCiudad } from '../clima.js';
+import { calcularTarifaRuta } from '../geo.js';
 
 export const cargasRouter = Router();
 
@@ -147,14 +148,31 @@ export function nombreCiudad(texto) {
     .join(' ');
 }
 
-const cargaSchema = z.object({
+// Recargo por tipo de carga: los mismos factores de app/src/data/mock.ts
+// (MULTIPLICADORES_TIPO_CARGA). El formulario envía la etiqueta.
+export const FACTOR_TIPO_CARGA = {
+  'Carga Normal': 1.0,
+  Refrigerada: 1.1,
+  'Carga Peligrosa': 1.2,
+  Semovientes: 1.15,
+  'Carga Extrapesada': 1.25,
+  'Carga Extradimensionada': 1.3,
+  'Desechos Peligrosos': 1.3,
+};
+
+// Misma fórmula que muestra el formulario, para que el número coincida.
+export function pisoLegal(tarifaPorTon, toneladas, tipoCarga) {
+  return Math.round(tarifaPorTon * toneladas * FACTOR_TIPO_CARGA[tipoCarga]);
+}
+
+// El piso SICE-TAC no viene del navegador: si llega, zod lo descarta.
+export const cargaSchema = z.object({
   titulo: z.string().min(3),
-  tipoCarga: z.string().min(2),
+  tipoCarga: z.enum(Object.keys(FACTOR_TIPO_CARGA)),
   origen: z.string().min(2).transform(nombreCiudad),
   destino: z.string().min(2).transform(nombreCiudad),
   toneladas: z.number().positive(),
   precio: z.number().int().positive(),
-  pisoSiceTac: z.number().int().positive(),
   fechaCarga: z.string().datetime().or(z.string().min(8)),
   tipoPublicacion: z.enum(['NACIONAL', 'URBANA', 'BARBACHA']),
   vehiculoRequerido: z.string().min(2),
@@ -163,14 +181,25 @@ const cargaSchema = z.object({
 cargasRouter.post('/', requireAuth, requireTipo('PUBLICADOR'), async (req, res) => {
   const parsed = cargaSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  const d = parsed.data;
 
-  const publicador = await prisma.publicador.findUnique({ where: { usuarioId: req.user.sub } });
-  if (parsed.data.precio < parsed.data.pisoSiceTac) {
+  let ruta;
+  try {
+    ruta = await calcularTarifaRuta(d.origen, d.destino);
+  } catch (err) {
+    console.error('Piso SICE-TAC al publicar:', err.message);
+    return res.status(422).json({
+      error: `No pudimos calcular la ruta ${d.origen} → ${d.destino}. Revisa los nombres de las ciudades e intenta de nuevo.`,
+    });
+  }
+  const pisoSiceTac = pisoLegal(ruta.tarifaPorTon, d.toneladas, d.tipoCarga);
+  if (d.precio < pisoSiceTac) {
     return res.status(422).json({ error: 'El precio no puede estar por debajo del piso SICE-TAC' });
   }
 
+  const publicador = await prisma.publicador.findUnique({ where: { usuarioId: req.user.sub } });
   const carga = await prisma.carga.create({
-    data: { ...parsed.data, fechaCarga: new Date(parsed.data.fechaCarga), publicadorId: publicador.id },
+    data: { ...d, pisoSiceTac, fechaCarga: new Date(d.fechaCarga), publicadorId: publicador.id },
   });
   res.status(201).json(carga);
 });
