@@ -1,6 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tarifaDesbloqueo, nombreCiudad, cargaSchema, pisoLegal, acarreoValido } from './cargas.js';
+import { tarifaDesbloqueo, nombreCiudad, cargaSchema, pisoLegal, acarreoValido, pisoExigible } from './cargas.js';
+
+test('los acarreos no tienen piso: el precio lo negocian las partes', () => {
+  assert.equal(pisoExigible('NACIONAL', 1450000), 1450000);
+  assert.equal(pisoExigible('URBANA', 106000), 0);
+  assert.equal(pisoExigible('BARBACHA', 106000), 0);
+  // un acarreo de $15.000 pasa; la misma carga como nacional no
+  assert.ok(15000 >= pisoExigible('URBANA', pisoLegal(106000, 1, 'Carga Normal')));
+  assert.ok(15000 < pisoExigible('NACIONAL', pisoLegal(106000, 1, 'Carga Normal')));
+});
 
 test('acarreos (Urbana/Barbacha) hasta 60 km; nacional sin límite', () => {
   assert.equal(acarreoValido('URBANA', 0), true); // misma ciudad

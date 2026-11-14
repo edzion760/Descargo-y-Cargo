@@ -273,10 +273,14 @@ export function TarjetaCarga({
         <p className="pt-2 text-[15px] text-zinc-950">
           <span className="font-bold">{formatCOP(carga.precio)}</span> <span className="text-zinc-500">flete ofrecido</span>
         </p>
-        <p className="flex items-center gap-1 text-xs font-medium text-emerald-700">
-          <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-          {formatCOP(sobrePiso)} sobre el piso legal de {formatCOP(carga.pisoSiceTac)}
-        </p>
+        {acarreo ? (
+          <p className="text-xs font-medium text-zinc-600">Precio negociable entre las partes</p>
+        ) : (
+          <p className="flex items-center gap-1 text-xs font-medium text-emerald-700">
+            <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+            {formatCOP(sobrePiso)} sobre el piso legal de {formatCOP(carga.pisoSiceTac)}
+          </p>
+        )}
       </div>
 
       <div className="mt-4">

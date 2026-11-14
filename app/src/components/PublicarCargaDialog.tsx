@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MULTIPLICADORES_TIPO_CARGA, CONFIGURACIONES_VEHICULO, formatCOP } from '@/data/mock';
+import { MULTIPLICADORES_TIPO_CARGA, CONFIGURACIONES_VEHICULO, esAcarreo, formatCOP } from '@/data/mock';
 import { apiFetch, ApiError } from '@/lib/api';
 import { compartirCargaWhatsApp } from '@/lib/compartir';
 
@@ -46,6 +46,9 @@ export default function PublicarCargaDialog({
   const [cargandoRuta, setCargandoRuta] = useState(false);
   const [tipoCarga, setTipoCarga] = useState<string>('normal');
   const [toneladas, setToneladas] = useState(20);
+  const [tipoPublicacion, setTipoPublicacion] = useState('NACIONAL');
+  // Acarreos (Urbana, Barbacha): sin piso SICE-TAC, precio negociable.
+  const acarreo = esAcarreo(tipoPublicacion);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [publicada, setPublicada] = useState<CargaParaCompartir | null>(null);
@@ -68,19 +71,19 @@ export default function PublicarCargaDialog({
   }
 
   const piso = useMemo(() => {
-    if (!ruta) return null;
+    if (!ruta || acarreo) return null;
     const factor = MULTIPLICADORES_TIPO_CARGA.find((t) => t.id === tipoCarga)?.factor ?? 1;
     return Math.round(ruta.tarifaPorTon * toneladas * factor);
-  }, [ruta, tipoCarga, toneladas]);
+  }, [ruta, tipoCarga, toneladas, acarreo]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!autenticado || piso == null) return;
+    if (!autenticado || (!acarreo && piso == null)) return;
     setError(null);
 
     const form = new FormData(e.currentTarget);
     const precio = Number(form.get('precio'));
-    if (precio < piso) {
+    if (piso != null && precio < piso) {
       setError(`El precio no puede ser menor al piso SICE-TAC: ${formatCOP(piso)}`);
       return;
     }
@@ -98,7 +101,7 @@ export default function PublicarCargaDialog({
           precio,
           // El piso lo calcula el servidor; aquí solo se muestra como referencia.
           fechaCarga: String(form.get('fechaCarga')),
-          tipoPublicacion: String(form.get('tipoPublicacion')),
+          tipoPublicacion,
           vehiculoRequerido: String(form.get('vehiculoRequerido')),
         },
       });
@@ -128,7 +131,9 @@ export default function PublicarCargaDialog({
           <div className="py-6 text-center">
             <p className="text-2xl font-extrabold tracking-tight text-zinc-950">¡Carga publicada!</p>
             <p className="mt-2 text-sm text-zinc-600">
-              Ya aparece en el marketplace, sobre el piso SICE-TAC de {piso != null ? formatCOP(piso) : ''}.
+              {piso != null
+                ? `Ya aparece en el marketplace, sobre el piso SICE-TAC de ${formatCOP(piso)}.`
+                : 'Ya aparece en el marketplace. El precio queda negociable con el transportador.'}
             </p>
             <p className="mt-4 text-sm text-zinc-600">
               ¿Tienes transportadores que ya te han cargado? Mándales el enlace de esta carga.
@@ -150,7 +155,7 @@ export default function PublicarCargaDialog({
             <DialogHeader>
               <DialogTitle className="text-2xl font-extrabold tracking-tight text-zinc-950">Publicar carga</DialogTitle>
               <DialogDescription className="text-zinc-500">
-                Gratis. Nunca podrás publicar por debajo del piso legal SICE-TAC.
+                Gratis. Las cargas nacionales nunca quedan por debajo del piso legal SICE-TAC.
               </DialogDescription>
             </DialogHeader>
 
@@ -215,7 +220,7 @@ export default function PublicarCargaDialog({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="carga-tipo-publicacion" className="text-zinc-700">Tipo de publicación</Label>
-                  <Select name="tipoPublicacion" defaultValue="NACIONAL">
+                  <Select value={tipoPublicacion} onValueChange={setTipoPublicacion}>
                     <SelectTrigger id="carga-tipo-publicacion" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
@@ -248,26 +253,32 @@ export default function PublicarCargaDialog({
 
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                  <Label htmlFor="carga-precio" className="text-zinc-700">Flete ofrecido (COP)</Label>
-                  {piso != null && <span className="text-xs font-medium text-zinc-500">Piso SICE-TAC: {formatCOP(piso)}</span>}
+                  <Label htmlFor="carga-precio" className="text-zinc-700">
+                    {acarreo ? 'Precio del acarreo (COP)' : 'Flete ofrecido (COP)'}
+                  </Label>
+                  {acarreo ? (
+                    <span className="text-xs font-medium text-zinc-500">Sin piso SICE-TAC · negociable</span>
+                  ) : (
+                    piso != null && <span className="text-xs font-medium text-zinc-500">Piso SICE-TAC: {formatCOP(piso)}</span>
+                  )}
                 </div>
                 <Input
-                  key={piso ?? 'sin-piso'}
+                  key={acarreo ? 'acarreo' : (piso ?? 'sin-piso')}
                   id="carga-precio"
                   name="precio"
                   type="number"
-                  min={piso ?? 0}
+                  min={acarreo ? 1 : (piso ?? 0)}
                   required
-                  disabled={piso == null}
-                  defaultValue={piso ?? ''}
-                  placeholder={piso == null ? 'Calcula la ruta primero' : undefined}
+                  disabled={!acarreo && piso == null}
+                  defaultValue={acarreo ? '' : (piso ?? '')}
+                  placeholder={acarreo ? 'Ej. 50000' : piso == null ? 'Calcula la ruta primero' : undefined}
                   className="disabled:bg-zinc-50"
                 />
               </div>
 
               {error && <p className="text-sm text-red-600">{error}</p>}
 
-              <Button type="submit" disabled={cargando || piso == null} className="h-12 w-full rounded-xl text-[15px] font-semibold">
+              <Button type="submit" disabled={cargando || (!acarreo && piso == null)} className="h-12 w-full rounded-xl text-[15px] font-semibold">
                 {cargando ? 'Publicando…' : 'Publicar carga gratis'}
               </Button>
             </form>

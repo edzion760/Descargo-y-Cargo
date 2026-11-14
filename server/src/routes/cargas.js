@@ -162,8 +162,13 @@ export const FACTOR_TIPO_CARGA = {
 
 // Misma fórmula que muestra el formulario, para que el número coincida.
 export function pisoLegal(tarifaPorTon, toneladas, tipoCarga) {
-  return Math.round(tarifaPorTon * toneladas * FACTOR_TIPO_CARGA[tipoCarga]);
+  return Math.round(tarifaPorTon * toneladas * (FACTOR_TIPO_CARGA[tipoCarga] ?? 1));
 }
+
+// El piso SICE-TAC aplica solo a cargas nacionales. En los acarreos (Urbana,
+// Barbacha) el publicador pone el precio y lo negocia con el transportador:
+// se guarda 0. También vale para acarreos viejos que guardaron un piso.
+export const pisoExigible = (tipoPublicacion, piso) => (tipoPublicacion === 'NACIONAL' ? piso : 0);
 
 // Urbana y Barbacha son acarreos cortos (p. ej. San Gil → Socorro, ~45 km):
 // más allá de 60 km por carretera es un viaje nacional y paga como tal.
@@ -201,7 +206,7 @@ cargasRouter.post('/', requireAuth, requireTipo('PUBLICADOR'), async (req, res) 
   if (!acarreoValido(d.tipoPublicacion, ruta.km)) {
     return res.status(422).json({ error: ERROR_ACARREO });
   }
-  const pisoSiceTac = pisoLegal(ruta.tarifaPorTon, d.toneladas, d.tipoCarga);
+  const pisoSiceTac = pisoExigible(d.tipoPublicacion, pisoLegal(ruta.tarifaPorTon, d.toneladas, d.tipoCarga));
   if (d.precio < pisoSiceTac) {
     return res.status(422).json({ error: 'El precio no puede estar por debajo del piso SICE-TAC' });
   }
@@ -235,20 +240,24 @@ cargasRouter.patch('/:id', requireAuth, requireTipo('PUBLICADOR'), async (req, r
 
   const parsed = cargaEdicionSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
-  if (parsed.data.precio < carga.pisoSiceTac) {
-    return res.status(422).json({ error: 'El precio no puede estar por debajo del piso SICE-TAC' });
+  const tipo = parsed.data.tipoPublicacion;
+
+  // Cambiar de tipo recalcula con la ruta guardada: a acarreo exige ruta
+  // corta y deja el precio libre; a nacional vuelve a exigir el piso legal.
+  let pisoSiceTac = pisoExigible(carga.tipoPublicacion, carga.pisoSiceTac);
+  if (tipo !== carga.tipoPublicacion) {
+    const ruta = await calcularTarifaRuta(carga.origen, carga.destino).catch(() => null);
+    if (!ruta) return res.status(422).json({ error: 'No pudimos calcular la ruta de esta carga. Intenta de nuevo.' });
+    if (!acarreoValido(tipo, ruta.km)) return res.status(422).json({ error: ERROR_ACARREO });
+    pisoSiceTac = pisoExigible(tipo, pisoLegal(ruta.tarifaPorTon, carga.toneladas, carga.tipoCarga));
   }
-  // Pasar a acarreo exige que la ruta guardada sea corta.
-  if (parsed.data.tipoPublicacion !== 'NACIONAL' && parsed.data.tipoPublicacion !== carga.tipoPublicacion) {
-    const km = await calcularTarifaRuta(carga.origen, carga.destino).then((r) => r.km).catch(() => null);
-    if (km == null || !acarreoValido(parsed.data.tipoPublicacion, km)) {
-      return res.status(422).json({ error: ERROR_ACARREO });
-    }
+  if (parsed.data.precio < pisoSiceTac) {
+    return res.status(422).json({ error: 'El precio no puede estar por debajo del piso SICE-TAC' });
   }
 
   const actualizada = await prisma.carga.update({
     where: { id },
-    data: { ...parsed.data, fechaCarga: new Date(parsed.data.fechaCarga) },
+    data: { ...parsed.data, pisoSiceTac, fechaCarga: new Date(parsed.data.fechaCarga) },
   });
   res.json(actualizada);
 });

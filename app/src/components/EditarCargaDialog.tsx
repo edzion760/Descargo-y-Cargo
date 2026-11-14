@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CONFIGURACIONES_VEHICULO, formatCOP } from '@/data/mock';
+import { CONFIGURACIONES_VEHICULO, esAcarreo, formatCOP } from '@/data/mock';
 import { apiFetch, ApiError } from '@/lib/api';
 
 export interface CargaEditable {
@@ -42,6 +42,9 @@ export default function EditarCargaDialog({
 }) {
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  // Los acarreos no tienen piso: el precio se negocia. Si se cambia el tipo,
+  // el servidor recalcula el piso con la ruta guardada.
+  const piso = carga && !esAcarreo(carga.tipoPublicacion) ? carga.pisoSiceTac : 0;
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -50,8 +53,8 @@ export default function EditarCargaDialog({
 
     const form = new FormData(e.currentTarget);
     const precio = Number(form.get('precio'));
-    if (precio < carga.pisoSiceTac) {
-      setError(`El precio no puede ser menor al piso SICE-TAC: ${formatCOP(carga.pisoSiceTac)}`);
+    if (precio < piso) {
+      setError(`El precio no puede ser menor al piso SICE-TAC: ${formatCOP(piso)}`);
       return;
     }
 
@@ -84,7 +87,7 @@ export default function EditarCargaDialog({
         <DialogHeader>
           <DialogTitle className="text-2xl font-extrabold tracking-tight text-zinc-950">Editar carga</DialogTitle>
           <DialogDescription className="text-zinc-500">
-            Origen, destino y toneladas no se pueden cambiar aquí -- eso determina el piso legal.
+            Origen, destino y toneladas no se pueden cambiar aquí: de eso depende el piso legal.
             Si necesitas cambiarlos, cancela esta publicación y crea una nueva.
           </DialogDescription>
         </DialogHeader>
@@ -143,13 +146,15 @@ export default function EditarCargaDialog({
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
               <Label htmlFor="editar-precio" className="text-zinc-700">Flete ofrecido (COP)</Label>
-              <span className="text-xs font-medium text-zinc-500">Piso SICE-TAC: {formatCOP(carga.pisoSiceTac)}</span>
+              <span className="text-xs font-medium text-zinc-500">
+                {piso ? `Piso SICE-TAC: ${formatCOP(piso)}` : 'Acarreo: sin piso SICE-TAC · negociable'}
+              </span>
             </div>
             <Input
               id="editar-precio"
               name="precio"
               type="number"
-              min={carga.pisoSiceTac}
+              min={piso || 1}
               required
               defaultValue={carga.precio}
             />
