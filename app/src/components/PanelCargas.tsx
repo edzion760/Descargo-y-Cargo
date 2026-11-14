@@ -30,11 +30,23 @@ function consulta(pestana: Pestana) {
     : `?tipoPublicacion=${pestana}`;
 }
 
-function FilaCarga({ carga, onAbrir }: { carga: Carga; onAbrir: () => void }) {
+function FilaCarga({
+  carga,
+  onAbrir,
+  onResaltar,
+}: {
+  carga: Carga;
+  onAbrir: () => void;
+  onResaltar?: (id: number | null) => void;
+}) {
   return (
     <button
       type="button"
       onClick={onAbrir}
+      onMouseEnter={() => onResaltar?.(carga.id)}
+      onMouseLeave={() => onResaltar?.(null)}
+      onFocus={() => onResaltar?.(carga.id)}
+      onBlur={() => onResaltar?.(null)}
       className="grid w-full grid-cols-[1fr_auto_1fr_auto] items-center gap-2 rounded-full bg-white px-4 py-3.5 text-left shadow-[0_2px_10px_rgb(0_0_0/0.08)] transition hover:shadow-[0_4px_14px_rgb(0_0_0/0.12)] active:scale-[0.99]"
     >
       <span className="truncate text-sm text-zinc-700">{carga.origen}</span>
@@ -57,9 +69,11 @@ function FilaCarga({ carga, onAbrir }: { carga: Carga; onAbrir: () => void }) {
 export default function PanelCargas({
   variante,
   verificandoPago = false,
+  onResaltar,
 }: {
   variante: 'app' | 'web';
   verificandoPago?: boolean;
+  onResaltar?: (id: number | null) => void;
 }) {
   const [pestana, setPestana] = useState<Pestana>('NACIONAL');
   const [texto, setTexto] = useState('');
@@ -69,7 +83,7 @@ export default function PanelCargas({
   const [abierta, setAbierta] = useState<Carga | null>(null);
   const [editando, setEditando] = useState<Carga | null>(null);
   const { autenticado } = useAuth();
-  const { publicar, ingresar } = useAcciones();
+  const { publicar, ingresar, registrarse, activarAvisos } = useAcciones();
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -151,7 +165,9 @@ export default function PanelCargas({
         </div>
       )}
 
-      {!cargando && !error && visibles.map((c) => <FilaCarga key={c.id} carga={c} onAbrir={() => setAbierta(c)} />)}
+      {!cargando &&
+        !error &&
+        visibles.map((c) => <FilaCarga key={c.id} carga={c} onAbrir={() => setAbierta(c)} onResaltar={onResaltar} />)}
 
       {!cargando && !error && visibles.length === 0 && (
         <div className="py-12 text-center">
@@ -236,7 +252,33 @@ export default function PanelCargas({
           </div>
 
           <div className="mt-3">{buscador}</div>
-          <div className="-mx-1 mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto px-1 pb-1">{lista}</div>
+          <div className="-mx-1 mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-1 pb-1">
+            {lista}
+            {/* Con pocas ofertas el contenedor quedaba casi vacío: abajo, las
+                dos invitaciones que más mueven el marketplace. */}
+            {!cargando && !error && !texto && visibles.length <= 3 && (
+              <div className="mt-auto grid gap-3 pt-2 sm:grid-cols-2">
+                <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgb(0_0_0/0.06)]">
+                  <p className="font-bold">¿Tienes carga?</p>
+                  <p className="mt-1 text-sm text-zinc-600">Publícala gratis en 5 minutos y llega a transportadores de todo el país.</p>
+                  <Button onClick={publicar} size="sm" className="mt-3 rounded-full">
+                    Publicar gratis
+                  </Button>
+                </div>
+                <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgb(0_0_0/0.06)]">
+                  <p className="font-bold">¿Eres transportador?</p>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    {autenticado
+                      ? 'Activa las alertas de clima y accidentes en tus rutas.'
+                      : 'Crea tu cuenta gratis y recibe alertas de clima y accidentes en tu ruta.'}
+                  </p>
+                  <Button onClick={autenticado ? activarAvisos : registrarse} size="sm" variant="outline" className="mt-3 rounded-full">
+                    {autenticado ? 'Activar alertas' : 'Crear mi cuenta'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

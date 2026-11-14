@@ -35,11 +35,30 @@ const ESTILO_RUTA: L.PathOptions = {
   interactive: false,
 };
 
-interface Ciudad {
-  nombre: string;
+interface Punto {
   lat: number;
   lon: number;
 }
+
+interface Ciudad extends Punto {
+  nombre: string;
+}
+
+// Ruta de una carga publicada de verdad (GET /api/cargas/rutas).
+export interface RutaCarga {
+  id: number;
+  origen: Punto;
+  destino: Punto;
+}
+
+const NARANJA = '#f97316';
+
+const iconoExtremo = L.divIcon({
+  className: '',
+  html: `<span class="block h-3 w-3 rounded-full border-2 border-white shadow" style="background:${NARANJA}"></span>`,
+  iconSize: [12, 12],
+  iconAnchor: [6, 6],
+});
 
 const CIUDADES: Ciudad[] = [
   { nombre: 'Bogotá', lat: 4.711, lon: -74.0721 },
@@ -108,29 +127,25 @@ const iconoCamion = L.divIcon({
 // Encuadra automáticamente todas las ciudades sin importar el tamaño real
 // del contenedor (varía entre móvil y escritorio) — más confiable que fijar
 // center/zoom a mano.
-function AjustarVista() {
+function AjustarVista({ margenSuperior }: { margenSuperior: number }) {
   const map = useMap();
   useEffect(() => {
     const bounds = L.latLngBounds(CIUDADES.map((c) => [c.lat, c.lon]));
-    // Más margen arriba: ahí va la leyenda flotante.
-    map.fitBounds(bounds, { paddingTopLeft: [28, 64], paddingBottomRight: [28, 28] });
-  }, [map]);
+    // Más margen arriba: ahí van la leyenda y lo que se ponga encima del mapa.
+    map.fitBounds(bounds, { paddingTopLeft: [28, margenSuperior], paddingBottomRight: [28, 28] });
+  }, [map, margenSuperior]);
   return null;
 }
 
-function interpolar(a: Ciudad, b: Ciudad, t: number): [number, number] {
+function interpolar(a: Punto, b: Punto, t: number): [number, number] {
   return [a.lat + (b.lat - a.lat) * t, a.lon + (b.lon - a.lon) * t];
 }
 
-function CamionAnimado({ origen, destino, duracionMs, inicio }: (typeof RUTAS_CAMIONES)[number]) {
-  const [posicion, setPosicion] = useState<[number, number]>(() =>
-    interpolar(CIUDADES[origen], CIUDADES[destino], inicio)
-  );
+function CamionAnimado({ a, b, duracionMs, inicio }: { a: Punto; b: Punto; duracionMs: number; inicio: number }) {
+  const [posicion, setPosicion] = useState<[number, number]>(() => interpolar(a, b, inicio));
   const marcoRef = useRef<number>(0);
 
   useEffect(() => {
-    const a = CIUDADES[origen];
-    const b = CIUDADES[destino];
     const inicioMs = performance.now() - inicio * duracionMs;
 
     function tick(ahora: number) {
@@ -142,12 +157,24 @@ function CamionAnimado({ origen, destino, duracionMs, inicio }: (typeof RUTAS_CA
     }
     marcoRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(marcoRef.current);
-  }, [origen, destino, duracionMs, inicio]);
+  }, [a, b, duracionMs, inicio]);
 
   return <Marker position={posicion} icon={iconoCamion} interactive={false} keyboard={false} />;
 }
 
-export default function MapaColombia({ className = 'h-72' }: { className?: string }) {
+export default function MapaColombia({
+  className = 'h-72',
+  rutas = [],
+  resaltada = null,
+  margenSuperior = 64,
+}: {
+  className?: string;
+  rutas?: RutaCarga[];
+  resaltada?: number | null;
+  margenSuperior?: number;
+}) {
+  // Con cargas reales, el ambiente ilustrativo pasa a segundo plano.
+  const hayReales = rutas.length > 0;
   return (
     // isolate: Leaflet pone z-index 400-700 en sus panes internos (tiles,
     // marcadores, popups) y su .leaflet-container no abre un contexto de
@@ -175,7 +202,7 @@ export default function MapaColombia({ className = 'h-72' }: { className?: strin
           className="h-full w-full"
           style={{ background: 'transparent' }}
         >
-          <AjustarVista />
+          <AjustarVista margenSuperior={margenSuperior} />
           <GeoJSON data={colombiaGeoJson as GeoJSON.GeoJsonObject} style={ESTILO_COLOMBIA} interactive={false} />
           {RUTAS_CAMIONES.map((r, i) => (
             <Polyline
@@ -184,18 +211,59 @@ export default function MapaColombia({ className = 'h-72' }: { className?: strin
                 [CIUDADES[r.origen].lat, CIUDADES[r.origen].lon],
                 [CIUDADES[r.destino].lat, CIUDADES[r.destino].lon],
               ]}
-              pathOptions={ESTILO_RUTA}
+              pathOptions={hayReales ? { ...ESTILO_RUTA, opacity: 0.4 } : ESTILO_RUTA}
             />
           ))}
           {EMPRESAS_ACTIVAS.map((i) => (
             <Marker key={CIUDADES[i].nombre} position={[CIUDADES[i].lat, CIUDADES[i].lon]} icon={iconoEmpresa} interactive={false} keyboard={false} />
           ))}
-          {RUTAS_CAMIONES.map((ruta, i) => (
-            <CamionAnimado key={i} {...ruta} />
+          {RUTAS_CAMIONES.map((r, i) => (
+            <CamionAnimado key={i} a={CIUDADES[r.origen]} b={CIUDADES[r.destino]} duracionMs={r.duracionMs} inicio={r.inicio} />
+          ))}
+
+          {/* Cargas publicadas: línea naranja; la que se señala en la lista se
+              engruesa y las demás se atenúan. */}
+          {rutas.map((r) => {
+            const activa = resaltada === r.id;
+            const atenuada = resaltada != null && !activa;
+            return (
+              <Polyline
+                key={`carga-${r.id}`}
+                positions={[
+                  [r.origen.lat, r.origen.lon],
+                  [r.destino.lat, r.destino.lon],
+                ]}
+                pathOptions={{
+                  color: NARANJA,
+                  weight: activa ? 5 : 3,
+                  opacity: atenuada ? 0.25 : 0.9,
+                  lineCap: 'round',
+                  interactive: false,
+                }}
+              />
+            );
+          })}
+          {rutas.flatMap((r) => [
+            <Marker key={`o-${r.id}`} position={[r.origen.lat, r.origen.lon]} icon={iconoExtremo} interactive={false} keyboard={false} />,
+            <Marker key={`d-${r.id}`} position={[r.destino.lat, r.destino.lon]} icon={iconoExtremo} interactive={false} keyboard={false} />,
+          ])}
+          {rutas.map((r, i) => (
+            <CamionAnimado
+              key={`c-${r.id}`}
+              a={r.origen}
+              b={r.destino}
+              duracionMs={Math.max(6000, Math.hypot(r.destino.lat - r.origen.lat, r.destino.lon - r.origen.lon) * 2500)}
+              inicio={(i * 0.37) % 1}
+            />
           ))}
         </MapContainer>
       </div>
       <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-full bg-white/90 px-3.5 py-2 text-[11px] font-medium text-zinc-600 shadow-suave backdrop-blur">
+        {hayReales && (
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ background: NARANJA }} /> Cargas publicadas
+          </span>
+        )}
         <span className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-emerald-500" /> Empresas
         </span>

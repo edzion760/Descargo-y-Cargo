@@ -159,6 +159,34 @@ const municipios = () =>
     }))
   );
 
+// "Bogotá", "BOGOTÁ, D.C." y "bogota" quedan iguales: sin tildes, sin "D.C."
+// ni signos, en minúscula.
+const claveCiudad = (s) =>
+  s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/d\.\s?c\./g, ' ')
+    .replace(/[^a-z ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const ubicaciones = new Map(); // también guarda los null: no repetir Nominatim por un nombre que no existe
+
+// Coordenadas de una ciudad escrita por el publicador (mapa de la portada):
+// primero el municipio del DANE con el mismo nombre; si no está, Nominatim.
+// ponytail: con nombres repetidos ("La Unión") toma el primero; pedir el
+// departamento al publicar si eso llega a importar.
+export async function ubicarCiudad(nombre) {
+  const clave = claveCiudad(nombre);
+  if (ubicaciones.has(clave)) return ubicaciones.get(clave);
+  const lista = await municipios().catch(() => []);
+  const m = lista.find((x) => claveCiudad(x.nombre) === clave);
+  const punto = m ? { lat: m.lat, lon: m.lon } : await geocodificar(nombre).catch(() => null);
+  ubicaciones.set(clave, punto);
+  return punto;
+}
+
 const trazado = (o, d) =>
   conCache(`osrm:${o.lat},${o.lon};${d.lat},${d.lon}`, 24 * 3600_000, async () => {
     const url = `https://router.project-osrm.org/route/v1/driving/${o.lon},${o.lat};${d.lon},${d.lat}?overview=simplified&geometries=geojson`;

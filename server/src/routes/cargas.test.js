@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tarifaDesbloqueo } from './cargas.js';
+import { tarifaDesbloqueo, nombreCiudad } from './cargas.js';
+
+test('nombre de ciudad con mayúsculas uniformes', () => {
+  assert.equal(nombreCiudad('San gil'), 'San Gil');
+  assert.equal(nombreCiudad('  BUCARAMANGA '), 'Bucaramanga');
+  assert.equal(nombreCiudad('cartagena  de indias'), 'Cartagena de Indias');
+  assert.equal(nombreCiudad('el carmen de bolívar'), 'El Carmen de Bolívar');
+});
 
 test('6% del flete', () => {
   assert.equal(tarifaDesbloqueo(1232712, null), 73963);

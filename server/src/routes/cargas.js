@@ -5,6 +5,7 @@ import { requireAuth, requireTipo, optionalAuth } from '../middleware/auth.js';
 import { urlCheckout } from '../wompi.js';
 import { enviarAvisoPublicador } from '../email.js';
 import { placaSchema } from './auth.js';
+import { ubicarCiudad } from '../clima.js';
 
 export const cargasRouter = Router();
 
@@ -78,6 +79,24 @@ const cargaPublica = {
   estado: true,
 };
 
+// Rutas de las cargas disponibles para el mapa de la portada. Secuencial: el
+// respaldo con Nominatim pide máximo 1 consulta por segundo (y queda en caché).
+cargasRouter.get('/rutas', async (_req, res) => {
+  const cargas = await prisma.carga.findMany({
+    where: { estado: 'DISPONIBLE' },
+    select: { id: true, origen: true, destino: true },
+    orderBy: { createdAt: 'desc' },
+    take: 40,
+  });
+  const rutas = [];
+  for (const c of cargas) {
+    const origen = await ubicarCiudad(c.origen);
+    const destino = await ubicarCiudad(c.destino);
+    if (origen && destino) rutas.push({ id: c.id, origen, destino });
+  }
+  res.json(rutas);
+});
+
 cargasRouter.get('/', optionalAuth, async (req, res) => {
   const { tipoPublicacion, vehiculoRequerido } = req.query;
   const cargas = await prisma.carga.findMany({
@@ -115,11 +134,24 @@ cargasRouter.get('/', optionalAuth, async (req, res) => {
   );
 });
 
+// "san gil" / "SAN GIL" -> "San Gil"; los conectores quedan en minúscula
+// ("Cartagena de Indias"). Así la lista, el buscador y el mapa ven un solo nombre.
+const CONECTORES = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y']);
+export function nombreCiudad(texto) {
+  return texto
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .split(' ')
+    .map((p, i) => (i > 0 && CONECTORES.has(p) ? p : p.charAt(0).toUpperCase() + p.slice(1)))
+    .join(' ');
+}
+
 const cargaSchema = z.object({
   titulo: z.string().min(3),
   tipoCarga: z.string().min(2),
-  origen: z.string().min(2),
-  destino: z.string().min(2),
+  origen: z.string().min(2).transform(nombreCiudad),
+  destino: z.string().min(2).transform(nombreCiudad),
   toneladas: z.number().positive(),
   precio: z.number().int().positive(),
   pisoSiceTac: z.number().int().positive(),
